@@ -1,0 +1,19 @@
+/* Xross Stars HP管理 — アプリ固有スタイル */
+html,body{margin:0;background:#201e1d;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button,input,select{font-family:inherit}
+@keyframes xs-hit-a{0%{transform:scale(1)}30%{transform:scale(1.12);color:#ff90b1}100%{transform:scale(1)}}
+@keyframes xs-hit-b{0%{transform:scale(1)}30%{transform:scale(1.12);color:#ff90b1}100%{transform:scale(1)}}
+@keyframes xs-heal-a{0%{transform:scale(1)}30%{transform:scale(1.09);color:#62c5ee}100%{transform:scale(1)}}
+@keyframes xs-heal-b{0%{transform:scale(1)}30%{transform:scale(1.09);color:#62c5ee}100%{transform:scale(1)}}
+@keyframes xs-down{0%{opacity:0;transform:scale(.92)}45%{opacity:1;transform:scale(1.03)}100%{opacity:1;transform:scale(1)}}
+@keyframes xs-sheet{0%{transform:translateY(18px);opacity:0}100%{transform:translateY(0);opacity:1}}
+
+/* 枠内の数値・ボタン。横向きスマホ（高さが小さい）では一段小さくして重なりを防ぐ */
+.xs-hp{font-size:28px}
+.xs-dmg{font-size:16px}
+.xs-btn{min-height:40px}
+@media (max-height:520px){
+  .xs-hp{font-size:22px}
+  .xs-dmg{font-size:14px}
+  .xs-btn{min-height:34px}
+}

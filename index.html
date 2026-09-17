@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xross Stars HP管理</title>
+
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/broadsheet.css">
+<link rel="stylesheet" href="css/app.css">
+
+<!-- 描画エンジン（React は dc-runtime より先に読み込むと CDN を使わずローカルで動く） -->
+<script src="js/vendor/react.production.min.js"></script>
+<script src="js/vendor/react-dom.production.min.js"></script>
+<script src="js/vendor/dc-runtime.js"></script>
+<script src="js/vendor/print-plates.js"></script>
+
+<!-- データ（第5弾以降のリーダー・装備はここに追記） -->
+<script src="js/data/leaders.js"></script>
+<script src="js/data/images.js"></script>
+<script src="js/data/effects.js"></script>
+
+<!-- カスタマイズ内容の保存（IndexedDB）と画像圧縮 -->
+<script src="js/storage.js"></script>
+
+<!-- アプリ本体 -->
+<script src="js/app.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="min-height:100dvh;display:flex;flex-direction:column;gap:8px;padding:8px calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));box-sizing:border-box;background:#201e1d;color:#f3f2f2;font-family:var(--font-body);-webkit-font-smoothing:antialiased">
+
+  <div style="display:flex;align-items:baseline;gap:10px;padding:2px 4px 0;white-space:nowrap">
+    <span style="flex:none;font-family:var(--font-heading);font-weight:600;font-size:14px;letter-spacing:.14em;text-transform:uppercase">Xross Stars</span>
+    <span style="flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:11px;color:#9b9797;letter-spacing:.08em">HP管理</span>
+    <span style="flex:none;margin-left:auto;font-size:11px;color:#9b9797">
+      <span style="color:#62c5ee">−</span> 回復 &nbsp; <span style="color:#ff90b1">＋</span> ダメージ
+    </span>
+    <button sc-camel-on-click="{{ askResetAll }}" style="flex:none;align-self:center;min-height:28px;padding:0 10px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:.06em;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" style-hover="background:#2d2b2b" style-active="background:#444141">全員HPリセット</button>
+  </div>
+
+  <div style="flex:1;display:grid;gap:8px;min-height:0;grid-template-columns:{{ gridCols }}">
+    <sc-for list="{{ slots }}" as="c" hint-placeholder-count="4">
+      <div style="position:relative;display:flex;flex-direction:column;min-height:0;background:#2d2b2b;border-radius:2px;overflow:hidden">
+
+        <sc-if value="{{ c.empty }}" hint-placeholder-val="{{ true }}">
+          <button sc-camel-on-click="{{ c.openPicker }}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px dashed #605d5d;border-radius:2px;background:transparent;color:#9b9797;font-family:var(--font-heading);font-size:14px;cursor:pointer" style-hover="background:#2d2b2b;color:#f3f2f2;border-color:#62c5ee">
+            <span style="font-size:22px;line-height:1">＋</span>
+            <span>{{ c.slotLabel }}</span>
+            <span style="font-size:11px">リーダーを選択</span>
+          </button>
+        </sc-if>
+
+        <sc-if value="{{ c.filled }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;min-height:0;flex:1">
+            <div style="height:4px;flex:none;background:{{ c.colorHex }}"></div>
+
+            <div style="display:flex;align-items:center;gap:4px;padding:6px 4px 0 10px;flex:none">
+              <span style="font-family:var(--font-heading);font-weight:600;font-size:14px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+              <sc-if value="{{ c.awakened }}" hint-placeholder-val="{{ false }}">
+                <span style="flex:none;font-size:9px;letter-spacing:.12em;padding:2px 5px;border-radius:2px;background:#4b1528;color:#ff90b1">覚醒</span>
+              </sc-if>
+              <button sc-camel-on-click="{{ c.openMenu }}" aria-label="メニュー" style="margin-left:auto;flex:none;width:32px;height:32px;display:grid;place-items:center;border:0;background:transparent;color:#9b9797;font-size:18px;line-height:1;border-radius:2px;cursor:pointer" style-hover="background:#444141;color:#f3f2f2">⋯</button>
+            </div>
+
+            <sc-if value="{{ c.equipText }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:none;margin:2px 10px 0;font-size:11px;line-height:1.3;color:#62c5ee;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">【装備】{{ c.equipText }}</div>
+            </sc-if>
+
+            <button sc-camel-on-click="{{ c.openDetail }}" aria-label="カード詳細" style="position:relative;flex:1;min-height:0;margin:6px 10px 0;padding:0;border:0;border-radius:2px;background:#201e1d;display:grid;place-items:center;overflow:hidden;cursor:pointer">
+              <sc-if value="{{ c.hasImage }}" hint-placeholder-val="{{ false }}">
+                <div class="halftone" style="position:absolute;inset:0"><img src="{{ c.imageSrc }}" alt="" style="display:block;width:100%;height:100%;object-fit:contain;"></div>
+              </sc-if>
+              <sc-if value="{{ c.noImage }}" hint-placeholder-val="{{ true }}">
+                <span style="position:relative;font-family:var(--font-heading);font-size:22px;color:#444141">{{ c.initial }}</span>
+              </sc-if>
+            </button>
+
+            <div style="flex:none;padding:6px 10px 0;display:flex;align-items:flex-end;gap:8px">
+              <div style="min-width:0">
+                <div style="font-size:9px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase">HP</div>
+                <div style="display:flex;align-items:baseline;gap:3px;white-space:nowrap">
+                  <span class="xs-hp" style="font-family:var(--font-heading);font-weight:600;line-height:.95;font-variant-numeric:tabular-nums;display:inline-block;animation:{{ c.hpAnim }}">{{ c.currentHp }}</span>
+                  <span style="font-size:13px;color:#9b9797;font-variant-numeric:tabular-nums">/ {{ c.maxHp }}</span>
+                </div>
+              </div>
+              <div style="margin-left:auto;text-align:right">
+                <div style="font-size:9px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase">DMG ／ ATK</div>
+                <div style="display:flex;align-items:baseline;gap:6px;justify-content:flex-end">
+                  <span class="xs-dmg" style="font-family:var(--font-heading);font-weight:600;line-height:1.05;color:#ff90b1;font-variant-numeric:tabular-nums">{{ c.damage }}</span>
+                  <span style="font-size:13px;color:#9b9797;font-variant-numeric:tabular-nums">{{ c.attack }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="flex:none;display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:4px;padding:6px 6px">
+              <button sc-camel-on-click="{{ c.heal10 }}" class="xs-btn" style="border:0;border-radius:2px;background:#0a303e;color:#99e0ff;font-family:var(--font-heading);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" style-hover="background:#004961" style-active="background:#006786">−10</button>
+              <button sc-camel-on-click="{{ c.hit10 }}" class="xs-btn" style="border:0;border-radius:2px;background:#4b1528;color:#ffc0d0;font-family:var(--font-heading);font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" style-hover="background:#790e3d" style-active="background:#aa0b56">＋10</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.isDown }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;pointer-events:none;border:2px solid #ff458e;border-radius:2px;display:flex;align-items:center;justify-content:center;background:rgba(32,30,29,.62);animation:xs-down .45s ease">
+            <span style="font-family:var(--font-heading);font-weight:600;font-size:32px;letter-spacing:.22em;color:#ff458e;text-indent:.22em">DOWN</span>
+          </div>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+
+
+  <sc-if value="{{ picker }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:40;background:#201e1d;display:flex;flex-direction:column">
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:12px 12px 8px">
+        <span style="font-family:var(--font-heading);font-weight:600;font-size:17px">{{ picker.title }}</span>
+        <button sc-camel-on-click="{{ toggleEdit }}" aria-label="リーダーをカスタマイズ" title="リーダーをカスタマイズ" style="flex:none;width:36px;height:36px;border:1px solid #605d5d;border-radius:2px;font-size:18px;line-height:1;cursor:pointer;background:{{ editBg }};color:{{ editFg }}" style-hover="color:#f3f2f2">⚙</button>
+        <button sc-camel-on-click="{{ closePicker }}" aria-label="閉じる" style="margin-left:auto;width:36px;height:36px;border:0;background:transparent;color:#9b9797;font-size:18px;border-radius:2px;cursor:pointer" style-hover="background:#444141;color:#f3f2f2">✕</button>
+      </div>
+
+      <div style="flex:none;padding:0 12px 8px;display:flex;flex-direction:column;gap:8px">
+        <input type="search" value="{{ query }}" sc-camel-on-change="{{ onQuery }}" placeholder="リーダー名を検索..." style="min-height:46px;padding:0 12px;border:1px solid #605d5d;border-radius:2px;background:#2d2b2b;color:#f3f2f2;font-family:var(--font-body);font-size:15px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <sc-for list="{{ boosterOpts }}" as="b" hint-placeholder-count="5">
+            <button sc-camel-on-click="{{ b.pick }}" style="min-height:38px;padding:0 12px;border:1px solid #605d5d;border-radius:2px;font-family:var(--font-heading);font-weight:600;font-size:13px;cursor:pointer;background:{{ b.bg }};color:{{ b.fg }}">{{ b.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <sc-for list="{{ colorOpts }}" as="k" hint-placeholder-count="5">
+            <button sc-camel-on-click="{{ k.pick }}" style="min-height:38px;padding:0 14px;border:1px solid {{ k.border }};border-radius:2px;font-family:var(--font-heading);font-weight:600;font-size:13px;cursor:pointer;background:{{ k.bg }};color:{{ k.fg }}">{{ k.label }}</button>
+          </sc-for>
+        </div>
+        <div style="font-size:11px;color:#7d7979">{{ countLine }}</div>
+        <sc-if value="{{ editMode }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:#99e0ff;padding:8px 10px;background:#0a303e;border-radius:2px">カスタマイズ中：各リーダーの右の ⚙ をタップすると、名前・テキスト・数値・画像を変更できます（この端末のブラウザに保存）。</div>
+        </sc-if>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow:auto;padding:0 12px 20px;display:flex;flex-direction:column;gap:6px">
+        <sc-for list="{{ results }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;gap:6px;align-items:stretch">
+          <button sc-camel-on-click="{{ r.pick }}" disabled="{{ r.used }}" style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;text-align:left;padding:10px;min-height:56px;border:0;border-radius:2px;background:#2d2b2b;color:#f3f2f2;cursor:pointer;opacity:{{ r.opacity }}" style-hover="background:#444141">
+            <span style="flex:none;width:8px;height:36px;border-radius:2px;background:{{ r.colorHex }}"></span>
+            <span style="flex:1;min-width:0">
+              <span style="display:block;font-family:var(--font-heading);font-weight:600;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+              <span style="display:block;font-size:11px;color:#9b9797">{{ r.meta }}</span>
+            </span>
+            <span style="flex:none;text-align:right;font-variant-numeric:tabular-nums">
+              <span style="display:block;font-family:var(--font-heading);font-weight:600;font-size:15px">{{ r.hpText }}</span>
+              <span style="display:block;font-size:11px;color:#9b9797">{{ r.atkText }}</span>
+            </span>
+          </button>
+          <sc-if value="{{ r.editable }}" hint-placeholder-val="{{ false }}">
+            <button sc-camel-on-click="{{ r.edit }}" aria-label="このリーダーをカスタマイズ" style="flex:none;width:52px;border:1px solid #605d5d;border-radius:2px;background:#2d2b2b;color:#99e0ff;font-size:20px;line-height:1;cursor:pointer" style-hover="background:#444141;color:#f3f2f2">⚙</button>
+          </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px 4px;font-size:13px;color:#7d7979">該当するリーダーがいません。</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ editor }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeEditor }}" style="position:fixed;inset:0;z-index:42;background:rgba(32,30,29,.82);display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto">
+      <div sc-camel-on-click="{{ stop }}" style="width:100%;max-width:460px;max-height:92dvh;overflow:auto;background:#2d2b2b;border-radius:2px;padding:16px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:18px">{{ editor.title }}</span>
+          <button sc-camel-on-click="{{ closeEditor }}" aria-label="閉じる" style="margin-left:auto;width:34px;height:34px;border:0;background:transparent;color:#9b9797;font-size:18px;border-radius:2px;cursor:pointer" style-hover="background:#444141;color:#f3f2f2">✕</button>
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">名前</div>
+          <input type="text" value="{{ editor.name }}" sc-camel-on-change="{{ editor.onName }}" placeholder="リーダー名" style="width:100%;min-height:46px;padding:0 12px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-body);font-size:15px">
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">覚醒効果テキスト</div>
+          <textarea value="{{ editor.awakeningEffect }}" sc-camel-on-change="{{ editor.onEffect }}" placeholder="覚醒時の効果" rows="3" style="width:100%;min-height:80px;padding:10px 12px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-body);font-size:14px;line-height:1.5;resize:vertical"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+          <div>
+            <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">HP（覚醒前）</div>
+            <input type="number" sc-camel-input-mode="numeric" value="{{ editor.hp }}" sc-camel-on-change="{{ editor.onHp }}" style="width:100%;min-height:44px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-heading);font-size:17px;text-align:center;font-variant-numeric:tabular-nums">
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">HP（覚醒後）</div>
+            <input type="number" sc-camel-input-mode="numeric" value="{{ editor.awakenedHp }}" sc-camel-on-change="{{ editor.onAwakenedHp }}" style="width:100%;min-height:44px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#ff90b1;font-family:var(--font-heading);font-size:17px;text-align:center;font-variant-numeric:tabular-nums">
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">ATK（覚醒前）</div>
+            <input type="number" sc-camel-input-mode="numeric" value="{{ editor.attack }}" sc-camel-on-change="{{ editor.onAttack }}" style="width:100%;min-height:44px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-heading);font-size:17px;text-align:center;font-variant-numeric:tabular-nums">
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">ATK（覚醒後）</div>
+            <input type="number" sc-camel-input-mode="numeric" value="{{ editor.awakenedAttack }}" sc-camel-on-change="{{ editor.onAwakenedAttack }}" style="width:100%;min-height:44px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#ff90b1;font-family:var(--font-heading);font-size:17px;text-align:center;font-variant-numeric:tabular-nums">
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase">画像（通常）</div>
+            <div class="halftone" style="width:100%;aspect-ratio:63/88;border-radius:2px;background:#201e1d">
+              <sc-if value="{{ editor.hasImage }}" hint-placeholder-val="{{ false }}"><img src="{{ editor.imageSrc }}" alt="" style="display:block;width:100%;height:100%;object-fit:contain;"></sc-if>
+            </div>
+            <label style="display:flex;align-items:center;justify-content:center;min-height:44px;border:0;border-radius:2px;background:#006786;color:#e9f8ff;font-family:var(--font-heading);font-weight:600;font-size:14px;cursor:pointer">
+              画像を選ぶ
+              <input type="file" accept="image/*" sc-camel-on-change="{{ editor.pickImage }}" style="display:none">
+            </label>
+            <sc-if value="{{ editor.hasCustomImage }}" hint-placeholder-val="{{ false }}">
+              <button sc-camel-on-click="{{ editor.clearImage }}" style="min-height:38px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#9b9797;font-size:13px;cursor:pointer" style-hover="color:#f3f2f2;background:#444141">元の画像に戻す</button>
+            </sc-if>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase">画像（覚醒後）</div>
+            <div class="halftone" style="width:100%;aspect-ratio:63/88;border-radius:2px;background:#201e1d">
+              <sc-if value="{{ editor.hasAwakenedImage }}" hint-placeholder-val="{{ false }}"><img src="{{ editor.awakenedImageSrc }}" alt="" style="display:block;width:100%;height:100%;object-fit:contain;"></sc-if>
+            </div>
+            <label style="display:flex;align-items:center;justify-content:center;min-height:44px;border:0;border-radius:2px;background:#aa0b56;color:#fff1f4;font-family:var(--font-heading);font-weight:600;font-size:14px;cursor:pointer">
+              画像を選ぶ
+              <input type="file" accept="image/*" sc-camel-on-change="{{ editor.pickAwakenedImage }}" style="display:none">
+            </label>
+            <sc-if value="{{ editor.hasCustomAwakenedImage }}" hint-placeholder-val="{{ false }}">
+              <button sc-camel-on-click="{{ editor.clearAwakenedImage }}" style="min-height:38px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#9b9797;font-size:13px;cursor:pointer" style-hover="color:#f3f2f2;background:#444141">元の画像に戻す</button>
+            </sc-if>
+          </div>
+        </div>
+
+        <sc-if value="{{ editor.error }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:13px;color:#ff90b1">{{ editor.error }}</div>
+        </sc-if>
+        <sc-if value="{{ editor.busy }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:#99e0ff">画像を処理中…</div>
+        </sc-if>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button sc-camel-on-click="{{ editor.save }}" disabled="{{ editor.busy }}" style="flex:2;min-width:140px;min-height:46px;border:0;border-radius:2px;background:#006786;color:#e9f8ff;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#1186ac">保存</button>
+          <sc-if value="{{ editor.customized }}" hint-placeholder-val="{{ false }}">
+            <button sc-camel-on-click="{{ editor.reset }}" style="flex:1;min-width:120px;min-height:46px;border:1px solid #aa0b56;border-radius:2px;background:transparent;color:#ff90b1;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#4b1528">初期設定に戻す</button>
+          </sc-if>
+          <button sc-camel-on-click="{{ closeEditor }}" style="flex:1;min-width:120px;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">キャンセル</button>
+        </div>
+        <div style="font-size:11px;color:#7d7979">変更内容はこの端末のブラウザ内に保存されます（他の端末には同期されません）。</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ detail }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeDetail }}" style="position:fixed;inset:0;z-index:38;background:rgba(32,30,29,.82);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto">
+      <div sc-camel-on-click="{{ stop }}" style="width:100%;max-width:420px;background:#2d2b2b;border-radius:2px;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:2px;background:{{ detail.colorHex }}"></span>
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:20px">{{ detail.name }}</span>
+          <button sc-camel-on-click="{{ closeDetail }}" aria-label="閉じる" style="margin-left:auto;width:34px;height:34px;border:0;background:transparent;color:#9b9797;font-size:18px;border-radius:2px;cursor:pointer" style-hover="background:#444141;color:#f3f2f2">✕</button>
+        </div>
+        <div class="halftone" style="width:100%;aspect-ratio:63/88;max-height:46dvh;border-radius:2px;background:#201e1d">
+          <sc-if value="{{ detail.hasImage }}" hint-placeholder-val="{{ false }}"><img src="{{ detail.imageSrc }}" alt="" style="display:block;width:100%;height:100%;object-fit:contain;"></sc-if>
+        </div>
+        <div style="font-size:12px;color:#9b9797">{{ detail.meta }}</div>
+        <div style="display:flex;gap:18px;font-variant-numeric:tabular-nums">
+          <div>
+            <div style="font-size:9px;letter-spacing:.16em;color:#9b9797">覚醒前</div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:17px">HP {{ detail.hp }} ／ ATK {{ detail.attack }}</div>
+          </div>
+          <div>
+            <div style="font-size:9px;letter-spacing:.16em;color:#9b9797">覚醒後</div>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:17px;color:#ff90b1">HP {{ detail.awakenedHp }} ／ ATK {{ detail.awakenedAttack }}</div>
+          </div>
+        </div>
+        <div style="font-size:14px;line-height:1.6">{{ detail.effectText }}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button sc-camel-on-click="{{ detail.toggleAwaken }}" style="flex:1;min-width:140px;min-height:46px;border:0;border-radius:2px;background:#aa0b56;color:#fff1f4;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#d82071">{{ detail.awakenLabel }}</button>
+          <button sc-camel-on-click="{{ detail.change }}" style="flex:1;min-width:140px;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">リーダーを変更</button>
+          <button sc-camel-on-click="{{ detail.clear }}" style="flex:1;min-width:140px;min-height:46px;border:1px solid #aa0b56;border-radius:2px;background:transparent;color:#ff90b1;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#4b1528">リーダーを外す</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sheet }}" hint-placeholder-val="{{ false }}">
+    <div sc-camel-on-click="{{ closeSheet }}" style="position:fixed;inset:0;z-index:36;background:rgba(32,30,29,.68);display:flex;align-items:flex-end;justify-content:center">
+      <div sc-camel-on-click="{{ stop }}" style="width:100%;max-width:520px;background:#2d2b2b;border-radius:2px 2px 0 0;padding:14px 14px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;max-height:88dvh;overflow:auto;animation:xs-sheet .18s ease">
+
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:2px;background:{{ sheet.colorHex }}"></span>
+          <span style="font-family:var(--font-heading);font-weight:600;font-size:17px">{{ sheet.name }}</span>
+          <span style="font-size:12px;color:#9b9797;font-variant-numeric:tabular-nums">HP {{ sheet.currentHp }} / {{ sheet.maxHp }} ・ DMG {{ sheet.damage }}</span>
+          <button sc-camel-on-click="{{ closeSheet }}" aria-label="閉じる" style="margin-left:auto;width:34px;height:34px;border:0;background:transparent;color:#9b9797;font-size:18px;border-radius:2px;cursor:pointer" style-hover="background:#444141;color:#f3f2f2">✕</button>
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">任意の値</div>
+          <div style="display:flex;gap:6px">
+            <input type="number" sc-camel-input-mode="numeric" value="{{ custom }}" sc-camel-on-change="{{ onCustom }}" aria-label="任意の値" style="width:82px;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-heading);font-size:18px;text-align:center;font-variant-numeric:tabular-nums">
+            <button sc-camel-on-click="{{ sheet.customHeal }}" style="flex:1;min-height:46px;border:0;border-radius:2px;background:#0a303e;color:#99e0ff;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer">回復</button>
+            <button sc-camel-on-click="{{ sheet.customHit }}" style="flex:1;min-height:46px;border:0;border-radius:2px;background:#4b1528;color:#ffc0d0;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer">ダメージ</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">最大HP（基本 {{ sheet.baseMaxHp }}）</div>
+          <div style="display:flex;gap:6px">
+            <button sc-camel-on-click="{{ sheet.maxDown }}" style="flex:1;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">最大HP −10</button>
+            <button sc-camel-on-click="{{ sheet.maxUp }}" style="flex:1;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">最大HP ＋10</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.16em;color:#9b9797;text-transform:uppercase;margin-bottom:6px">装備</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <sc-for list="{{ sheet.catalog }}" as="eq" hint-placeholder-count="1">
+              <button sc-camel-on-click="{{ eq.add }}" style="display:flex;align-items:center;gap:8px;text-align:left;padding:8px 10px;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;cursor:pointer;opacity:{{ eq.opacity }}" style-hover="background:#444141">
+                <span style="font-family:var(--font-heading);font-weight:600;font-size:14px">{{ eq.name }}</span>
+                <span style="font-size:11px;color:#62c5ee">{{ eq.note }}</span>
+                <span style="margin-left:auto;font-size:18px;color:#9b9797">＋</span>
+              </button>
+            </sc-for>
+            <sc-for list="{{ sheet.equipment }}" as="e" hint-placeholder-count="0">
+              <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#201e1d;border-radius:2px">
+                <span style="font-size:14px;color:#62c5ee">{{ e.name }}</span>
+                <sc-if value="{{ e.hpNote }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:11px;color:#9b9797;font-variant-numeric:tabular-nums">{{ e.hpNote }}</span>
+                </sc-if>
+                <button sc-camel-on-click="{{ e.remove }}" style="margin-left:auto;min-height:34px;padding:0 12px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#9b9797;font-size:13px;cursor:pointer" style-hover="color:#f3f2f2;background:#444141">外す</button>
+              </div>
+            </sc-for>
+            <div style="display:flex;gap:6px">
+              <input type="text" value="{{ equipName }}" sc-camel-on-change="{{ onEquipName }}" placeholder="装備カード名" style="flex:1;min-width:0;min-height:46px;padding:0 10px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-body);font-size:15px">
+              <input type="number" sc-camel-input-mode="numeric" value="{{ equipHp }}" sc-camel-on-change="{{ onEquipHp }}" aria-label="最大HP増減" style="width:66px;flex:none;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:#201e1d;color:#f3f2f2;font-family:var(--font-heading);font-size:16px;text-align:center;font-variant-numeric:tabular-nums">
+              <button sc-camel-on-click="{{ sheet.equip }}" style="min-height:46px;padding:0 16px;border:0;border-radius:2px;background:#006786;color:#e9f8ff;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#1186ac">装備</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button sc-camel-on-click="{{ sheet.toggleAwaken }}" style="flex:1;min-width:130px;min-height:46px;border:1px solid #aa0b56;border-radius:2px;background:transparent;color:#ff90b1;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#4b1528">{{ sheet.awakenLabel }}</button>
+          <button sc-camel-on-click="{{ sheet.undo }}" style="flex:1;min-width:130px;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">1手戻す</button>
+          <button sc-camel-on-click="{{ sheet.askReset }}" style="flex:1;min-width:130px;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">HPをリセット</button>
+          <button sc-camel-on-click="{{ sheet.clear }}" style="flex:1;min-width:130px;min-height:46px;border:1px solid #aa0b56;border-radius:2px;background:transparent;color:#ff90b1;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#4b1528">リーダーを外す</button>
+        </div>
+
+        <div style="font-size:11px;color:#7d7979">直前の操作：{{ sheet.lastLabel }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ confirm }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:44;display:grid;place-items:center;padding:20px;background:rgba(32,30,29,.72)">
+      <div style="width:100%;max-width:360px;background:#2d2b2b;border-radius:2px;padding:20px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:19px">HPをリセットしますか？</div>
+        <div style="font-size:13px;color:#9b9797">{{ confirm.detail }}</div>
+        <div style="display:flex;gap:8px">
+          <button sc-camel-on-click="{{ cancelConfirm }}" style="flex:1;min-height:46px;border:1px solid #605d5d;border-radius:2px;background:transparent;color:#f3f2f2;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#444141">キャンセル</button>
+          <button sc-camel-on-click="{{ doConfirm }}" style="flex:1;min-height:46px;border:0;border-radius:2px;background:#aa0b56;color:#fff1f4;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#d82071">リセット</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;2x2&quot;,&quot;1x4&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;表示&quot;},&quot;showFlash&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;表示&quot;}}">
+class Component extends XSComponent {}
+</script>
+</body>
+</html>
