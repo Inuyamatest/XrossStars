@@ -1,0 +1,260 @@
+/* Xross Stars ゲームエンジン — Effect Resolver（Phase A：汎用Effect Engine本体）
+ *
+ * 根拠: docs/xross-stars-game-spec.md 26〜28章 / docs/game-engine-architecture.md 10〜11章
+ *
+ * 役割:
+ *   カードデータ（cardId） → cardEffectData.js の CardEffect[] → 本ファイルのApply処理 → GameState変更
+ *
+ * 既存ファイル（gameState.js / events.js / resolutionStack.js / deck.js / combat.js / phases.js /
+ * match.js）は一切変更しない。本ファイルはそれらの上に乗る「効果対応レイヤー」として、
+ * 既存の公開APIだけを呼び出して統合する。
+ *
+ * Action は最小限のみ実装する（Phase Bの代表カードに必要な分だけ）:
+ *   DRAW, DAMAGE, HEAL, RECOVER_PP, ATTACK_DAMAGE_BONUS, EQUIP_HP_MODIFIER, MULTI
+ * 未知のActionTypeは黙って無視せず例外にする（安全側。カード追加時の設定ミスに気付ける）。
+ */
+(function (root, factory) {
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = factory(
+      require('./gameState.js'),
+      require('./events.js'),
+      require('./resolutionStack.js'),
+      require('./deck.js'),
+      require('./combat.js'),
+      require('./phases.js'),
+      require('./cardEffect.js'),
+      require('./cardEffectData.js')
+    );
+  } else {
+    root.XS_ENGINE_EFFECT_RESOLVER = factory(
+      root.XS_ENGINE_STATE, root.XS_ENGINE_EVENTS, root.XS_ENGINE_RESOLUTION_STACK,
+      root.XS_ENGINE_DECK, root.XS_ENGINE_COMBAT, root.XS_ENGINE_PHASES,
+      root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_CARD_EFFECT_DATA
+    );
+  }
+}(typeof self !== 'undefined' ? self : this, function (
+  GameState, Events, ResolutionStack, Deck, Combat, Phases, CardEffectCore, CardEffectData
+) {
+  'use strict';
+
+  var effectIdCounter = 0;
+  function nextEffectId() { effectIdCounter += 1; return 'effect#' + effectIdCounter; }
+
+  // ---- Action適用（GameState変更の実体）----
+  // targets: LeaderRef[]（{playerId, leaderIndex}）。actionによっては使わない（DRAW/RECOVER_PP等）。
+  function applyAction(state, action, targets, ctx, cardIndex) {
+    if (!action) return state;
+
+    switch (action.type) {
+      case 'DRAW':
+        Deck.drawCards(state, ctx.ownerPlayerId, action.amount);
+        return state;
+
+      case 'RECOVER_PP': {
+        var player = state.players[ctx.ownerPlayerId];
+        var recover = Math.min(action.amount, player.ppCards.tapped); // FAQ Q9: 乗っている分以上は回復しない
+        player.ppCards.tapped -= recover;
+        return state;
+      }
+
+      case 'HEAL':
+        (targets || []).forEach(function (ref) {
+          var leader = state.players[ref.playerId].leaders[ref.leaderIndex];
+          leader.damage = Math.max(0, leader.damage - action.amount); // FAQ Q9: ダメージカウンター以上は回復しない
+        });
+        return state;
+
+      case 'DAMAGE':
+        (targets || []).forEach(function (ref) {
+          dealDamageAndCheckDown(state, ref, action.amount, cardIndex, ctx);
+        });
+        return state;
+
+      case 'MULTI':
+        (action.actions || []).forEach(function (sub) { applyAction(state, sub, targets, ctx, cardIndex); });
+        return state;
+
+      case 'ATTACK_DAMAGE_BONUS':
+      case 'EQUIP_HP_MODIFIER':
+        // これらはdeclareAttackWithEffects/getEffectiveMaxHpが個別に参照する値であり、
+        // 「即時にGameStateを書き換えるAction」としては扱わない。ここに来た場合は呼び出し側の誤りとする。
+        throw new Error(action.type + ' はapplyAction()ではなく専用の計算関数から参照してください');
+
+      default:
+        throw new Error('未知のActionTypeです（cardEffectData.jsの設定を確認してください）: ' + action.type);
+    }
+  }
+
+  // ダメージ処理＋ダウン判定＋（アタックに紐づく場合のみ）アタッカーの覚醒判定。
+  // combat.js の declareAttack 内の相当処理と意図的に同じロジックだが、
+  // 既存の combat.js を変更しないため、Card Effect Layer 側に独立して実装する
+  // （spec 12-3章のとおり、AFTER_ATTACK効果によるダウンでもアタッカーは覚醒する）。
+  function dealDamageAndCheckDown(state, targetRef, amount, cardIndex, ctx) {
+    var target = state.players[targetRef.playerId].leaders[targetRef.leaderIndex];
+    if (target.isDown) return false; // ダウン中はダメージを受けない（spec 3-2章）
+    target.damage += amount;
+    Events.logEvent(state, 'DAMAGE_DEALT', { playerId: targetRef.playerId, leaderIndex: targetRef.leaderIndex, amount: amount, source: 'CARD_EFFECT' });
+
+    if (GameState.getLeaderCurrentHp(cardIndex, target) <= 0) {
+      target.isDown = true;
+      target.damage = 0;
+      Events.logEvent(state, 'LEADER_DOWNED', { playerId: targetRef.playerId, leaderIndex: targetRef.leaderIndex });
+
+      if (ctx && ctx.attackerPlayerId != null && ctx.attackerLeaderIndex != null) {
+        var attacker = state.players[ctx.attackerPlayerId].leaders[ctx.attackerLeaderIndex];
+        if (!attacker.awakened) {
+          attacker.awakened = true;
+          Events.logEvent(state, 'LEADER_AWAKENED', { playerId: ctx.attackerPlayerId, leaderIndex: ctx.attackerLeaderIndex });
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // 装備品による永続HP修正の合計を計算する（gameState.jsは変更せず、こちらで積み上げる）
+  function getEquipmentHpModifier(leader) {
+    var total = 0;
+    (leader.equipment || []).forEach(function (equip) {
+      CardEffectData.getEffectsForCard(equip.cardId).forEach(function (effect) {
+        if (effect.action && effect.action.type === 'EQUIP_HP_MODIFIER') total += effect.action.amount;
+      });
+    });
+    return total;
+  }
+
+  // 装備込みの最大HP（GameState.getLeaderMaxHpに装備分を加算する。Rule Layerは変更しない）
+  function getEffectiveMaxHp(cardIndex, leader) {
+    return GameState.getLeaderMaxHp(cardIndex, leader) + getEquipmentHpModifier(leader);
+  }
+
+  // ---- CardEffect → PendingEffect 変換 ----
+  function buildPendingEffect(cardEffect, ctx, cardIndex) {
+    return {
+      id: nextEffectId(),
+      sourceInstanceId: ctx.sourceInstanceId,
+      trigger: cardEffect.trigger,
+      ownerPlayerId: ctx.ownerPlayerId,
+      condition: cardEffect.condition
+        ? function (state) { return CardEffectCore.isConditionMet(state, ctx, cardEffect); }
+        : null,
+      resolve: function (state) {
+        var targets = cardEffect.target ? CardEffectCore.resolveTargets(state, ctx, cardEffect) : [];
+        if (cardEffect.target && targets.length === 0) return state; // 対象なしNo-op（FAQ Q8）
+        return applyAction(state, cardEffect.action, targets, ctx, cardIndex);
+      },
+    };
+  }
+
+  // ---- ON_PLAY：カードをプレイした瞬間の効果をResolutionStackへ積む ----
+  function queueOnPlayEffects(state, playerId, cardInstance, cardIndex) {
+    var ctx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId };
+    CardEffectData.getEffectsForCard(cardInstance.cardId)
+      .filter(function (e) { return e.trigger === 'ON_PLAY'; })
+      .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
+    return state;
+  }
+
+  // ---- メモリアカードのプレイ：既存のPhases.playMemoriaCardを土台に、
+  //      登録済み効果（ON_PLAY即時効果／ATTACK_BOOST／次のアタックに紐づくAFTER_ATTACK）を統合する ----
+  // ON_PLAYはqueueOnPlayEffects()と同じ経路でResolutionStackへ積む（プレイ時効果の入口を一本化する）。
+  // ATTACK_BOOSTのmodifierはCombat.queueAttackBoostへ、同じカードが持つAFTER_ATTACK効果は
+  // 「次のアタック」に紐付けて保留しておく（次の1回のみ有効、spec 9章。超新星が実例）。
+  function playMemoriaCardWithEffects(state, playerId, cardInstanceId, options, cardIndex) {
+    var player = state.players[playerId];
+    var handEntry = player.hand.find(function (c) { return c.instanceId === cardInstanceId; });
+    if (!handEntry) throw new Error('指定されたカードは手札にありません: ' + cardInstanceId);
+    var cardId = handEntry.cardId;
+
+    var result = Phases.playMemoriaCard(state, playerId, cardInstanceId, options, cardIndex);
+
+    queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex);
+
+    player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+    CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+        Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstanceId);
+      } else if (e.trigger === 'AFTER_ATTACK') {
+        // このAFTER_ATTACK効果は「次のアタック」に付随する。ctxは次のplayAttackCardWithEffects呼び出し時に完成させる。
+        // sourceInstanceIdはこのメモリア自身のインスタンスIDを保持しておく（アタックカードのIDと混同しない）。
+        player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstanceId });
+      }
+    });
+    return result;
+  }
+
+  // ---- ON_ATTACK：アタックカード自身の固有ダメージをattackCardBaseDamageとして算出 ----
+  function computeAttackCardBaseDamage(cardId) {
+    var total = 0;
+    CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
+      if (e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'ATTACK_DAMAGE_BONUS') total += e.action.amount;
+    });
+    return total;
+  }
+
+  // ---- アタック実行：既存のPhases.playAttackCard / Combat.declareAttackを土台に、
+  //      登録済み効果（自身のON_ATTACKダメージ、AFTER_ATTACK、メモリアが積んでおいたAFTER_ATTACK、
+  //      ダウン後のON_AWAKEN）を統合する ----
+  // options: { attackerLeaderIndex, targetPlayerId, targetLeaderIndex, chooseTarget?, chooseHealTarget? }
+  function playAttackCardWithEffects(state, playerId, cardInstanceId, options, cardIndex) {
+    var player = state.players[playerId];
+    var handEntry = player.hand.find(function (c) { return c.instanceId === cardInstanceId; });
+    if (!handEntry) throw new Error('指定されたカードは手札にありません: ' + cardInstanceId);
+    var cardId = handEntry.cardId;
+
+    var attackCardEffects = CardEffectData.getEffectsForCard(cardId);
+    var baseDamage = computeAttackCardBaseDamage(cardId);
+
+    var result = Phases.playAttackCard(state, playerId, cardInstanceId, {
+      attackerLeaderIndex: options.attackerLeaderIndex,
+      targetPlayerId: options.targetPlayerId,
+      targetLeaderIndex: options.targetLeaderIndex,
+      attackCardBaseDamage: baseDamage,
+    }, cardIndex);
+
+    var ctx = {
+      ownerPlayerId: playerId,
+      sourceInstanceId: cardInstanceId,
+      attackerPlayerId: playerId,
+      attackerLeaderIndex: options.attackerLeaderIndex,
+      targetPlayerId: options.targetPlayerId,
+      targetLeaderIndex: options.targetLeaderIndex,
+      chooseTarget: options.chooseTarget,
+    };
+
+    // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
+    attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
+      .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
+
+    // このターン（この1回のアタック）のためにメモリア等が積んでおいたAFTER_ATTACK効果をResolutionStackへ
+    // （sourceInstanceIdは各メモリア自身のIDのまま保持し、アタックカードのIDで上書きしない）
+    var queued = player.pendingAfterAttackEffects || [];
+    player.pendingAfterAttackEffects = [];
+    queued.forEach(function (item) {
+      var itemCtx = Object.assign({}, ctx, { sourceInstanceId: item.sourceInstanceId });
+      ResolutionStack.push(state.resolutionStack, buildPendingEffect(item.effect, itemCtx, cardIndex));
+    });
+
+    // ON_AWAKEN：declareAttack内で覚醒していれば、そのリーダーの覚醒時効果を解決する
+    if (result.state.players[playerId].leaders[options.attackerLeaderIndex].awakened) {
+      var awakenCtx = Object.assign({}, ctx, { chooseTarget: options.chooseHealTarget || options.chooseTarget });
+      CardEffectData.getEffectsForCard(result.state.players[playerId].leaders[options.attackerLeaderIndex].cardId)
+        .filter(function (e) { return e.trigger === 'ON_AWAKEN'; })
+        .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, awakenCtx, cardIndex)); });
+    }
+
+    return result;
+  }
+
+  return {
+    applyAction: applyAction,
+    dealDamageAndCheckDown: dealDamageAndCheckDown,
+    getEquipmentHpModifier: getEquipmentHpModifier,
+    getEffectiveMaxHp: getEffectiveMaxHp,
+    buildPendingEffect: buildPendingEffect,
+    queueOnPlayEffects: queueOnPlayEffects,
+    playMemoriaCardWithEffects: playMemoriaCardWithEffects,
+    computeAttackCardBaseDamage: computeAttackCardBaseDamage,
+    playAttackCardWithEffects: playAttackCardWithEffects,
+  };
+}));
