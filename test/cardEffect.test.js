@@ -368,12 +368,52 @@ test('装備効果が正しく反映される：ライトシールドを装備�
   const baseMaxHp = GameState.getLeaderMaxHp(cardIndex, leader);
 
   const instanceId = injectTactics(state, 'playerA', 'BP01-095');
-  Phases.playTacticsCard(state, 'playerA', instanceId, { subType: 'EQUIPMENT', equipLeaderIndex: 0 }, cardIndex);
+  EffectResolver.playTacticsCardWithEffects(state, 'playerA', instanceId, { subType: 'EQUIPMENT', equipLeaderIndex: 0 }, cardIndex);
 
   assert.strictEqual(leader.equipment.length, 1);
-  assert.strictEqual(EffectResolver.getEffectiveMaxHp(cardIndex, leader), baseMaxHp + 30);
-  // 既知の制限（未実装）：combat.js の DOWN CHECK は GameState.getLeaderMaxHp のみを見るため、
-  // 装備による+30はまだ実際のダウン判定には反映されない（今回のスコープ外。最終報告に明記する）。
+  assert.strictEqual(leader.equipment[0].hpModifier, 30);
+  assert.strictEqual(GameState.getLeaderMaxHp(cardIndex, leader), baseMaxHp + 30, 'Phase Cでは装備がGameState.getLeaderMaxHp自体に反映されるはず');
+  assert.strictEqual(EffectResolver.getEffectiveMaxHp(cardIndex, leader), baseMaxHp + 30, '後方互換のためgetEffectiveMaxHpも同じ値を返す');
+});
+
+test('装備効果が実際のダウン判定へ反映される：+30分だけ余分にダメージを受けてもダウンしない（combat.jsは無改修）', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  state.turn.turnNumber = 2;
+  const leader = state.players.playerA.leaders[0];
+  const baseMaxHp = GameState.getLeaderMaxHp(cardIndex, leader);
+
+  const instanceId = injectTactics(state, 'playerA', 'BP01-095');
+  EffectResolver.playTacticsCardWithEffects(state, 'playerA', instanceId, { subType: 'EQUIPMENT', equipLeaderIndex: 0 }, cardIndex);
+
+  // 装備なしなら即ダウンするはずの「ちょうどbaseMaxHp分」のダメージ。+30されているので耐えるはず。
+  Combat.declareAttack(state, {
+    attackerPlayerId: 'playerB', attackerLeaderIndex: 0,
+    targetPlayerId: 'playerA', targetLeaderIndex: 0, attackCardBaseDamage: baseMaxHp - GameState.getLeaderCurrentAtk(cardIndex, state.players.playerB.leaders[0]),
+  }, cardIndex);
+  assert.strictEqual(leader.isDown, false, 'combat.js自体は無改修だが、GameState.getLeaderMaxHpが装備を加算するためダウンしないはず');
+
+  // 残りの+30分はさらにダメージを受ければダウンする
+  Combat.declareAttack(state, {
+    attackerPlayerId: 'playerB', attackerLeaderIndex: 0,
+    targetPlayerId: 'playerA', targetLeaderIndex: 0, attackCardBaseDamage: 40,
+  }, cardIndex);
+  assert.strictEqual(leader.isDown, true);
+});
+
+test('装備効果が正しく反映される：現在HP/回復上限とは混同しない（HEALはダメージカウンター除去のみ、最大HP増加とは独立）', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  state.turn.turnNumber = 2;
+  const leader = state.players.playerA.leaders[0];
+  leader.damage = 20;
+
+  const instanceId = injectTactics(state, 'playerA', 'BP01-095');
+  EffectResolver.playTacticsCardWithEffects(state, 'playerA', instanceId, { subType: 'EQUIPMENT', equipLeaderIndex: 0 }, cardIndex);
+
+  // 最大HPが+30されても、既存のダメージカウンター(20)自体は変化しない（回復とは別物）
+  assert.strictEqual(leader.damage, 20);
+  // HEAL Actionは相変わらずダメージカウンターの除去のみで、乗っている分(20)以上は回復しない
+  EffectResolver.applyAction(state, { type: 'HEAL', amount: 999 }, [{ playerId: 'playerA', leaderIndex: 0 }], { ownerPlayerId: 'playerA' }, cardIndex);
+  assert.strictEqual(leader.damage, 0);
 });
 
 // ============================================================

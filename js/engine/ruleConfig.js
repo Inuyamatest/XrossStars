@@ -54,6 +54,17 @@
         status: 'PROVISIONAL',
         source: 'docs/xross-stars-game-spec.md 8章（未確定）',
       },
+      // 装備タクティクスカードの「体力+30」等の効果テキストが、
+      // 最大HP（体力そのもの）の増加なのか、その場限りの回復（ダメージカウンター除去）なのか、
+      // 公式資料に明記が見当たらない（⚠️未確認）。
+      // 「体力」＝カード印刷値（p.02, p.08）、「回復」＝ダメージカウンター除去（FAQ）と
+      // 用語が一貫して区別されていることから、本エンジンはMAX_HP_INCREASEを採用している。
+      // CURRENT_HP_HEALは未実装（このRuleConfigで切り分けているだけで、実際の分岐処理は無い）。
+      equipmentHpModifierSemantics: {
+        mode: 'MAX_HP_INCREASE', // 'MAX_HP_INCREASE'（実装済み） | 'CURRENT_HP_HEAL'（未実装）
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 3-4章 / p.02,p.08の「体力」表記, FAQ「体力の回復＝ダメージカウンター除去」の用語比較（未確定）',
+      },
     };
   }
 

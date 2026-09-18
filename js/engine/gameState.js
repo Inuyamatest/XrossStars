@@ -92,10 +92,22 @@
     return card;
   }
 
+  // 装備（leader.equipment）による最大HP修正の合計を加算する。
+  // ここではCard Effect Layer（cardEffectData.js等）には一切依存せず、装備時にそちらが
+  // 各装備インスタンスへ書き込んでおいた数値（equip.hpModifier）を合算するだけにとどめる
+  // （Rule LayerがCard Effect Layerを知らないという既存の層分離を壊さないため）。
+  // 装備が無い・hpModifierが未設定の場合は従来どおり0加算となり、既存の挙動は変わらない。
+  function getEquipmentHpModifierSum(leader) {
+    return (leader.equipment || []).reduce(function (sum, equip) {
+      return sum + (equip.hpModifier || 0);
+    }, 0);
+  }
+
   function getLeaderMaxHp(cardIndex, leader) {
     var card = getCardData(cardIndex, leader.cardId);
     var hp = leader.awakened ? card.awakenHp : card.hp;
-    return hp == null ? 0 : hp;
+    var base = hp == null ? 0 : hp;
+    return base + getEquipmentHpModifierSum(leader);
   }
 
   function getLeaderCurrentHp(cardIndex, leader) {
@@ -117,6 +129,7 @@
     createGameState: createGameState,
     getOpponentId: getOpponentId,
     getCardData: getCardData,
+    getEquipmentHpModifierSum: getEquipmentHpModifierSum,
     getLeaderMaxHp: getLeaderMaxHp,
     getLeaderCurrentHp: getLeaderCurrentHp,
     getLeaderCurrentAtk: getLeaderCurrentAtk,

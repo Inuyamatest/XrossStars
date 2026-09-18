@@ -5,9 +5,15 @@
  * 役割:
  *   カードデータ（cardId） → cardEffectData.js の CardEffect[] → 本ファイルのApply処理 → GameState変更
  *
- * 既存ファイル（gameState.js / events.js / resolutionStack.js / deck.js / combat.js / phases.js /
- * match.js）は一切変更しない。本ファイルはそれらの上に乗る「効果対応レイヤー」として、
- * 既存の公開APIだけを呼び出して統合する。
+ * 既存ファイル（events.js / resolutionStack.js / deck.js / combat.js / phases.js / match.js）は
+ * 一切変更しない。本ファイルはそれらの上に乗る「効果対応レイヤー」として、既存の公開APIだけを
+ * 呼び出して統合する。
+ *
+ * 例外（Phase C, 最小限の1関数のみ）: gameState.js の getLeaderMaxHp() には、装備による
+ * 最大HP修正（leader.equipment[].hpModifier の合計）を加算する変更を行った。
+ * これはRule Layer（gameState.js/combat.js）がCard Effect Layer（本ファイル）を一切知らないまま、
+ * 装備時に本ファイルが装備インスタンスへ書き込んだ「ただの数値」を合算するだけの変更であり、
+ * combat.js自体は無改修のままダウン判定に装備が反映されるようになる（詳細は関数コメント参照）。
  *
  * Action は最小限のみ実装する（Phase Bの代表カードに必要な分だけ）:
  *   DRAW, DAMAGE, HEAL, RECOVER_PP, ATTACK_DAMAGE_BONUS, EQUIP_HP_MODIFIER, MULTI
@@ -112,20 +118,26 @@
     return false;
   }
 
-  // 装備品による永続HP修正の合計を計算する（gameState.jsは変更せず、こちらで積み上げる）
-  function getEquipmentHpModifier(leader) {
+  // 指定したカード（装備タクティクスカード）が持つEQUIP_HP_MODIFIERの合計値を計算する。
+  // 装備した瞬間に1回だけ呼び、結果を装備インスタンス自身に書き込む（playTacticsCardWithEffects参照）。
+  function computeEquipHpModifierForCard(cardId) {
     var total = 0;
-    (leader.equipment || []).forEach(function (equip) {
-      CardEffectData.getEffectsForCard(equip.cardId).forEach(function (effect) {
-        if (effect.action && effect.action.type === 'EQUIP_HP_MODIFIER') total += effect.action.amount;
-      });
+    CardEffectData.getEffectsForCard(cardId).forEach(function (effect) {
+      if (effect.action && effect.action.type === 'EQUIP_HP_MODIFIER') total += effect.action.amount;
     });
     return total;
   }
 
-  // 装備込みの最大HP（GameState.getLeaderMaxHpに装備分を加算する。Rule Layerは変更しない）
+  // 現在装備しているカードによるHP修正の合計（gameState.getEquipmentHpModifierSumの薄いエイリアス。
+  // Phase B時点のAPIをそのまま維持するために残している）。
+  function getEquipmentHpModifier(leader) {
+    return GameState.getEquipmentHpModifierSum(leader);
+  }
+
+  // 装備込みの最大HP。Phase Cで GameState.getLeaderMaxHp 自体が装備を加算するようになったため、
+  // 本関数は単なるエイリアスになっている（Phase Bで追加したAPIをそのまま維持するために残す）。
   function getEffectiveMaxHp(cardIndex, leader) {
-    return GameState.getLeaderMaxHp(cardIndex, leader) + getEquipmentHpModifier(leader);
+    return GameState.getLeaderMaxHp(cardIndex, leader);
   }
 
   // ---- CardEffect → PendingEffect 変換 ----
@@ -180,6 +192,23 @@
         player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstanceId });
       }
     });
+    return result;
+  }
+
+  // ---- タクティクスカードのプレイ：既存のPhases.playTacticsCardを土台に、
+  //      装備（subType:'EQUIPMENT'）の場合は装備インスタンスへhpModifierを書き込み、
+  //      GameState.getLeaderMaxHp（ひいてはcombat.jsのダウン判定）へ実際に反映させる ----
+  // options: { subType: 'CONSUMABLE' | 'EQUIPMENT', equipLeaderIndex? }（Phases.playTacticsCardと同じ）
+  function playTacticsCardWithEffects(state, playerId, cardInstanceId, options, cardIndex) {
+    var result = Phases.playTacticsCard(state, playerId, cardInstanceId, options, cardIndex);
+    if (options && options.subType === 'EQUIPMENT') {
+      var leader = state.players[playerId].leaders[options.equipLeaderIndex];
+      var equipEntry = leader.equipment[leader.equipment.length - 1];
+      // 直前にpushされたのが今回装備したカードであることを確認してから書き込む（安全側）
+      if (equipEntry && equipEntry.instanceId === cardInstanceId) {
+        equipEntry.hpModifier = computeEquipHpModifierForCard(equipEntry.cardId);
+      }
+    }
     return result;
   }
 
@@ -254,6 +283,8 @@
     buildPendingEffect: buildPendingEffect,
     queueOnPlayEffects: queueOnPlayEffects,
     playMemoriaCardWithEffects: playMemoriaCardWithEffects,
+    playTacticsCardWithEffects: playTacticsCardWithEffects,
+    computeEquipHpModifierForCard: computeEquipHpModifierForCard,
     computeAttackCardBaseDamage: computeAttackCardBaseDamage,
     playAttackCardWithEffects: playAttackCardWithEffects,
   };
