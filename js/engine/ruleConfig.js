@@ -91,11 +91,26 @@
       // ただしEQUIP_GRANT_ABILITY自体はPhase D-2の対象外のため今回は実カード未登録）の識別単位・
       // 判定タイミングが公式資料に明記されていない。
       oncePerTurnUsageTracking: {
-        identificationUnit: 'SOURCE_INSTANCE_ID', // カードID単位ではなく、効果の発生源インスタンス単位
+        identificationUnit: 'SOURCE_INSTANCE_ID', // カードID単位ではなく、効果の発生源インスタンス単位（装備なら装備インスタンス単位）
         markUsedTiming: 'ON_CONDITION_MET', // Condition成立と同時に使用済みとする（対象0件のNo-opでも使用済みになる）
-        resetMechanism: 'TURN_NUMBER_COMPARISON', // 明示的リセット処理は持たず、turnNumberとの比較で自然に再有効化する
+        // Phase D-3A監査で修正: turnNumberはラウンドが変わるたびに1にリセットされる（match.js）ため、
+        // 生のturnNumberだけの比較ではラウンドをまたいだ誤判定（衝突）が起きることを確認した。
+        // roundNumber+turnNumberの複合キーで一意化する（match.js/phases.js自体は無改修）。
+        resetMechanism: 'ROUND_AND_TURN_NUMBER_COMPARISON',
         status: 'PROVISIONAL',
         source: 'docs/xross-stars-game-spec.md 該当章なし（カードテキストのみから類推、未確定）',
+      },
+      // Phase D-3A: 装備が付与する能力（EQUIP_GRANT_ABILITY、例：盗賊キット/ヒーリングオーブ）の
+      // ライフサイクルが公式資料に明記されていない。
+      equipGrantedAbilityLifecycle: {
+        // 付与能力は「装備がleader.equipmentに存在する間だけ」有効という設計（hpModifier/atkModifierと同じ扱い）。
+        durationScope: 'WHILE_EQUIPPED',
+        // リーダーがダウンしても装備・付与能力ともに残る（既存downedLeaderEquipmentHandling: KEEPと同じ扱い）。
+        onLeaderDown: 'FOLLOWS_DOWNED_LEADER_EQUIPMENT_HANDLING',
+        // 装備の移動・解除（MOVE_EQUIPMENT等）は未実装のため、その際の能力消失は検証していない。
+        onUnequipOrMove: 'NOT_IMPLEMENTED',
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 3-4章（装備の一般的な扱いからの類推）、該当カードのテキストのみ（未確定）',
       },
     };
   }

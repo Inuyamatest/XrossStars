@@ -337,6 +337,71 @@
       target: F.makeOwnAliveLeaderTarget(),
       action: { type: 'HEAL', amount: 30 },
     })],
+
+    // ============================================================
+    // Phase D-3A: EQUIP_GRANT_ABILITY
+    // 該当4枚中3枚を登録。BP02-077オートタレットは「このアタックの〖アタック後〗効果でダメージを
+    // 与えているなら」という、他の効果の解決結果を参照するメタ条件を持ち、既存エンジンにはこれを
+    // 正確に表現する仕組みが無いため、推測を避けてUNVERIFIEDとして見送る（最終報告に記載）。
+    // ============================================================
+
+    // BP02-078 盗賊キット（タクティクス, 無色, cost0, 装備）
+    // カードテキスト: "これを装備しているリーダーは以下の能力を持つ。
+    //                  「〖アタック後〗このアタックを受けたリーダーがダウンしているなら、
+    //                    カードを1枚引く。この効果はターンに1回しか発動しない。」"
+    'BP02-078': [E({
+      trigger: 'ON_PLAY',
+      duration: 'PERMANENT',
+      action: {
+        type: 'EQUIP_GRANT_ABILITY',
+        ability: {
+          trigger: 'AFTER_ATTACK',
+          condition: F.makeOncePerTurnCondition(function (state, ctx) {
+            return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown;
+          }),
+          action: { type: 'DRAW', amount: 1 },
+        },
+      },
+    })],
+
+    // BP04-075 盗賊キット（BP02-078と同一効果の再録。カードテキストは全角/半角ブラケットの
+    // 表記揺れのみで意味は同一のため、同じ付与能力として登録する）
+    'BP04-075': [E({
+      trigger: 'ON_PLAY',
+      duration: 'PERMANENT',
+      action: {
+        type: 'EQUIP_GRANT_ABILITY',
+        ability: {
+          trigger: 'AFTER_ATTACK',
+          condition: F.makeOncePerTurnCondition(function (state, ctx) {
+            return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown;
+          }),
+          action: { type: 'DRAW', amount: 1 },
+        },
+      },
+    })],
+
+    // BP02-079 ヒーリングオーブ（タクティクス, 無色, cost0, 装備）
+    // カードテキスト: "〖プレイ時〗自分のリーダー1体を60回復する。
+    //                  これを装備しているリーダーは以下の能力を持つ。
+    //                  「〖アタック後〗自分のリーダー1体を20回復する。この効果はターンに1回しか発動しない。」"
+    // プレイ時の60回復は付与能力ではない通常のON_PLAY効果として別entryに登録する。
+    'BP02-079': [
+      E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 60 } }),
+      E({
+        trigger: 'ON_PLAY',
+        duration: 'PERMANENT',
+        action: {
+          type: 'EQUIP_GRANT_ABILITY',
+          ability: {
+            trigger: 'AFTER_ATTACK',
+            condition: F.makeOncePerTurnCondition(),
+            target: F.makeOwnAliveLeaderTarget(),
+            action: { type: 'HEAL', amount: 20 },
+          },
+        },
+      }),
+    ],
   };
 
   function getEffectsForCard(cardId) {

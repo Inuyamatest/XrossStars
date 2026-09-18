@@ -100,7 +100,9 @@
       case 'ATTACK_DAMAGE_BONUS':
       case 'EQUIP_HP_MODIFIER':
       case 'EQUIP_ATK_MODIFIER':
-        // これらはdeclareAttackWithEffects/getEffectiveMaxHp/getEquipmentAtkModifierが個別に参照する値であり、
+      case 'EQUIP_GRANT_ABILITY':
+        // これらはdeclareAttackWithEffects/getEffectiveMaxHp/getEquipmentAtkModifier/
+        // computeGrantedAbilitiesForCardが個別に参照する値であり、
         // 「即時にGameStateを書き換えるAction」としては扱わない。ここに来た場合は呼び出し側の誤りとする。
         throw new Error(action.type + ' はapplyAction()ではなく専用の計算関数から参照してください');
 
@@ -207,6 +209,37 @@
     return GameState.getLeaderCurrentAtk(cardIndex, leader);
   }
 
+  // ---- EQUIP_GRANT_ABILITY（Phase D-3A）----
+  // 指定したカード（装備タクティクスカード）が持つEQUIP_GRANT_ABILITYのability仕様から、
+  // 実際のCardEffectオブジェクトを組み立てて返す。computeEquipHpModifierForCard等と同じく
+  // 装備した瞬間に1回だけ呼び、結果を装備インスタンス自身に書き込む（playTacticsCardWithEffects参照）。
+  // 新しい効果システムは作らず、既存のCardEffectCore.createCardEffectをそのまま使う。
+  function computeGrantedAbilitiesForCard(cardId) {
+    var abilities = [];
+    CardEffectData.getEffectsForCard(cardId).forEach(function (effect) {
+      if (effect.action && effect.action.type === 'EQUIP_GRANT_ABILITY' && effect.action.ability) {
+        abilities.push(CardEffectCore.createCardEffect(effect.action.ability));
+      }
+    });
+    return abilities;
+  }
+
+  // 装備インスタンスが持つ付与能力のうち、指定Triggerに一致するものをResolutionStackへ積む。
+  // sourceInstanceIdは装備インスタンス自身のID（アタックカードやメモリアのIDではない）にする。
+  // これによりONCE_PER_TURN_USEDが「装備インスタンス単位」で正しく機能する（PROVISIONAL、ruleConfig.js参照）。
+  // 現時点で確認できている実カードの付与能力はすべてAFTER_ATTACKのみ（他Triggerの実例が無いため対応しない）。
+  function queueEquipmentGrantedAfterAttackEffects(state, leaderPlayerId, leaderIndex, ctx, cardIndex) {
+    var leader = state.players[leaderPlayerId].leaders[leaderIndex];
+    (leader.equipment || []).forEach(function (equip) {
+      (equip.grantedAbilities || [])
+        .filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
+        .forEach(function (e) {
+          var equipCtx = Object.assign({}, ctx, { sourceInstanceId: equip.instanceId });
+          ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, equipCtx, cardIndex));
+        });
+    });
+  }
+
   // ---- CardEffect → PendingEffect 変換 ----
   // Phase D-2-A: condition(state, ctx) / target(state, ctx) から ctx.cardIndex を参照できるようにする。
   // 既存のCondition/Target APIのシグネチャ（state, ctx）自体は変更しない。ctxに cardIndex フィールドを
@@ -229,11 +262,16 @@
     };
   }
 
+  // これらのAction typeは「即時にGameStateを書き換えるAction」ではなく、装備時に専用の計算関数が
+  // 参照するマーカーとしてのみ存在する（EQUIP_HP_MODIFIER/EQUIP_ATK_MODIFIER/EQUIP_GRANT_ABILITY）。
+  // ON_PLAYの一般的なキュー処理からは常に除外する（そのままresolveすればapplyAction()が例外を投げるため）。
+  var EQUIP_MARKER_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY'];
+
   // ---- ON_PLAY：カードをプレイした瞬間の効果をResolutionStackへ積む ----
   function queueOnPlayEffects(state, playerId, cardInstance, cardIndex) {
     var ctx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId };
     CardEffectData.getEffectsForCard(cardInstance.cardId)
-      .filter(function (e) { return e.trigger === 'ON_PLAY'; })
+      .filter(function (e) { return e.trigger === 'ON_PLAY' && !(e.action && EQUIP_MARKER_ACTION_TYPES.indexOf(e.action.type) >= 0); })
       .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
     return state;
   }
@@ -267,12 +305,13 @@
   }
 
   // ---- タクティクスカードのプレイ：既存のPhases.playTacticsCardを土台に、
-  //      装備（subType:'EQUIPMENT'）の場合は装備インスタンスへhpModifier/atkModifierを書き込み、
-  //      GameState.getLeaderMaxHp/getLeaderCurrentAtk（ひいてはcombat.jsの判定）へ実際に反映させる。
-  //      消費型（subType:'CONSUMABLE'）の場合は、他のON_PLAYカードと同じ経路でResolutionStackへ積む
-  //      （Phase D-1: BP01-093ジャミングパルス等、ON_PLAY効果を持つ消費型タクティクスカードのため追加）。
-  //      装備型のON_PLAY登録（EQUIP_HP_MODIFIER/EQUIP_ATK_MODIFIER）はここでは積まない
-  //      （applyAction()はこれらのActionTypeを即時処理できない設計のため、専用の計算関数のみが参照する）。----
+  //      装備（subType:'EQUIPMENT'）の場合は装備インスタンスへhpModifier/atkModifier/grantedAbilitiesを
+  //      書き込み、GameState.getLeaderMaxHp/getLeaderCurrentAtk（ひいてはcombat.jsの判定）と
+  //      playAttackCardWithEffects（付与能力の発動）へ実際に反映させる。
+  //      ON_PLAYの「本当に即時実行するべき効果」は、装備型・消費型どちらでも共通のqueueOnPlayEffects経路で
+  //      ResolutionStackへ積む（EQUIP_*マーカーはqueueOnPlayEffects内で自動的に除外される。
+  //      Phase D-3A: ヒーリングオーブ〔プレイ時に自分のリーダー1体を60回復〕のように、
+  //      装備カード自身がEQUIP_GRANT_ABILITYとは別に本物のON_PLAY効果を持つ場合に必要）。----
   // options: { subType: 'CONSUMABLE' | 'EQUIPMENT', equipLeaderIndex? }（Phases.playTacticsCardと同じ）
   function playTacticsCardWithEffects(state, playerId, cardInstanceId, options, cardIndex) {
     var player = state.players[playerId];
@@ -288,8 +327,10 @@
       if (equipEntry && equipEntry.instanceId === cardInstanceId) {
         equipEntry.hpModifier = computeEquipHpModifierForCard(equipEntry.cardId);
         equipEntry.atkModifier = computeEquipAtkModifierForCard(equipEntry.cardId);
+        equipEntry.grantedAbilities = computeGrantedAbilitiesForCard(equipEntry.cardId);
       }
-    } else if (cardId) {
+    }
+    if (cardId) {
       queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex);
     }
     return result;
@@ -351,6 +392,9 @@
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
       .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
 
+    // アタッカーの装備が付与するAFTER_ATTACK能力をResolutionStackへ（Phase D-3A）
+    queueEquipmentGrantedAfterAttackEffects(state, playerId, options.attackerLeaderIndex, ctx, cardIndex);
+
     // このターン（この1回のアタック）のためにメモリア等が積んでおいたAFTER_ATTACK効果をResolutionStackへ
     // （sourceInstanceIdは各メモリア自身のIDのまま保持し、アタックカードのIDで上書きしない）
     var queued = player.pendingAfterAttackEffects || [];
@@ -385,6 +429,8 @@
     playTacticsCardWithEffects: playTacticsCardWithEffects,
     computeEquipHpModifierForCard: computeEquipHpModifierForCard,
     computeEquipAtkModifierForCard: computeEquipAtkModifierForCard,
+    computeGrantedAbilitiesForCard: computeGrantedAbilitiesForCard,
+    queueEquipmentGrantedAfterAttackEffects: queueEquipmentGrantedAfterAttackEffects,
     computeAttackCardBaseDamage: computeAttackCardBaseDamage,
     playAttackCardWithEffects: playAttackCardWithEffects,
     // Phase D-2: Condition / Target ファクトリ（実体はeffectFactories.js。循環依存を避けるため

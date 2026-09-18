@@ -106,15 +106,25 @@
   // ---- ONCE_PER_TURN_USED ----
   // PROVISIONAL: 識別単位はsourceInstanceId（効果の発生源となったカード/装備インスタンス単位）。
   // 「使用済み」はCondition成立と同時に記録する（対象0件のNo-opでも使用済み扱いになる、という解釈もPROVISIONAL）。
-  // リセットは明示的な処理を持たない：turnNumberそのものと比較するため、ターンが進めば自動的に再び使用可能になる
-  // （phases.js/resolutionStack.js等の既存ファイルを一切変更せずに実現できる設計）。
+  //
+  // Phase D-3A監査で発見・修正: state.turn.turnNumber は match.js の setupNextRound/createMatch で
+  // ラウンドが変わるたびに1にリセットされる（ターンはラウンドごとの相対値）。そのため、生のturnNumberだけを
+  // 「最後に使用したターン」として保存すると、ラウンド1のターンNで使用した効果が、ラウンド2の（たまたま
+  // 同じ）ターンNで誤って「使用済み」と判定されるバグがあった（実際にシミュレーションで再現・確認済み）。
+  // 修正として、state.match.roundNumber と state.turn.turnNumber を組み合わせた複合キーで一意化する。
+  // これによりmatch.js/phases.js等の既存ファイルには一切手を入れず、リセットは相変わらず「現在のキーとの
+  // 比較」だけで自然に行われる（明示的なリセット処理は不要という設計方針は維持）。
+  function currentTurnKey(state) {
+    return state.match.roundNumber + ':' + state.turn.turnNumber;
+  }
+
   function isEffectUsedThisTurn(state, sourceInstanceId) {
-    return !!(state.turn.effectUsage && state.turn.effectUsage[sourceInstanceId] === state.turn.turnNumber);
+    return !!(state.turn.effectUsage && state.turn.effectUsage[sourceInstanceId] === currentTurnKey(state));
   }
 
   function markEffectUsedThisTurn(state, sourceInstanceId) {
     state.turn.effectUsage = state.turn.effectUsage || {};
-    state.turn.effectUsage[sourceInstanceId] = state.turn.turnNumber;
+    state.turn.effectUsage[sourceInstanceId] = currentTurnKey(state);
   }
 
   // innerCondition: 省略可能。「ダウンしているなら」等、ターン1回制限と組み合わせる追加条件。
