@@ -1,0 +1,102 @@
+/* Xross Stars デッキビルダー — 専用スタイル（既存 index.html のHP管理画面とは独立） */
+:root{
+  --xs-bg:#201e1d; --xs-panel:#2d2b2b; --xs-panel2:#262423; --xs-text:#f3f2f2; --xs-sub:#9b9797;
+  --xs-border:#444141; --xs-line:#3a3736;
+  --xs-red:#ff458e; --xs-blue:#62c5ee; --xs-green:#6fae7c; --xs-yellow:#edbb00; --xs-colorless:#9b9797;
+  --xs-ok:#62c5ee; --xs-ng:#ff458e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--xs-bg);color:var(--xs-text);font-family:var(--font-body, sans-serif);-webkit-text-size-adjust:100%}
+button,input,select{font-family:inherit;color:inherit}
+a{color:var(--xs-blue)}
+
+.db-app{display:flex;flex-direction:column;min-height:100dvh}
+
+.db-header{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;background:var(--xs-panel);border-bottom:1px solid var(--xs-line);position:sticky;top:0;z-index:20}
+.db-header h1{font-family:var(--font-heading, sans-serif);font-size:15px;font-weight:600;letter-spacing:.08em;margin:0;flex:none}
+.db-header .db-name-input{flex:1 1 160px;min-width:120px;min-height:36px;padding:0 10px;border:1px solid var(--xs-border);border-radius:2px;background:var(--xs-bg);color:var(--xs-text);font-size:14px}
+.db-header .db-back{flex:none;font-size:12px;color:var(--xs-sub);text-decoration:none;border:1px solid var(--xs-border);border-radius:2px;padding:0 10px;min-height:36px;display:flex;align-items:center}
+.db-btn{flex:none;min-height:36px;padding:0 12px;border:1px solid var(--xs-border);border-radius:2px;background:transparent;color:var(--xs-text);font-size:13px;cursor:pointer}
+.db-btn:hover{background:var(--xs-border)}
+.db-btn.primary{background:#006786;border-color:#006786;color:#e9f8ff}
+.db-btn.primary:hover{background:#1186ac}
+.db-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.db-body{flex:1;display:grid;grid-template-columns:1fr 320px;gap:0;min-height:0}
+@media (max-width:900px){ .db-body{grid-template-columns:1fr} }
+
+.db-main{min-width:0;display:flex;flex-direction:column;gap:10px;padding:10px}
+
+.db-leaders{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:640px){ .db-leaders{grid-template-columns:repeat(2,1fr)} }
+.db-leader-slot{aspect-ratio:63/88;border:1px dashed var(--xs-border);border-radius:4px;background:var(--xs-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;position:relative;overflow:hidden;padding:0}
+.db-leader-slot:hover{border-color:var(--xs-blue)}
+.db-leader-slot img{width:100%;height:100%;object-fit:contain;display:block}
+.db-leader-slot .db-leader-name{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.68);font-size:11px;padding:3px 4px;text-align:center;line-height:1.2}
+.db-leader-slot .db-leader-empty{color:var(--xs-sub);font-size:12px;text-align:center;padding:6px}
+.db-leader-slot .db-swatch{position:absolute;top:4px;left:4px;width:8px;height:8px;border-radius:50%}
+.db-leader-slot .db-remove{position:absolute;top:2px;right:2px;width:22px;height:22px;border:0;border-radius:2px;background:rgba(0,0,0,.6);color:#fff;font-size:13px;cursor:pointer;z-index:2}
+
+.db-filters{display:flex;flex-wrap:wrap;gap:6px;background:var(--xs-panel);padding:8px;border-radius:4px}
+.db-filters input[type=text],.db-filters input[type=search],.db-filters select{min-height:34px;padding:0 8px;border:1px solid var(--xs-border);border-radius:2px;background:var(--xs-bg);color:var(--xs-text);font-size:13px}
+.db-filters .db-chip{min-height:30px;padding:0 10px;border:1px solid var(--xs-border);border-radius:14px;background:transparent;color:var(--xs-sub);font-size:12px;cursor:pointer}
+.db-filters .db-chip.active{background:#006786;border-color:#006786;color:#e9f8ff}
+.db-filters label.db-check{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--xs-sub);padding:0 6px}
+
+.db-grid-meta{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--xs-sub);padding:0 2px}
+
+.db-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.db-card{background:var(--xs-panel);border-radius:4px;overflow:hidden;display:flex;flex-direction:column;position:relative;border:1px solid transparent}
+.db-card.ineligible{opacity:.45}
+.db-card.unknown-rule{border-color:#edbb00}
+.db-card .db-card-img{aspect-ratio:63/88;background:var(--xs-panel2);display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:pointer}
+.db-card .db-card-img img{width:100%;height:100%;object-fit:contain;display:block}
+.db-card .db-card-placeholder{font-size:11px;color:var(--xs-sub);text-align:center;padding:6px;line-height:1.4}
+.db-card .db-card-body{padding:6px;display:flex;flex-direction:column;gap:4px;flex:1}
+.db-card .db-card-name{font-size:12px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.db-card .db-card-meta{font-size:10px;color:var(--xs-sub);display:flex;justify-content:space-between;gap:4px}
+.db-card .db-card-ban{position:absolute;top:4px;left:4px;background:var(--xs-ng);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:2px;z-index:2}
+.db-card .db-card-ace{position:absolute;top:4px;right:4px;background:#edbb00;color:#201e1d;font-size:10px;font-weight:700;padding:2px 5px;border-radius:2px;z-index:2}
+.db-card .db-card-controls{display:flex;align-items:center;gap:4px;padding:0 6px 6px}
+.db-card .db-qty-btn{flex:none;width:26px;height:26px;border:1px solid var(--xs-border);border-radius:2px;background:transparent;color:var(--xs-text);font-size:14px;cursor:pointer}
+.db-card .db-qty-btn:disabled{opacity:.3;cursor:not-allowed}
+.db-card .db-qty{flex:1;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.db-card .db-reason{font-size:10px;color:var(--xs-yellow);padding:0 6px 6px;line-height:1.3}
+
+.db-pager{display:flex;justify-content:center;gap:8px;padding:8px 0}
+
+.db-sidebar{background:var(--xs-panel);padding:10px;display:flex;flex-direction:column;gap:12px;border-left:1px solid var(--xs-line);position:sticky;top:53px;align-self:flex-start;max-height:calc(100dvh - 53px);overflow:auto}
+@media (max-width:900px){ .db-sidebar{position:static;max-height:none;border-left:0;border-top:1px solid var(--xs-line)} }
+
+.db-status-title{font-size:11px;letter-spacing:.14em;color:var(--xs-sub);text-transform:uppercase}
+.db-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px}
+.db-status-grid .db-stat{background:var(--xs-panel2);border-radius:2px;padding:6px 8px}
+.db-status-grid .db-stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.db-status-grid .db-stat.ok b{color:var(--xs-ok)}
+.db-status-grid .db-stat.ng b{color:var(--xs-ng)}
+
+.db-tabs{display:flex;gap:4px}
+.db-tab{flex:1;min-height:34px;border:1px solid var(--xs-border);border-radius:2px;background:transparent;color:var(--xs-text);font-size:12px;cursor:pointer}
+.db-tab.active{background:#006786;border-color:#006786;color:#e9f8ff}
+
+.db-violations{display:flex;flex-direction:column;gap:4px;font-size:12px}
+.db-violations .v-bad{color:var(--xs-ng)}
+.db-violations .v-warn{color:var(--xs-yellow)}
+.db-violations .v-good{color:var(--xs-ok)}
+
+.db-deck-list{display:flex;flex-direction:column;gap:2px;font-size:12px;max-height:220px;overflow:auto}
+.db-deck-list .db-deck-row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:1px solid var(--xs-line)}
+.db-deck-list .db-deck-row .rm{color:var(--xs-sub);cursor:pointer;border:0;background:none;font-size:12px}
+
+.db-modal-overlay{position:fixed;inset:0;background:rgba(32,30,29,.82);z-index:40;display:flex;align-items:center;justify-content:center;padding:12px}
+.db-modal{width:100%;max-width:900px;max-height:88dvh;background:var(--xs-panel);border-radius:4px;display:flex;flex-direction:column;overflow:hidden}
+.db-modal-header{display:flex;align-items:center;gap:8px;padding:12px}
+.db-modal-body{flex:1;overflow:auto;padding:0 12px 12px}
+.db-modal-close{margin-left:auto;width:32px;height:32px;border:0;background:transparent;color:var(--xs-sub);font-size:18px;cursor:pointer}
+
+.db-savedlist{display:flex;flex-direction:column;gap:6px}
+.db-savedlist .row{display:flex;align-items:center;gap:8px;padding:8px;background:var(--xs-panel2);border-radius:2px}
+.db-savedlist .row .name{flex:1;font-size:13px}
+.db-code-box{width:100%;min-height:70px;font-family:monospace;font-size:11px;background:var(--xs-bg);color:var(--xs-text);border:1px solid var(--xs-border);border-radius:2px;padding:8px;word-break:break-all}
+
+.db-empty{color:var(--xs-sub);font-size:13px;padding:20px;text-align:center}

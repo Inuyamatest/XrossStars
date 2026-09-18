@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Xross Stars デッキビルダー</title>
+
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/deckbuilder.css">
+
+<!-- カードマスタ（js/data 以下と同じ方式：<script>で直接 window に載せる。file:// でも動く） -->
+<script src="js/data/leaders.js"></script>
+<script src="js/data/images.js"></script>
+<script src="js/deckbuilder/cards-data.js"></script>
+
+<!-- デッキ構築ロジック -->
+<script src="js/deckbuilder/rules.js"></script>
+<script src="js/deckbuilder/deckcode.js"></script>
+</head>
+<body>
+<div id="db-root" class="db-app">
+  <div class="db-empty">読み込み中…</div>
+</div>
+<script src="js/deckbuilder/app.js"></script>
+</body>
+</html>
