@@ -10,14 +10,17 @@
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('./cardEffect.js'));
+    module.exports = factory(require('./cardEffect.js'), require('./effectFactories.js'));
   } else {
-    root.XS_ENGINE_CARD_EFFECT_DATA = factory(root.XS_ENGINE_CARD_EFFECT);
+    root.XS_ENGINE_CARD_EFFECT_DATA = factory(root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_EFFECT_FACTORIES);
   }
-}(typeof self !== 'undefined' ? self : this, function (CardEffectCore) {
+}(typeof self !== 'undefined' ? self : this, function (CardEffectCore, EffectFactories) {
   'use strict';
 
   var E = CardEffectCore.createCardEffect;
+  // Phase D-2: Condition/Targetファクトリ（effectFactories.js。effectResolver.jsとの循環依存を避けるため
+  // cardEffectData.jsはeffectFactories.jsを直接requireする。詳細はeffectFactories.jsのコメント参照）
+  var F = EffectFactories;
 
   var REGISTRY = {
 
@@ -188,6 +191,152 @@
     'BP02-080': [
       E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_ATK_MODIFIER', amount: 10 } }),
     ],
+
+    // ============================================================
+    // Phase D-2: PLAY_AREA_TYPE_COUNT / SAME_COLOR_AS / OVERKILL_AMOUNT
+    // 該当カードのテキストを個別に確認し、単一条件・単一Actionで正確に表現できるものだけ登録する。
+    // 「アタック強化」の段階的加算・カウントタイミング注記付きのカード（BP01-056/075/077/069,
+    // BP02-038/058）はPROVISIONALとして見送る（最終報告に一覧化）。
+    // ============================================================
+
+    // --- PLAY_AREA_TYPE_COUNT: 自分の場にメモリアが2枚以上→対戦相手の他のリーダー1体に20ダメージ ---
+    // ウォールブレイカー/いたずらドローン/うっかりアッパー/ベテランの意地/スペシャルコントラクト
+    'BP01-042': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 20 },
+    })],
+    'BP01-047': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 20 },
+    })],
+    'BP02-021': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 20 },
+    })],
+    'BP02-037': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 20 },
+    })],
+    'BP03-043': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 20 },
+    })],
+
+    // --- PLAY_AREA_TYPE_COUNT: 自分の場にメモリアが2枚以上→対戦相手の他のリーダーすべてに10ダメージ ---
+    // ハイグラバースト/逆境の1ドット/ヘヴィーインパクト/ブラインドショット/ツーマンセル/オーバーグラビティ
+    'BP01-024': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+    'BP02-028': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+    'BP02-034': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+    'ST01-012': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+    'BP03-034': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+    'BP04-043': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+
+    // --- SAME_COLOR_AS ---
+    // BP02-039 ポイズンボム（アタック, 緑, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このアタックを受けたリーダーと同じ色を持つ
+    //                  対戦相手の他のリーダーすべてに40ダメージ。"
+    'BP02-039': [E({
+      trigger: 'AFTER_ATTACK',
+      target: F.makeSameColorAsAttackedLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 40 },
+    })],
+
+    // --- OVERKILL_AMOUNT ---
+    // カードテキストの「オーバーキルN：〜」の定義自体はPROVISIONAL（ruleConfig.js参照）。
+    'BP01-029': [E({ // うるパーンチッ！：オーバーキル30→対戦相手の他のリーダー1体に50ダメージ
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 30 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 50 },
+    })],
+    'BP02-017': [E({ // ビクトリーランページ：オーバーキル40→対戦相手の他のリーダー1体に90ダメージ
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 40 }),
+      target: F.makeSingleOtherOpponentLeaderTarget(),
+      action: { type: 'DAMAGE', amount: 90 },
+    })],
+    'BP01-039': [E({ // アジト急襲：オーバーキル30→PPを1回復する
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 30 }),
+      action: { type: 'RECOVER_PP', amount: 1 },
+    })],
+    'BP01-052': [E({ // スタンプキル：オーバーキル30→PPを1回復する
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 30 }),
+      action: { type: 'RECOVER_PP', amount: 1 },
+    })],
+    'BP02-035': [E({ // デッドリーキャンプ：オーバーキル20→PPを1回復する
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 20 }),
+      action: { type: 'RECOVER_PP', amount: 1 },
+    })],
+    'BP03-042': [E({ // ブリーチングフォース：オーバーキル20→PPを1回復する
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 20 }),
+      action: { type: 'RECOVER_PP', amount: 1 },
+    })],
+    'BP02-020': [E({ // 猪突猛進：オーバーキル30→カードを2枚引く
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 30 }),
+      action: { type: 'DRAW', amount: 2 },
+    })],
+    'BP04-041': [E({ // アースサーファー：オーバーキル30→カードを2枚引く
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 30 }),
+      action: { type: 'DRAW', amount: 2 },
+    })],
+    'BP02-025': [E({ // ヘンディーブロー：オーバーキル20→自分のリーダー1体を30回復する
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 20 }),
+      target: F.makeOwnAliveLeaderTarget(),
+      action: { type: 'HEAL', amount: 30 },
+    })],
+    'BP03-039': [E({ // 逆転の一矢：オーバーキル20→自分のリーダー1体を30回復する
+      trigger: 'AFTER_ATTACK',
+      condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 20 }),
+      target: F.makeOwnAliveLeaderTarget(),
+      action: { type: 'HEAL', amount: 30 },
+    })],
   };
 
   function getEffectsForCard(cardId) {

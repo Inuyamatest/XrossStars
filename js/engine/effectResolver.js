@@ -34,17 +34,18 @@
       require('./combat.js'),
       require('./phases.js'),
       require('./cardEffect.js'),
-      require('./cardEffectData.js')
+      require('./cardEffectData.js'),
+      require('./effectFactories.js')
     );
   } else {
     root.XS_ENGINE_EFFECT_RESOLVER = factory(
       root.XS_ENGINE_STATE, root.XS_ENGINE_EVENTS, root.XS_ENGINE_RESOLUTION_STACK,
       root.XS_ENGINE_DECK, root.XS_ENGINE_COMBAT, root.XS_ENGINE_PHASES,
-      root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_CARD_EFFECT_DATA
+      root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_CARD_EFFECT_DATA, root.XS_ENGINE_EFFECT_FACTORIES
     );
   }
 }(typeof self !== 'undefined' ? self : this, function (
-  GameState, Events, ResolutionStack, Deck, Combat, Phases, CardEffectCore, CardEffectData
+  GameState, Events, ResolutionStack, Deck, Combat, Phases, CardEffectCore, CardEffectData, EffectFactories
 ) {
   'use strict';
 
@@ -207,19 +208,23 @@
   }
 
   // ---- CardEffect → PendingEffect 変換 ----
+  // Phase D-2-A: condition(state, ctx) / target(state, ctx) から ctx.cardIndex を参照できるようにする。
+  // 既存のCondition/Target APIのシグネチャ（state, ctx）自体は変更しない。ctxに cardIndex フィールドを
+  // 追加するだけであり、既存の（cardIndexを参照しない）Condition/Targetの挙動は一切変わらない。
   function buildPendingEffect(cardEffect, ctx, cardIndex) {
+    var effectiveCtx = Object.assign({}, ctx, { cardIndex: cardIndex });
     return {
       id: nextEffectId(),
       sourceInstanceId: ctx.sourceInstanceId,
       trigger: cardEffect.trigger,
       ownerPlayerId: ctx.ownerPlayerId,
       condition: cardEffect.condition
-        ? function (state) { return CardEffectCore.isConditionMet(state, ctx, cardEffect); }
+        ? function (state) { return CardEffectCore.isConditionMet(state, effectiveCtx, cardEffect); }
         : null,
       resolve: function (state) {
-        var targets = cardEffect.target ? CardEffectCore.resolveTargets(state, ctx, cardEffect) : [];
+        var targets = cardEffect.target ? CardEffectCore.resolveTargets(state, effectiveCtx, cardEffect) : [];
         if (cardEffect.target && targets.length === 0) return state; // 対象なしNo-op（FAQ Q8）
-        return applyAction(state, cardEffect.action, targets, ctx, cardIndex);
+        return applyAction(state, cardEffect.action, targets, effectiveCtx, cardIndex);
       },
     };
   }
@@ -312,12 +317,24 @@
     var attackCardEffects = CardEffectData.getEffectsForCard(cardId);
     var baseDamage = computeAttackCardBaseDamage(cardId);
 
+    // Phase D-2-D: OVERKILL_AMOUNT用に、combat.js内で計算される合計ダメージと同じ式を
+    // ここで独立して事前計算しておく（combat.js自体は無改修。既存のdealDamageAndCheckDownが
+    // combat.jsの計算を複製している前例と同じ考え方）。攻撃前の残りHPも合わせて記録する。
+    var targetLeaderBeforeAttack = state.players[options.targetPlayerId].leaders[options.targetLeaderIndex];
+    var targetHpBeforeAttack = GameState.getLeaderCurrentHp(cardIndex, targetLeaderBeforeAttack);
+    var attackerLeaderForOverkill = state.players[playerId].leaders[options.attackerLeaderIndex];
+    var boostBeforeConsumption = player.pendingAttackBoost || 0; // declareAttack内で消費・リセットされる直前の値
+    var totalDamageForOverkill = boostBeforeConsumption + baseDamage + GameState.getLeaderCurrentAtk(cardIndex, attackerLeaderForOverkill);
+
     var result = Phases.playAttackCard(state, playerId, cardInstanceId, {
       attackerLeaderIndex: options.attackerLeaderIndex,
       targetPlayerId: options.targetPlayerId,
       targetLeaderIndex: options.targetLeaderIndex,
       attackCardBaseDamage: baseDamage,
     }, cardIndex);
+
+    // ダウンした場合のみOverkillの概念が成立する（PROVISIONAL、ruleConfig.js参照）
+    var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
 
     var ctx = {
       ownerPlayerId: playerId,
@@ -327,6 +344,7 @@
       targetPlayerId: options.targetPlayerId,
       targetLeaderIndex: options.targetLeaderIndex,
       chooseTarget: options.chooseTarget,
+      overkillAmount: overkillAmount,
     };
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
@@ -369,5 +387,17 @@
     computeEquipAtkModifierForCard: computeEquipAtkModifierForCard,
     computeAttackCardBaseDamage: computeAttackCardBaseDamage,
     playAttackCardWithEffects: playAttackCardWithEffects,
+    // Phase D-2: Condition / Target ファクトリ（実体はeffectFactories.js。循環依存を避けるため
+    // cardEffectData.jsはeffectFactories.jsを直接requireし、ここでは既存API利用側のために再エクスポートする）
+    countPlayAreaByType: EffectFactories.countPlayAreaByType,
+    makePlayAreaTypeCountCondition: EffectFactories.makePlayAreaTypeCountCondition,
+    makeSameColorAsAttackedLeaderTarget: EffectFactories.makeSameColorAsAttackedLeaderTarget,
+    makeOverkillAmountCondition: EffectFactories.makeOverkillAmountCondition,
+    isEffectUsedThisTurn: EffectFactories.isEffectUsedThisTurn,
+    markEffectUsedThisTurn: EffectFactories.markEffectUsedThisTurn,
+    makeOncePerTurnCondition: EffectFactories.makeOncePerTurnCondition,
+    makeSingleOtherOpponentLeaderTarget: EffectFactories.makeSingleOtherOpponentLeaderTarget,
+    makeAllOtherOpponentLeadersTarget: EffectFactories.makeAllOtherOpponentLeadersTarget,
+    makeOwnAliveLeaderTarget: EffectFactories.makeOwnAliveLeaderTarget,
   };
 }));

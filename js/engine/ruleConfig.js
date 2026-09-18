@@ -77,6 +77,26 @@
         status: 'PROVISIONAL',
         source: 'docs/xross-stars-game-spec.md 8章（手札上限の類推）, FAQ Q9（回復量の類推）（いずれも未確定）',
       },
+      // カードテキストの「オーバーキルN：〜」（例：BP01-029等）が指す「余剰ダメージ」の定義自体が、
+      // Playing Manualに一般ルールとして明記されていない（各カードの括弧書き説明からの類推）。
+      // 本エンジンでは「このカード自身のメイン攻撃で与えたダメージ－攻撃前の残りHP」とし、
+      // 他の効果による累積ダメージは含めない（ダウンしなかった場合はOverkillの概念自体が存在しない）。
+      overkillDefinition: {
+        formula: 'DAMAGE_MINUS_REMAINING_HP', // 与えたダメージ－攻撃前の残りHP
+        scope: 'PRIMARY_ATTACK_ONLY', // このカード自身のメイン攻撃のみ。AFTER_ATTACK効果の累積ダメージは含めない
+        status: 'PROVISIONAL',
+        source: '各オーバーキルカードの括弧書き説明からの類推（Playing Manualに一般ルールとしての式の明記なし）',
+      },
+      // 装備が付与する「この効果はターンに1回しか発動しない」（例：オートタレット/盗賊キット。
+      // ただしEQUIP_GRANT_ABILITY自体はPhase D-2の対象外のため今回は実カード未登録）の識別単位・
+      // 判定タイミングが公式資料に明記されていない。
+      oncePerTurnUsageTracking: {
+        identificationUnit: 'SOURCE_INSTANCE_ID', // カードID単位ではなく、効果の発生源インスタンス単位
+        markUsedTiming: 'ON_CONDITION_MET', // Condition成立と同時に使用済みとする（対象0件のNo-opでも使用済みになる）
+        resetMechanism: 'TURN_NUMBER_COMPARISON', // 明示的リセット処理は持たず、turnNumberとの比較で自然に再有効化する
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 該当章なし（カードテキストのみから類推、未確定）',
+      },
     };
   }
 
