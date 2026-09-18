@@ -115,10 +115,19 @@
     return Math.max(0, getLeaderMaxHp(cardIndex, leader) - leader.damage);
   }
 
+  // 装備によるATK修正の合計。getEquipmentHpModifierSumと完全に対称の設計
+  // （装備時にCard Effect Layer側が equip.atkModifier へ書き込んだ数値を合算するだけ）。
+  function getEquipmentAtkModifierSum(leader) {
+    return (leader.equipment || []).reduce(function (sum, equip) {
+      return sum + (equip.atkModifier || 0);
+    }, 0);
+  }
+
   function getLeaderCurrentAtk(cardIndex, leader) {
     var card = getCardData(cardIndex, leader.cardId);
     var atk = leader.awakened ? card.awakenAtk : card.atk;
-    return atk == null ? 0 : atk;
+    var base = atk == null ? 0 : atk;
+    return base + getEquipmentAtkModifierSum(leader);
   }
 
   return {
@@ -130,6 +139,7 @@
     getOpponentId: getOpponentId,
     getCardData: getCardData,
     getEquipmentHpModifierSum: getEquipmentHpModifierSum,
+    getEquipmentAtkModifierSum: getEquipmentAtkModifierSum,
     getLeaderMaxHp: getLeaderMaxHp,
     getLeaderCurrentHp: getLeaderCurrentHp,
     getLeaderCurrentAtk: getLeaderCurrentAtk,

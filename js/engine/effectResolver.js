@@ -15,9 +15,14 @@
  * 装備時に本ファイルが装備インスタンスへ書き込んだ「ただの数値」を合算するだけの変更であり、
  * combat.js自体は無改修のままダウン判定に装備が反映されるようになる（詳細は関数コメント参照）。
  *
- * Action は最小限のみ実装する（Phase Bの代表カードに必要な分だけ）:
- *   DRAW, DAMAGE, HEAL, RECOVER_PP, ATTACK_DAMAGE_BONUS, EQUIP_HP_MODIFIER, MULTI
+ * Action は最小限のみ実装する（Phase Bの代表カード＋Phase D-1で追加した分だけ）:
+ *   DRAW, DAMAGE, HEAL, RECOVER_PP, ATTACK_DAMAGE_BONUS, EQUIP_HP_MODIFIER, EQUIP_ATK_MODIFIER,
+ *   DISCARD_HAND, MULTI
  * 未知のActionTypeは黙って無視せず例外にする（安全側。カード追加時の設定ミスに気付ける）。
+ *
+ * Phase D-1（最小限の追加）: gameState.js の getLeaderCurrentAtk() にも、getLeaderMaxHp()と
+ * 完全に対称の装備ATK修正（leader.equipment[].atkModifier の合計）を加算する変更を行った。
+ * combat.js は今回も無改修（getLeaderCurrentAtkを呼ぶだけなので自動的に反映される）。
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
@@ -80,9 +85,21 @@
         (action.actions || []).forEach(function (sub) { applyAction(state, sub, targets, ctx, cardIndex); });
         return state;
 
+      case 'DISCARD_HAND': {
+        // action.who: 'SELF' | 'OPPONENT' | 'ALL'（省略時はSELF）。Target APIはLeader用の形（{playerId,leaderIndex}）
+        // なので流用せず、既存のRECOVER_PP同様「誰の手札か」をActionのフィールドで直接指定する。
+        var discardPlayerIds;
+        if (action.who === 'ALL') discardPlayerIds = ['playerA', 'playerB'];
+        else if (action.who === 'OPPONENT') discardPlayerIds = [GameState.getOpponentId(ctx.ownerPlayerId)];
+        else discardPlayerIds = [ctx.ownerPlayerId];
+        discardPlayerIds.forEach(function (pid) { discardFromHand(state, pid, action.amount, ctx); });
+        return state;
+      }
+
       case 'ATTACK_DAMAGE_BONUS':
       case 'EQUIP_HP_MODIFIER':
-        // これらはdeclareAttackWithEffects/getEffectiveMaxHpが個別に参照する値であり、
+      case 'EQUIP_ATK_MODIFIER':
+        // これらはdeclareAttackWithEffects/getEffectiveMaxHp/getEquipmentAtkModifierが個別に参照する値であり、
         // 「即時にGameStateを書き換えるAction」としては扱わない。ここに来た場合は呼び出し側の誤りとする。
         throw new Error(action.type + ' はapplyAction()ではなく専用の計算関数から参照してください');
 
@@ -118,6 +135,34 @@
     return false;
   }
 
+  // 指定プレイヤーの手札からamount枚を選んでトラッシュへ捨てる（DISCARD_HAND Actionの実体）。
+  // 誰がどのカードを選ぶかはruleConfig.cardEffectDiscardChoice（PROVISIONAL）参照。
+  // ctx.chooseDiscard(hand, count, playerId) => instanceId[] が渡されればそれを使い、
+  // 省略時は既存のphases.js runEndPhase（手札上限処理）と同じデフォルト方針（末尾から自動選択）に揃える。
+  // 手札が指定枚数未満でもクラッシュさせず、あるだけ捨てる（PROVISIONAL、FAQ Q9の考え方からの類推）。
+  function discardFromHand(state, playerId, amount, ctx) {
+    var player = state.players[playerId];
+    var count = Math.min(amount, player.hand.length);
+    if (count <= 0) return state;
+
+    var toDiscardIds;
+    if (ctx && typeof ctx.chooseDiscard === 'function') {
+      toDiscardIds = ctx.chooseDiscard(player.hand.slice(), count, playerId) || [];
+    } else {
+      toDiscardIds = player.hand.slice(-count).map(function (c) { return c.instanceId; });
+    }
+
+    toDiscardIds.slice(0, count).forEach(function (instanceId) {
+      var idx = player.hand.findIndex(function (c) { return c.instanceId === instanceId; });
+      if (idx >= 0) {
+        var card = player.hand.splice(idx, 1)[0];
+        player.trash.push({ card: card, faceUp: false }); // p.11類推：手札からの破棄は裏向き
+        Events.logEvent(state, 'CARD_DISCARDED_BY_EFFECT', { playerId: playerId, cardId: card.cardId });
+      }
+    });
+    return state;
+  }
+
   // 指定したカード（装備タクティクスカード）が持つEQUIP_HP_MODIFIERの合計値を計算する。
   // 装備した瞬間に1回だけ呼び、結果を装備インスタンス自身に書き込む（playTacticsCardWithEffects参照）。
   function computeEquipHpModifierForCard(cardId) {
@@ -138,6 +183,27 @@
   // 本関数は単なるエイリアスになっている（Phase Bで追加したAPIをそのまま維持するために残す）。
   function getEffectiveMaxHp(cardIndex, leader) {
     return GameState.getLeaderMaxHp(cardIndex, leader);
+  }
+
+  // 指定したカード（装備タクティクスカード）が持つEQUIP_ATK_MODIFIERの合計値を計算する。
+  // computeEquipHpModifierForCardと完全に対称（Phase D-1）。
+  function computeEquipAtkModifierForCard(cardId) {
+    var total = 0;
+    CardEffectData.getEffectsForCard(cardId).forEach(function (effect) {
+      if (effect.action && effect.action.type === 'EQUIP_ATK_MODIFIER') total += effect.action.amount;
+    });
+    return total;
+  }
+
+  // 現在装備しているカードによるATK修正の合計（gameState.getEquipmentAtkModifierSumの薄いエイリアス。
+  // getEquipmentHpModifierと同じ位置づけで残している）。
+  function getEquipmentAtkModifier(leader) {
+    return GameState.getEquipmentAtkModifierSum(leader);
+  }
+
+  // 装備込みの現在ATK。GameState.getLeaderCurrentAtk自体が装備を加算するため、本関数は薄いエイリアス。
+  function getEffectiveAtk(cardIndex, leader) {
+    return GameState.getLeaderCurrentAtk(cardIndex, leader);
   }
 
   // ---- CardEffect → PendingEffect 変換 ----
@@ -196,18 +262,30 @@
   }
 
   // ---- タクティクスカードのプレイ：既存のPhases.playTacticsCardを土台に、
-  //      装備（subType:'EQUIPMENT'）の場合は装備インスタンスへhpModifierを書き込み、
-  //      GameState.getLeaderMaxHp（ひいてはcombat.jsのダウン判定）へ実際に反映させる ----
+  //      装備（subType:'EQUIPMENT'）の場合は装備インスタンスへhpModifier/atkModifierを書き込み、
+  //      GameState.getLeaderMaxHp/getLeaderCurrentAtk（ひいてはcombat.jsの判定）へ実際に反映させる。
+  //      消費型（subType:'CONSUMABLE'）の場合は、他のON_PLAYカードと同じ経路でResolutionStackへ積む
+  //      （Phase D-1: BP01-093ジャミングパルス等、ON_PLAY効果を持つ消費型タクティクスカードのため追加）。
+  //      装備型のON_PLAY登録（EQUIP_HP_MODIFIER/EQUIP_ATK_MODIFIER）はここでは積まない
+  //      （applyAction()はこれらのActionTypeを即時処理できない設計のため、専用の計算関数のみが参照する）。----
   // options: { subType: 'CONSUMABLE' | 'EQUIPMENT', equipLeaderIndex? }（Phases.playTacticsCardと同じ）
   function playTacticsCardWithEffects(state, playerId, cardInstanceId, options, cardIndex) {
+    var player = state.players[playerId];
+    var areaEntry = player.tacticsArea.find(function (t) { return t.card.instanceId === cardInstanceId; });
+    var cardId = areaEntry ? areaEntry.card.cardId : null;
+
     var result = Phases.playTacticsCard(state, playerId, cardInstanceId, options, cardIndex);
+
     if (options && options.subType === 'EQUIPMENT') {
       var leader = state.players[playerId].leaders[options.equipLeaderIndex];
       var equipEntry = leader.equipment[leader.equipment.length - 1];
       // 直前にpushされたのが今回装備したカードであることを確認してから書き込む（安全側）
       if (equipEntry && equipEntry.instanceId === cardInstanceId) {
         equipEntry.hpModifier = computeEquipHpModifierForCard(equipEntry.cardId);
+        equipEntry.atkModifier = computeEquipAtkModifierForCard(equipEntry.cardId);
       }
+    } else if (cardId) {
+      queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex);
     }
     return result;
   }
@@ -278,13 +356,17 @@
   return {
     applyAction: applyAction,
     dealDamageAndCheckDown: dealDamageAndCheckDown,
+    discardFromHand: discardFromHand,
     getEquipmentHpModifier: getEquipmentHpModifier,
     getEffectiveMaxHp: getEffectiveMaxHp,
+    getEquipmentAtkModifier: getEquipmentAtkModifier,
+    getEffectiveAtk: getEffectiveAtk,
     buildPendingEffect: buildPendingEffect,
     queueOnPlayEffects: queueOnPlayEffects,
     playMemoriaCardWithEffects: playMemoriaCardWithEffects,
     playTacticsCardWithEffects: playTacticsCardWithEffects,
     computeEquipHpModifierForCard: computeEquipHpModifierForCard,
+    computeEquipAtkModifierForCard: computeEquipAtkModifierForCard,
     computeAttackCardBaseDamage: computeAttackCardBaseDamage,
     playAttackCardWithEffects: playAttackCardWithEffects,
   };

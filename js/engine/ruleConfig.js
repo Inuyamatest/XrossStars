@@ -65,6 +65,18 @@
         status: 'PROVISIONAL',
         source: 'docs/xross-stars-game-spec.md 3-4章 / p.02,p.08の「体力」表記, FAQ「体力の回復＝ダメージカウンター除去」の用語比較（未確定）',
       },
+      // カード効果（例：BP01-093ジャミングパルス「対戦相手は手札を2枚捨てる」）による強制ディスカードで、
+      // 「どのカードを捨てるか」を誰が選ぶかが公式資料に明記されていない（⚠️未確認）。
+      // 自分の手札を自分で捨てるケース（曖昧性なし）は対象外。相手/全員への強制ディスカードのみが対象。
+      // 既存のhandOverflowDiscardChoice（8章・終了フェイズの7枚制限専用）とは別文脈のため独立して定義する。
+      // insufficientHandBehaviorは、PPの回復/HEALが「利用可能な分だけ処理する」設計（FAQ Q9）と
+      // 一貫させるための類推であり、ディスカード自体の公式ルールとして明記されたものではない。
+      cardEffectDiscardChoice: {
+        chooser: 'OWNER_PLAYER', // 'OWNER_PLAYER'（捨てる本人が選ぶ）以外の値は今回未検討
+        insufficientHandBehavior: 'DISCARD_AVAILABLE_ONLY', // 手札が指定枚数未満なら、あるだけ捨てる（クラッシュさせない）
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 8章（手札上限の類推）, FAQ Q9（回復量の類推）（いずれも未確定）',
+      },
     };
   }
 
