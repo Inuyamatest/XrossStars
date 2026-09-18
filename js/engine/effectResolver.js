@@ -35,17 +35,19 @@
       require('./phases.js'),
       require('./cardEffect.js'),
       require('./cardEffectData.js'),
-      require('./effectFactories.js')
+      require('./effectFactories.js'),
+      require('./match.js')
     );
   } else {
     root.XS_ENGINE_EFFECT_RESOLVER = factory(
       root.XS_ENGINE_STATE, root.XS_ENGINE_EVENTS, root.XS_ENGINE_RESOLUTION_STACK,
       root.XS_ENGINE_DECK, root.XS_ENGINE_COMBAT, root.XS_ENGINE_PHASES,
-      root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_CARD_EFFECT_DATA, root.XS_ENGINE_EFFECT_FACTORIES
+      root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_CARD_EFFECT_DATA, root.XS_ENGINE_EFFECT_FACTORIES,
+      root.XS_ENGINE_MATCH
     );
   }
 }(typeof self !== 'undefined' ? self : this, function (
-  GameState, Events, ResolutionStack, Deck, Combat, Phases, CardEffectCore, CardEffectData, EffectFactories
+  GameState, Events, ResolutionStack, Deck, Combat, Phases, CardEffectCore, CardEffectData, EffectFactories, Match
 ) {
   'use strict';
 
@@ -76,14 +78,43 @@
         });
         return state;
 
-      case 'DAMAGE':
+      case 'DAMAGE': {
+        // Phase D-3: action.amountは数値のほか、{type:'DERIVED_AMOUNT', source}も受け付ける
+        // （ドレインロッドの「回復した数値と同じダメージ」用）。既存の数値指定は完全に後方互換。
+        var damageAmount = resolveActionAmount(action.amount, ctx);
         (targets || []).forEach(function (ref) {
-          dealDamageAndCheckDown(state, ref, action.amount, cardIndex, ctx);
+          dealDamageAndCheckDown(state, ref, damageAmount, cardIndex, ctx);
         });
         return state;
+      }
 
       case 'MULTI':
         (action.actions || []).forEach(function (sub) { applyAction(state, sub, targets, ctx, cardIndex); });
+        return state;
+
+      case 'TEMP_ATK_MODIFIER':
+        // duration（いつ消えるか）はPROVISIONAL（ruleConfig.js参照）。leader.tempAtkModifierへ加算するだけで、
+        // 実際のクリアはendTurnAndSwitchWithEffects/processRoundEndWithEffectsが行う。
+        (targets || []).forEach(function (ref) {
+          var leader = state.players[ref.playerId].leaders[ref.leaderIndex];
+          leader.tempAtkModifier = (leader.tempAtkModifier || 0) + action.amount;
+        });
+        return state;
+
+      case 'DISTRIBUTED_HEAL': {
+        // Phase D-3: 対象は常に「自分の生存リーダー」（実在3枚すべてで確認済みのため、
+        // MULTI内で別対象〔相手リーダー〕を必要とするDAMAGEと衝突しないよう、
+        // cardEffect.targetの解決結果（targets引数）には依存せず内部で直接解決する。
+        var healCandidates = EffectFactories.makeAllOwnAliveLeadersTarget()(state, ctx);
+        var healedTotal = applyDistributedHeal(state, ctx, action.total, healCandidates);
+        // DERIVED_AMOUNTが参照する解決中一時領域（このPendingEffectのresolve()呼び出し内でのみ有効）
+        ctx.derivedValues = ctx.derivedValues || {};
+        ctx.derivedValues.lastDistributedHealTotal = healedTotal;
+        return state;
+      }
+
+      case 'MOVE_EQUIPMENT':
+        moveEquipment(state, ctx);
         return state;
 
       case 'DISCARD_HAND': {
@@ -136,6 +167,105 @@
       return true;
     }
     return false;
+  }
+
+  // ---- DERIVED_AMOUNT（Phase D-3）----
+  // action.amountを実際の数値に解決する。プレーンな数値はそのまま返す（既存の全登録カードと完全互換）。
+  // {type:'DERIVED_AMOUNT', source} の場合のみ、ctx.derivedValues（同一MULTI内の直前のActionが
+  // 書き込んだ解決中の一時値）から値を取り出す。現時点で確認できている実カードの用法は
+  // LAST_DISTRIBUTED_HEAL_TOTAL（ドレインロッド）のみ。
+  function resolveActionAmount(amountSpec, ctx) {
+    if (typeof amountSpec === 'number') return amountSpec;
+    if (amountSpec && amountSpec.type === 'DERIVED_AMOUNT') {
+      if (amountSpec.source === 'LAST_DISTRIBUTED_HEAL_TOTAL') {
+        return (ctx.derivedValues && ctx.derivedValues.lastDistributedHealTotal) || 0;
+      }
+      throw new Error('未知のDERIVED_AMOUNT sourceです（cardEffectData.jsの設定を確認してください）: ' + amountSpec.source);
+    }
+    throw new Error('解決できないaction.amount指定です: ' + JSON.stringify(amountSpec));
+  }
+
+  // ---- DISTRIBUTED_HEAL（Phase D-3）----
+  // PROVISIONAL: 「複数のリーダーを選んでもよい」の配分方法は公式資料に明記がない。
+  // ctx.chooseDistributedHeal(candidates, total, state) => [{playerId, leaderIndex, amount}] が
+  // 渡ればそれを使い、省略時は先頭候補1体に全量を割り当てる（均等配分ではない）。
+  // 各配分は既存HEALと同じくFAQ Q9（ダメージカウンター以上は回復しない）に従い、
+  // 実際に回復した量の合計だけをtotalの残り予算として消費する（過剰請求分は他へ繰り越さず失われる）。
+  function applyDistributedHeal(state, ctx, total, candidates) {
+    var allocations;
+    if (ctx && typeof ctx.chooseDistributedHeal === 'function') {
+      allocations = ctx.chooseDistributedHeal(candidates.slice(), total, state) || [];
+    } else if (candidates.length > 0) {
+      allocations = [{ playerId: candidates[0].playerId, leaderIndex: candidates[0].leaderIndex, amount: total }];
+    } else {
+      allocations = [];
+    }
+
+    var totalApplied = 0;
+    allocations.forEach(function (alloc) {
+      if (totalApplied >= total) return;
+      var leader = state.players[alloc.playerId] && state.players[alloc.playerId].leaders[alloc.leaderIndex];
+      if (!leader || leader.isDown) return; // 不正・無効な対象は安全に無視
+      var requested = Math.min(alloc.amount, total - totalApplied);
+      var actuallyHealed = Math.min(requested, leader.damage); // FAQ Q9類推：ダメージカウンター以上は回復しない
+      if (actuallyHealed <= 0) return;
+      leader.damage -= actuallyHealed;
+      totalApplied += actuallyHealed;
+    });
+    return totalApplied;
+  }
+
+  // ---- MOVE_EQUIPMENT（Phase D-3）----
+  // PROVISIONAL: 移動先の選択方法・未選択時の挙動（「してもよい」を辞退したものとして扱う）は
+  // 公式資料に明記がない。同じEquipmentインスタンスをleader.equipment間でsplice/pushするだけで、
+  // hpModifier/atkModifier/grantedAbilitiesは自動的に維持される（新しいinstanceIdは生成しない）。
+  // ctx.chooseMoveEquipment(candidates, leaderIndexes, state) => {candidateIndex, toLeaderIndex} | null
+  function moveEquipment(state, ctx) {
+    var player = state.players[ctx.ownerPlayerId];
+    var candidates = [];
+    player.leaders.forEach(function (l, li) {
+      (l.equipment || []).forEach(function (eq, ei) { candidates.push({ leaderIndex: li, equipIndex: ei, equip: eq }); });
+    });
+    if (candidates.length === 0) return; // 移動できる装備が無い→No-op
+    if (typeof ctx.chooseMoveEquipment !== 'function') return; // PROVISIONAL: 未選択は「してもよい」の辞退として扱う
+
+    var leaderIndexes = player.leaders.map(function (l, i) { return i; });
+    var choice = ctx.chooseMoveEquipment(candidates.slice(), leaderIndexes, state);
+    if (!choice) return; // 辞退
+
+    var from = candidates[choice.candidateIndex];
+    if (!from) return; // 不正な選択は安全に無視
+    var toLeader = player.leaders[choice.toLeaderIndex];
+    if (choice.toLeaderIndex == null || !toLeader || choice.toLeaderIndex === from.leaderIndex) return; // 不正な移動先（自分自身含む）
+
+    var fromLeader = player.leaders[from.leaderIndex];
+    var removed = fromLeader.equipment.splice(from.equipIndex, 1)[0];
+    toLeader.equipment.push(removed);
+  }
+
+  // ---- TEMP_ATK_MODIFIER のクリア（Phase D-3）----
+  // PROVISIONAL: 「このターン」が終わる契機をターン終了・ラウンド終了の両方とする
+  // （ruleConfig.js参照）。phases.js/match.js自体は無改修で、それぞれを薄くラップして
+  // クリア処理を追加する（Phase D-2監査でturnNumberがラウンドごとにリセットされることが
+  // 判明したのと同じ理由で、ターン終了だけでなくラウンド終了時のクリアも必要）。
+  function clearTempAtkModifiers(state, playerId) {
+    state.players[playerId].leaders.forEach(function (l) { l.tempAtkModifier = 0; });
+  }
+
+  function endTurnAndSwitchWithEffects(state) {
+    var endingPlayerId = state.turn.activePlayer;
+    var result = Phases.endTurnAndSwitch(state);
+    clearTempAtkModifiers(state, endingPlayerId);
+    return result;
+  }
+
+  function processRoundEndWithEffects(state, chooseIndexFn) {
+    var result = Match.processRoundEnd(state, chooseIndexFn);
+    if (result.roundEnded) {
+      clearTempAtkModifiers(state, 'playerA');
+      clearTempAtkModifiers(state, 'playerB');
+    }
+    return result;
   }
 
   // 指定プレイヤーの手札からamount枚を選んでトラッシュへ捨てる（DISCARD_HAND Actionの実体）。
@@ -268,8 +398,22 @@
   var EQUIP_MARKER_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY'];
 
   // ---- ON_PLAY：カードをプレイした瞬間の効果をResolutionStackへ積む ----
-  function queueOnPlayEffects(state, playerId, cardInstance, cardIndex) {
-    var ctx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId };
+  // options（playMemoriaCardWithEffects/playTacticsCardWithEffectsの呼び出し元が渡すもの）のうち、
+  // 選択コールバック系のフィールドだけをctxへ橋渡し用に抜き出す（Phase D-3で追加）。
+  function extractChoiceOptions(options) {
+    if (!options) return undefined;
+    var extra = {};
+    if (options.chooseTarget) extra.chooseTarget = options.chooseTarget;
+    if (options.chooseDistributedHeal) extra.chooseDistributedHeal = options.chooseDistributedHeal;
+    if (options.chooseMoveEquipment) extra.chooseMoveEquipment = options.chooseMoveEquipment;
+    return extra;
+  }
+
+  // extraCtx（省略可）: Phase D-3で追加した選択コールバック（chooseDistributedHeal/chooseMoveEquipment等）
+  // や既存のchooseTargetを、呼び出し元（playMemoriaCardWithEffects/playTacticsCardWithEffects）から
+  // ctxへ橋渡しするための追加フィールド。何も渡さなければ従来通りの挙動（デフォルト選択）になる。
+  function queueOnPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx) {
+    var ctx = Object.assign({ ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId }, extraCtx || {});
     CardEffectData.getEffectsForCard(cardInstance.cardId)
       .filter(function (e) { return e.trigger === 'ON_PLAY' && !(e.action && EQUIP_MARKER_ACTION_TYPES.indexOf(e.action.type) >= 0); })
       .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
@@ -289,7 +433,7 @@
 
     var result = Phases.playMemoriaCard(state, playerId, cardInstanceId, options, cardIndex);
 
-    queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex);
+    queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, extractChoiceOptions(options));
 
     player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
     CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
@@ -331,7 +475,7 @@
       }
     }
     if (cardId) {
-      queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex);
+      queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, extractChoiceOptions(options));
     }
     return result;
   }
@@ -445,5 +589,14 @@
     makeSingleOtherOpponentLeaderTarget: EffectFactories.makeSingleOtherOpponentLeaderTarget,
     makeAllOtherOpponentLeadersTarget: EffectFactories.makeAllOtherOpponentLeadersTarget,
     makeOwnAliveLeaderTarget: EffectFactories.makeOwnAliveLeaderTarget,
+    makeAllOwnAliveLeadersTarget: EffectFactories.makeAllOwnAliveLeadersTarget,
+    makeAnyOpponentLeaderTarget: EffectFactories.makeAnyOpponentLeaderTarget,
+    // Phase D-3: MOVE_EQUIPMENT / TEMP_ATK_MODIFIER / DISTRIBUTED_HEAL / DERIVED_AMOUNT
+    resolveActionAmount: resolveActionAmount,
+    applyDistributedHeal: applyDistributedHeal,
+    moveEquipment: moveEquipment,
+    clearTempAtkModifiers: clearTempAtkModifiers,
+    endTurnAndSwitchWithEffects: endTurnAndSwitchWithEffects,
+    processRoundEndWithEffects: processRoundEndWithEffects,
   };
 }));

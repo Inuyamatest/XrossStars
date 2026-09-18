@@ -112,6 +112,49 @@
         status: 'PROVISIONAL',
         source: 'docs/xross-stars-game-spec.md 3-4章（装備の一般的な扱いからの類推）、該当カードのテキストのみ（未確定）',
       },
+      // Phase D-3: MOVE_EQUIPMENT（例：メカニカルエキスパート「装備し直してもよい」）の
+      // 移動先選択・未選択時の挙動が公式資料に明記されていない。
+      moveEquipmentPolicy: {
+        // 選択コールバック未提供時は「してもよい」を辞退したもの＝何もしないとして扱う
+        defaultWhenNoChoice: 'DECLINE',
+        // 移動先にDOWN中の自分のリーダーを含めてよいか：一般的な対象制限（spec 3-2章）は
+        // ダメージ等の「対象」に関するものであり、装備の付け替えはそれとは別と解釈して除外しない
+        allowDownedLeaderAsDestination: true,
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 3-2章・3-4章からの類推、該当カードのテキストのみ（未確定）',
+      },
+      // Phase D-3: TEMP_ATK_MODIFIER（例：先導者の証「このターン、攻撃力+30」）の
+      // 失効タイミングが公式資料に明記されていない。
+      tempAtkModifierLifecycle: {
+        // ターン終了時・ラウンド終了時の両方でクリアする（match.js/phases.js自体は無改修、
+        // effectResolver.jsのラッパー関数が能動的にクリアする設計）
+        clearsOn: ['TURN_END', 'ROUND_END'],
+        // DOWNしても消えない（既存downedLeaderEquipmentHandling: KEEPと同じ非クリア方針）
+        clearsOnLeaderDown: false,
+        // 同一ターンに複数回付与された場合は加算で積み上がる（装備ATK修正の複数装備時と同じ扱い）
+        stacking: 'ADDITIVE',
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 該当章なし（カードテキストのみから類推、未確定）',
+      },
+      // Phase D-3: DISTRIBUTED_HEAL（例：救急キット「合計80回復、複数のリーダーを選んでもよい」）の
+      // 配分方法が公式資料に明記されていない。
+      distributedHealAllocationPolicy: {
+        // 配分コールバック未提供時は先頭候補1体に全量を割り当てる（均等配分ではない）
+        defaultWhenNoChoice: 'FIRST_CANDIDATE_GETS_ALL',
+        // 過剰に請求した分（対象の残りダメージカウンターを超える割り当て）は他対象へ繰り越さず失われる
+        overAllocationHandling: 'LOST_NOT_REDISTRIBUTED',
+        status: 'PROVISIONAL',
+        source: 'docs/xross-stars-game-spec.md 該当章なし（カードテキストのみから類推、未確定）',
+      },
+      // Phase D-3: BP02-076ドレインロッドはdata/cards.json内で
+      // confirmStatus:"要確認（外部情報で基本情報確認／公式詳細未確認）", confirmed:false, officialUrl:null。
+      // 他の確定カードと異なりテキスト自体の公式確認が完了していない状態であることを明記する
+      // （テキストは変更せずそのまま実装したが、データの確度自体がPROVISIONAL）。
+      unconfirmedCardData: {
+        cardIds: ['BP02-076'],
+        status: 'PROVISIONAL',
+        source: 'data/cards.json内のconfirmStatus/confirmedフィールド自体が未確認を示している',
+      },
     };
   }
 

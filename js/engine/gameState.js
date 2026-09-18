@@ -123,11 +123,19 @@
     }, 0);
   }
 
+  // Phase D-3: 一時的なATK修正（TEMP_ATK_MODIFIER）の合計。装備由来のatkModifierとは別の
+  // フィールド（leader.tempAtkModifier）に持たせ、完全に独立して加算する。
+  // 「いつ消えるか」はこの関数の責務ではない（stateを受け取らないため判定できない）。
+  // effectResolver.js側が能動的にクリアする設計（詳細はeffectResolver.jsのコメント参照）。
+  function getTempAtkModifierSum(leader) {
+    return leader.tempAtkModifier || 0;
+  }
+
   function getLeaderCurrentAtk(cardIndex, leader) {
     var card = getCardData(cardIndex, leader.cardId);
     var atk = leader.awakened ? card.awakenAtk : card.atk;
     var base = atk == null ? 0 : atk;
-    return base + getEquipmentAtkModifierSum(leader);
+    return base + getEquipmentAtkModifierSum(leader) + getTempAtkModifierSum(leader);
   }
 
   return {
@@ -140,6 +148,7 @@
     getCardData: getCardData,
     getEquipmentHpModifierSum: getEquipmentHpModifierSum,
     getEquipmentAtkModifierSum: getEquipmentAtkModifierSum,
+    getTempAtkModifierSum: getTempAtkModifierSum,
     getLeaderMaxHp: getLeaderMaxHp,
     getLeaderCurrentHp: getLeaderCurrentHp,
     getLeaderCurrentAtk: getLeaderCurrentAtk,

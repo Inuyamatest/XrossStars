@@ -179,6 +179,35 @@
     };
   }
 
+  // ---- Phase D-3: TEMP_ATK_MODIFIER / DISTRIBUTED_HEAL 用の追加Target ----
+
+  // 自分の生存リーダー「全員」を返す（makeOwnAliveLeaderTargetは1体だけを選ぶ点が異なる）。
+  // 先導者の証（自分のリーダーすべての攻撃力+30）、救急キット/ドレインロッド（配分回復の候補）で使用。
+  function makeAllOwnAliveLeadersTarget() {
+    return function (state, ctx) {
+      var self = state.players[ctx.ownerPlayerId];
+      var results = [];
+      self.leaders.forEach(function (l, i) { if (!l.isDown) results.push({ playerId: ctx.ownerPlayerId, leaderIndex: i }); });
+      return results;
+    };
+  }
+
+  // 対戦相手の生存リーダーから1体を選ぶ（アタック中の「対戦相手の他のリーダー」とは異なり、
+  // アタックに紐づかないON_PLAY効果〔例：ドレインロッド〕用。除外対象となる「攻撃を受けたリーダー」が
+  // 存在しないため、対戦相手の生存リーダー全員が候補になる）。
+  function makeAnyOpponentLeaderTarget() {
+    return function (state, ctx) {
+      var opponentId = GameState.getOpponentId(ctx.ownerPlayerId);
+      var opponent = state.players[opponentId];
+      var candidates = [];
+      opponent.leaders.forEach(function (l, i) { if (!l.isDown) candidates.push({ playerId: opponentId, leaderIndex: i }); });
+      if (candidates.length === 0) return [];
+      var pick = (ctx.chooseTarget ? ctx.chooseTarget(candidates, state) : 0);
+      if (pick < 0 || pick >= candidates.length) pick = 0;
+      return [candidates[pick]];
+    };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -191,5 +220,7 @@
     makeSingleOtherOpponentLeaderTarget: makeSingleOtherOpponentLeaderTarget,
     makeAllOtherOpponentLeadersTarget: makeAllOtherOpponentLeadersTarget,
     makeOwnAliveLeaderTarget: makeOwnAliveLeaderTarget,
+    makeAllOwnAliveLeadersTarget: makeAllOwnAliveLeadersTarget,
+    makeAnyOpponentLeaderTarget: makeAnyOpponentLeaderTarget,
   };
 }));

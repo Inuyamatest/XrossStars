@@ -402,6 +402,49 @@
         },
       }),
     ],
+
+    // ============================================================
+    // Phase D-3: MOVE_EQUIPMENT / TEMP_ATK_MODIFIER / DISTRIBUTED_HEAL / DERIVED_AMOUNT
+    // ============================================================
+
+    // BP03-045 メカニカルエキスパート（メモリア, 赤, cost0, ACE）
+    // カードテキスト: "〖プレイ時〗自分のリーダーが装備しているカード1枚を、別の自分のリーダーに
+    //                  装備し直してもよい。〖アタック強化〗次のアタックのダメージ+30。"
+    'BP03-045': [
+      E({ trigger: 'ON_PLAY', action: { type: 'MOVE_EQUIPMENT' } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+    ],
+
+    // BP01-071 先導者の証（メモリア, 黄, cost1, ACE）
+    // カードテキスト: "〖プレイ時〗このターン、自分のリーダーすべての攻撃力を+30する。"
+    'BP01-071': [
+      E({ trigger: 'ON_PLAY', target: F.makeAllOwnAliveLeadersTarget(), action: { type: 'TEMP_ATK_MODIFIER', amount: 30 } }),
+    ],
+
+    // ST01-021 / ST02-021 救急キット（タクティクス, 無色, cost0, 同一効果の別印刷）
+    // カードテキスト: "〖プレイ時〗自分のリーダーを合計80回復する。（複数のリーダーを選んでもよい。）"
+    'ST01-021': [E({ trigger: 'ON_PLAY', action: { type: 'DISTRIBUTED_HEAL', total: 80 } })],
+    'ST02-021': [E({ trigger: 'ON_PLAY', action: { type: 'DISTRIBUTED_HEAL', total: 80 } })],
+
+    // BP02-076 ドレインロッド（タクティクス, 無色, cost0）
+    // カードテキスト: "[プレイ時]自分のリーダーを合計40回復する。（複数のリーダーを選んでもよい。）
+    //                  対戦相手のリーダー1体に、このカードの効果で回復した数値と同じダメージ。"
+    // 注意：このカードはdata/cards.json内でconfirmStatus:"要確認"・confirmed:falseであり、
+    //       他の確定カードと異なりテキスト自体の公式確認が完了していない
+    //       （ruleConfig.js の unconfirmedCardData 参照。テキストは変更せずそのまま実装する）。
+    'BP02-076': [
+      E({
+        trigger: 'ON_PLAY',
+        target: F.makeAnyOpponentLeaderTarget(), // MULTI内のDAMAGEステップが使う対象（回復対象は内部で別途解決）
+        action: {
+          type: 'MULTI',
+          actions: [
+            { type: 'DISTRIBUTED_HEAL', total: 40 },
+            { type: 'DAMAGE', amount: { type: 'DERIVED_AMOUNT', source: 'LAST_DISTRIBUTED_HEAL_TOTAL' } },
+          ],
+        },
+      }),
+    ],
   };
 
   function getEffectsForCard(cardId) {
