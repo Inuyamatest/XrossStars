@@ -1,5 +1,6 @@
 /* Xross Stars — リーダーデータ（ユーザー提供JSONをそのまま登録・改変なし）
- * 第1弾16名 / 第2弾16名 / 第3弾16名 / 第4弾16名 = 64名
+ * 第1弾16名 / ST01 4名 / ST02 4名 / 第2弾16名 / 第3弾16名 / 第4弾16名 / 1st Anniv. 4名 = 76名
+ * （旧コメントは「=64名」だったが、ST01/ST02の8名が数え漏れていたため今回あわせて修正）
  * 第5弾以降は leaders 配列に追記するだけで選択画面へ自動反映されます。
  */
 (function () {
@@ -83,7 +84,13 @@
       {"id":"BP04-013","name":"乾伸一郎","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-013/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/7-013"},
       {"id":"BP04-014","name":"銀城サイネ","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-014/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを2枚引き、手札を2枚捨てる。","officialCardUrl":"https://xross-stars.com/card/7-014"},
       {"id":"BP04-015","name":"じゃすぱー","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-015/081","color":"green","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/7-015"},
-      {"id":"BP04-016","name":"天帝フォルテ","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-016/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/7-016"}
+      {"id":"BP04-016","name":"天帝フォルテ","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-016/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/7-016"},
+
+      // Xross Stars 1st Anniv. Collection PREMIUM SET（表示名は短く「1st Anniv.」）
+      {"id":"AN01-001","name":"うるか (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-001/024 LRP","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを2枚引き、手札を2枚捨てる。"},
+      {"id":"AN01-002","name":"橘ひなの (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-002/024 LRP","color":"red","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に20ダメージ。"},
+      {"id":"AN01-003","name":"一ノ瀬うるは (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-003/024 LRP","color":"blue","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。"},
+      {"id":"AN01-004","name":"白雪レイド (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-004/024 LRP","color":"blue","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。"}
     ]
   };
 
