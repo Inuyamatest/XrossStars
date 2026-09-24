@@ -268,6 +268,7 @@
       '<div class="db-header">' +
         '<h1>XROSS STARS デッキビルダー</h1>' +
         '<a class="db-back" href="index.html">← HP管理へ</a>' +
+        '<a class="db-back" href="battle.html">対戦する →</a>' +
         '<input class="db-name-input" id="db-deck-name" type="text" placeholder="デッキ名" value="' + esc(state.deckName) + '">' +
         '<button class="db-btn primary" data-act="save">保存</button>' +
         '<button class="db-btn" data-act="load">読み込み</button>' +

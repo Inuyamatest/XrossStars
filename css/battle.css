@@ -1,0 +1,100 @@
+/* Xross Stars 対戦UI — 専用スタイル（deckbuilder.css と同じトークン設計を踏襲） */
+:root{
+  --xs-bg:#201e1d; --xs-panel:#2d2b2b; --xs-panel2:#262423; --xs-text:#f3f2f2; --xs-sub:#9b9797;
+  --xs-border:#444141; --xs-line:#3a3736;
+  --xs-red:#ff458e; --xs-blue:#62c5ee; --xs-green:#6fae7c; --xs-yellow:#edbb00; --xs-colorless:#9b9797;
+  --xs-ok:#62c5ee; --xs-ng:#ff458e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--xs-bg);color:var(--xs-text);font-family:var(--font-body, sans-serif);-webkit-text-size-adjust:100%}
+button,input,select{font-family:inherit;color:inherit}
+a{color:var(--xs-blue)}
+
+.bt-app{display:flex;flex-direction:column;min-height:100dvh}
+
+.bt-topbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;background:var(--xs-panel);border-bottom:1px solid var(--xs-line);position:sticky;top:0;z-index:20}
+.bt-topbar h1{font-family:var(--font-heading, sans-serif);font-size:15px;font-weight:600;letter-spacing:.08em;margin:0;flex:none}
+.bt-topbar .bt-back{flex:none;font-size:12px;color:var(--xs-sub);text-decoration:none;border:1px solid var(--xs-border);border-radius:2px;padding:0 10px;min-height:36px;display:flex;align-items:center}
+.bt-btn{flex:none;min-height:36px;padding:0 12px;border:1px solid var(--xs-border);border-radius:2px;background:transparent;color:var(--xs-text);font-size:13px;cursor:pointer}
+.bt-btn:hover{background:var(--xs-border)}
+.bt-btn.primary{background:#006786;border-color:#006786;color:#e9f8ff}
+.bt-btn.primary:hover{background:#1186ac}
+.bt-btn.danger{background:#7a1c3d;border-color:#7a1c3d;color:#ffeaf1}
+.bt-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.bt-notice{background:#2f2a1a;border:1px solid #5a4b1e;color:var(--xs-yellow);font-size:12px;line-height:1.6;padding:8px 12px;margin:10px 12px 0;border-radius:4px}
+
+/* ---- セットアップ画面 ---- */
+.bt-setup{max-width:960px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:16px;width:100%}
+.bt-setup-players{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:760px){ .bt-setup-players{grid-template-columns:1fr} }
+.bt-setup-panel{background:var(--xs-panel);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.bt-setup-panel h2{font-size:14px;margin:0 0 4px;letter-spacing:.06em}
+.bt-setup-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bt-setup-row select{flex:1;min-height:34px;padding:0 8px;border:1px solid var(--xs-border);border-radius:2px;background:var(--xs-bg);color:var(--xs-text);font-size:13px}
+.bt-deck-summary{font-size:12px;color:var(--xs-sub);line-height:1.6}
+.bt-deck-leaders{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.bt-deck-leaders img{width:48px;height:67px;object-fit:contain;background:var(--xs-panel2);border-radius:2px}
+.bt-deck-violations{font-size:11px;color:var(--xs-ng);line-height:1.6}
+.bt-deck-warnings{font-size:11px;color:var(--xs-yellow);line-height:1.6}
+.bt-setup-options{background:var(--xs-panel);border-radius:6px;padding:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.bt-setup-options label{font-size:12px;color:var(--xs-sub);display:flex;align-items:center;gap:6px}
+.bt-start-row{display:flex;justify-content:center}
+
+/* ---- 対戦画面 ---- */
+.bt-battle{flex:1;display:flex;flex-direction:column;gap:8px;padding:8px 10px 90px;max-width:1100px;margin:0 auto;width:100%}
+.bt-matchinfo{display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:var(--xs-sub);background:var(--xs-panel);border-radius:4px;padding:8px 10px;align-items:center}
+.bt-matchinfo b{color:var(--xs-text)}
+.bt-matchinfo .bt-turn-badge{margin-left:auto;background:#006786;color:#e9f8ff;padding:3px 10px;border-radius:12px;font-size:12px}
+
+.bt-side{background:var(--xs-panel);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.bt-side.is-active{outline:2px solid #006786}
+.bt-side-title{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--xs-sub)}
+.bt-side-title b{color:var(--xs-text);font-size:13px}
+
+.bt-leaders{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+@media (max-width:640px){ .bt-leaders{grid-template-columns:repeat(2,1fr)} }
+.bt-leader{position:relative;background:var(--xs-panel2);border:1px solid var(--xs-border);border-radius:4px;padding:4px;display:flex;flex-direction:column;gap:3px;text-align:center;cursor:default}
+.bt-leader.pickable{cursor:pointer;border-color:var(--xs-blue)}
+.bt-leader.picked{border-color:var(--xs-ok);box-shadow:0 0 0 2px var(--xs-ok) inset}
+.bt-leader.down{opacity:.4}
+.bt-leader img{width:100%;aspect-ratio:63/88;object-fit:contain;background:var(--xs-panel);border-radius:2px}
+.bt-leader-noimg{aspect-ratio:63/88;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--xs-sub);background:var(--xs-panel)}
+.bt-leader-name{font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt-hpbar{height:6px;background:var(--xs-border);border-radius:3px;overflow:hidden}
+.bt-hpfill{height:100%;background:var(--xs-ok)}
+.bt-leader-stats{font-size:10px;color:var(--xs-sub)}
+.bt-equip{font-size:9px;color:var(--xs-yellow);line-height:1.3}
+.bt-down-badge{position:absolute;top:2px;right:2px;background:var(--xs-ng);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:2px}
+
+.bt-tacticsrow{display:flex;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--xs-sub)}
+.bt-tacticscard{background:var(--xs-panel2);border:1px solid var(--xs-border);border-radius:3px;padding:4px 6px;display:flex;align-items:center;gap:6px}
+.bt-tacticscard button{min-height:24px;padding:0 8px;font-size:11px;border:1px solid var(--xs-border);border-radius:2px;background:transparent;color:var(--xs-text);cursor:pointer}
+.bt-tacticscard button:disabled{opacity:.35;cursor:not-allowed}
+
+.bt-playarea{display:flex;flex-wrap:wrap;gap:4px;min-height:20px;font-size:10px;color:var(--xs-sub)}
+.bt-playarea-card{background:var(--xs-panel2);border-radius:2px;padding:2px 6px}
+
+.bt-handbar{position:fixed;left:0;right:0;bottom:0;background:var(--xs-panel);border-top:1px solid var(--xs-line);padding:8px 10px;display:flex;flex-direction:column;gap:6px;z-index:15}
+.bt-hand{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.bt-handcard{flex:none;width:74px;background:var(--xs-panel2);border:1px solid var(--xs-border);border-radius:4px;padding:3px;cursor:pointer;text-align:center}
+.bt-handcard.selected{border-color:var(--xs-blue);box-shadow:0 0 0 2px var(--xs-blue) inset}
+.bt-handcard.unplayable{opacity:.4}
+.bt-handcard img{width:100%;aspect-ratio:63/88;object-fit:contain;background:var(--xs-panel);border-radius:2px}
+.bt-card-noimg{aspect-ratio:63/88;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--xs-sub);background:var(--xs-panel);padding:2px}
+.bt-handcard-meta{font-size:9px;color:var(--xs-sub);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+
+.bt-actionbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;color:var(--xs-sub)}
+.bt-actionbar b{color:var(--xs-text)}
+
+.bt-pp-pips{display:flex;gap:3px}
+.bt-pp-pip{width:12px;height:12px;border-radius:50%;border:1px solid var(--xs-border);background:transparent}
+.bt-pp-pip.filled{background:var(--xs-yellow);border-color:var(--xs-yellow)}
+
+.bt-log{background:var(--xs-panel);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--xs-sub);max-height:160px;overflow:auto;display:none}
+.bt-log.open{display:block}
+.bt-log div{padding:1px 0;border-bottom:1px dashed var(--xs-line)}
+
+.bt-overlay{position:fixed;inset:0;background:rgba(10,9,9,.78);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.bt-overlay-box{background:var(--xs-panel);border-radius:8px;padding:24px;max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;gap:12px}
+.bt-overlay-box h2{margin:0;font-size:18px}
