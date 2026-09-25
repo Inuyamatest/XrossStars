@@ -625,8 +625,6 @@
     // BP04-059 グレイトフルファーマー：アタックカードを実行後に同じカードをもう一度実行し直す
     //   （REPLAY_FROM_PLAY_AREA、過去のPhaseで明示的に対象外とした機構）。
     //
-    // BP03-017 ストームラッシュ：1回のプレイで3回アタックする（MULTI_ATTACK、過去のPhaseで対象外）。
-    //
     // BP03-024 頂きの景色：アタック後、プレイエリアのメモリアカードのコスト合計と同じ枚数を引く。
     //   DERIVED_AMOUNTは現状LAST_DISTRIBUTED_HEAL_TOTALのみ対応で、「プレイエリアのコスト合計」を
     //   ソースにするには新しいDERIVED_AMOUNT sourceの追加が必要なため見送る。
@@ -644,11 +642,6 @@
     //
     // BP01-026 CLUTCH!!!：手札のコスト0カードを公開・破棄してもよい、という任意コストのボーナス
     //   （OPTIONAL_DISCARD_THEN_BONUS、過去のPhaseで対象外）。
-    //
-    // BP01-080 勝利へのジャンプ：プレイ時に対戦相手のリーダーすべてに50ダメージ。
-    //   既存のmakeAllOtherOpponentLeadersTargetはアタック文脈（ctx.targetLeaderIndex）が前提のため、
-    //   アタックに紐づかないON_PLAYから「対戦相手の生存リーダー全員」を取る新しいTarget Factoryが必要
-    //   （makeAnyOpponentLeaderTargetは単体選択なので流用不可）。新設計になるため今回は見送る。
     //
     // ST01-005 クロスファイア／ST01-016 初の栄冠／ST02-009 魔王降臨／ST02-012 変わらない関係：
     //   「自分のリーダーすべてが特定のタグ（VSPO!/CR等）を持つなら」という判定は、過去のPhaseで
@@ -687,6 +680,26 @@
     'BP02-038': [
       E({ trigger: 'ON_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 2 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } }),
       E({ trigger: 'ON_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 4 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 20 } }),
+    ],
+
+    // ============================================================
+    // Phase F: MULTI_ATTACK機構を追加したことで登録可能になったカード（+ついでに単発の
+    // Target Factory不足のみが理由で見送っていたBP01-080）
+    // ============================================================
+
+    // BP03-017 ストームラッシュ（アタック, 赤, cost2, ACE）
+    // カードテキスト: "〖アタックする〗〖アタックする〗〖アタックする〗（アタックのたびに、
+    //  アタッカーとアタックを受けるリーダーを選ぶ。）"
+    // このカード自身に固定のダメージ加算等は無く、3回の独立したアタック宣言だけを行う。
+    'BP03-017': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'MULTI_ATTACK', count: 3 } }),
+    ],
+
+    // BP01-080 勝利へのジャンプ（メモリア, 緑, cost3, ACE）
+    // カードテキスト: "〖プレイ時〗対戦相手のリーダーすべてに50ダメージ。"
+    // makeAllAliveOpponentLeadersTarget（Phase Fで新設）を使うだけで表現できる、単純なON_PLAY。
+    'BP01-080': [
+      E({ trigger: 'ON_PLAY', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 50 } }),
     ],
   };
 

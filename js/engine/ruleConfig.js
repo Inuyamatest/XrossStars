@@ -171,6 +171,23 @@
         status: 'PROVISIONAL',
         source: 'BP03-059 We are...!の括弧書き（ATTACK_BOOST側のみ明記）からの一般化。ON_ATTACK側は該当カードのテキストに評価タイミングの明記なし。',
       },
+      // Phase F: MULTI_ATTACK（例：ストームラッシュ「アタックする」×3、アタックのたびにアタッカー/
+      // 対象を選ぶ）を、カード1枚のプレイ内で独立したCombat.declareAttackをcount回呼ぶ形で実装した際の
+      // 設計判断。公式資料に「複数回アタックする」効果の一般ルールとしての明記は見当たらず、各カードの
+      // テキスト（「アタックする」を複数回書く形式）からの類推。
+      multiAttackSemantics: {
+        // カードのPP支払い・手札からの除去・プレイエリアへの追加は1回のみ（カードは1枚のまま）
+        costAndPlayAreaHandling: 'ONCE_PER_CARD_PLAY',
+        // 各回の宣言は完全に独立したアタックイベントとして扱う
+        // （オーバーキル計算・カード自身/装備のAFTER_ATTACK・ON_AWAKEN判定をそれぞれ個別に行う）
+        eachDeclarationIsIndependentAttackEvent: true,
+        // メモリア等が付与する「次の1回のアタックのみ」のアタック強化/紐づくAFTER_ATTACK効果は、
+        // pendingAttackBoost/pendingAfterAttackEffectsが最初の宣言で消費される実装上の帰結として、
+        // 自然にN回のうち最初の1回にのみ適用される（2回目以降には引き継がれない）
+        boostAndLinkedAfterAttackAppliesToFirstDeclarationOnly: true,
+        status: 'PROVISIONAL',
+        source: 'BP03-017 ストームラッシュの文言（「アタックする」×3＋「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」という括弧書き）からの類推。他の実カードでの確認は取れていない。',
+      },
     };
   }
 

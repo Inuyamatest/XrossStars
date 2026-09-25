@@ -208,6 +208,19 @@
     };
   }
 
+  // 対戦相手の生存リーダー「全員」を返す（makeAnyOpponentLeaderTargetは単体選択な点が異なる。
+  // makeAllOwnAliveLeadersTargetの対戦相手版）。アタックに紐づかないON_PLAY効果（例：勝利へのジャンプ
+  // 「対戦相手のリーダーすべてに50ダメージ」）用。
+  function makeAllAliveOpponentLeadersTarget() {
+    return function (state, ctx) {
+      var opponentId = GameState.getOpponentId(ctx.ownerPlayerId);
+      var opponent = state.players[opponentId];
+      var results = [];
+      opponent.leaders.forEach(function (l, i) { if (!l.isDown) results.push({ playerId: opponentId, leaderIndex: i }); });
+      return results;
+    };
+  }
+
   // ---- Phase E: 条件付きON_ATTACK/ATTACK_BOOSTボーナス用の追加Condition ----
 
   // 「自分のリーダーの色がすべて異なるなら」（アナイアレーション実装のために新設）。
@@ -243,6 +256,7 @@
     makeOwnAliveLeaderTarget: makeOwnAliveLeaderTarget,
     makeAllOwnAliveLeadersTarget: makeAllOwnAliveLeadersTarget,
     makeAnyOpponentLeaderTarget: makeAnyOpponentLeaderTarget,
+    makeAllAliveOpponentLeadersTarget: makeAllAliveOpponentLeadersTarget,
     makeAllLeadersDifferentColorsCondition: makeAllLeadersDifferentColorsCondition,
   };
 }));
