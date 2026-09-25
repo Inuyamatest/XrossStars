@@ -135,10 +135,12 @@
         // 委ねる。省略時は「してもよい」を辞退したものとして何もしない。コスト合計超過分・重複・不正な
         // instanceIdは安全に無視する（申告どおりに信頼せず、こちら側で合計を再計算して打ち切る）。
         var freePlayer = state.players[ctx.ownerPlayerId];
+        // コスト未確定（null）のカードは「card.cost || 0」でコスト0扱いにすると、コスト合計の
+        // 判定を誤って通してしまう（実データで確認された不具合と同種）ため、候補から除外する。
         var freeCandidates = freePlayer.hand.filter(function (c) {
           var cd = ctx.cardIndex[c.cardId];
-          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true;
-        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: ctx.cardIndex[c.cardId].cost || 0 }; });
+          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true && typeof cd.cost === 'number';
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: ctx.cardIndex[c.cardId].cost }; });
         if (freeCandidates.length === 0) return state;
         var chosenFreeIds = (ctx.chooseFreePlayFromHand ? ctx.chooseFreePlayFromHand(freeCandidates.slice(), action.costLimit, state) : []) || [];
         var freeTotalCost = 0;
@@ -166,9 +168,10 @@
         // （ruleConfig.js deckLookTrashOrientation参照。公式資料に表裏の明記なし）。
         var deckLookPlayer = state.players[ctx.ownerPlayerId];
         var revealed = deckLookPlayer.deck.splice(0, Math.min(action.count, deckLookPlayer.deck.length));
+        // コスト未確定（null）のカードは対象外にする（(cd.cost || 0)だと誤って0扱いになってしまう）。
         var deckLookCandidates = revealed.filter(function (c) {
           var cd = ctx.cardIndex[c.cardId];
-          return cd && cd.cardType === 'MEMORIA' && (cd.cost || 0) <= action.maxCost;
+          return cd && cd.cardType === 'MEMORIA' && typeof cd.cost === 'number' && cd.cost <= action.maxCost;
         }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
         var chosenId = (deckLookCandidates.length > 0 && ctx.chooseDeckLookPlay) ? ctx.chooseDeckLookPlay(deckLookCandidates.slice(), state) : null;
         var chosenCard = chosenId ? revealed.find(function (c) { return c.instanceId === chosenId; }) : null;
@@ -190,9 +193,12 @@
         // 選択はctx.chooseReplayFromPlayArea(candidates, maxCount, state) => instanceId[]に委ねる
         // （省略時は「してもよい」を辞退）。
         var replayPlayer = state.players[ctx.ownerPlayerId];
+        // maxCostが指定されている場合、コスト未確定（null）のカードは満たすかどうか判定できないため対象外にする
+        // （(cd.cost || 0)だと誤って0扱いになってしまう）。maxCost自体が無い場合はコストを問わないので影響しない。
         var replayCandidates = replayPlayer.playArea.filter(function (entry) {
           var cd = ctx.cardIndex[entry.card.cardId];
-          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true && (action.maxCost == null || (cd.cost || 0) <= action.maxCost);
+          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true &&
+            (action.maxCost == null || (typeof cd.cost === 'number' && cd.cost <= action.maxCost));
         }).map(function (entry) { return { instanceId: entry.card.instanceId, cardId: entry.card.cardId }; });
         if (replayCandidates.length === 0) return state;
         var chosenReplayIds = (ctx.chooseReplayFromPlayArea ? ctx.chooseReplayFromPlayArea(replayCandidates.slice(), action.maxCount, state) : []) || [];
@@ -701,8 +707,9 @@
     var player = state.players[playerId];
     var idx = player.hand.findIndex(function (c) { return c.instanceId === cardInstanceId; });
     var cardData = GameState.getCardData(cardIndex, cardId);
-    if (!Phases.payPP(player, cardData.cost || 0)) {
-      throw new Error('PPが不足しています（必要:' + (cardData.cost || 0) + '）');
+    var multiAttackCost = Phases.requireKnownCost(cardData);
+    if (!Phases.payPP(player, multiAttackCost)) {
+      throw new Error('PPが不足しています（必要:' + multiAttackCost + '）');
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });

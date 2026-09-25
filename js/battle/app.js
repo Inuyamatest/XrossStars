@@ -372,7 +372,9 @@
     var handHtml = player.hand.map(function (c) {
       var card = cardOf(c.cardId);
       var img = cardImg(card);
-      var affordable = (card.cost || 0) <= pp;
+      // コスト未確定（null）のカードは「(card.cost || 0)」だとコスト0として常にプレイ可能表示に
+      // なってしまう（エンジン側のPP不具合と同じ原因）。コスト不明の間はプレイ不可として表示する。
+      var affordable = card.cost != null && card.cost <= pp;
       var isSel = sel && sel.cardInstanceId === c.instanceId;
       return '' +
         '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable ? '' : ' unplayable') + '" data-act="select-hand" data-instance="' + esc(c.instanceId) + '">' +
