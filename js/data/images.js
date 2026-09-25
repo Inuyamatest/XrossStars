@@ -79,7 +79,13 @@
     'kinako': 'cards/BP02-096_kinako.webp',
     '神成きゅぴ': 'cards/BP02-095_kaminari-kyupi.webp',
     'どぐら': 'cards/BP02-101_dogura.webp',
-    '天鬼ぷるる': 'cards/BP02-100_amaki-pururu.webp'
+    '天鬼ぷるる': 'cards/BP02-100_amaki-pururu.webp',
+
+    // 1st Anniv.（AN01）
+    'うるか (AN1)': 'cards/AN01-001_uruka.webp',
+    '橘ひなの (AN1)': 'cards/AN01-002_tachibana-hinano.webp',
+    '一ノ瀬うるは (AN1)': 'cards/AN01-003_ichinose-uruha.webp',
+    '白雪レイド (AN1)': 'cards/AN01-004_shirayuki-reid.webp'
   };
 
   // 覚醒後の画像（無ければ覚醒前を使用）
@@ -101,7 +107,13 @@
     '花芽すみれ': 'cards/lrpp_haname-sumire_awakened.webp',
     '花芽なずな': 'cards/lrpp_haname-nazuna_awakened.webp',
     '藍沢エマ': 'cards/lrpp_aizawa-ema_awakened.webp',
-    '赤見かるび': 'cards/lrpp_akami-karubi_awakened.webp'
+    '赤見かるび': 'cards/lrpp_akami-karubi_awakened.webp',
+
+    // 1st Anniv.（AN01）
+    'うるか (AN1)': 'cards/AN01-001_uruka_awakened.webp',
+    '橘ひなの (AN1)': 'cards/AN01-002_tachibana-hinano_awakened.webp',
+    '一ノ瀬うるは (AN1)': 'cards/AN01-003_ichinose-uruha_awakened.webp',
+    '白雪レイド (AN1)': 'cards/AN01-004_shirayuki-reid_awakened.webp'
   };
 
   window.XS_VERIFY_IMAGES = function () {

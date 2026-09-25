@@ -1,5 +1,6 @@
 /* Xross Stars — リーダーデータ（ユーザー提供JSONをそのまま登録・改変なし）
- * 第1弾16名 / 第2弾16名 / 第3弾16名 / 第4弾16名 = 64名
+ * 第1弾16名 / ST01 4名 / ST02 4名 / 第2弾16名 / 第3弾16名 / 第4弾16名 / 1st Anniv. 4名 = 76名
+ * （旧コメントは「=64名」だったが、ST01/ST02の8名が数え漏れていたため今回あわせて修正）
  * 第5弾以降は leaders 配列に追記するだけで選択画面へ自動反映されます。
  */
 (function () {
@@ -25,14 +26,14 @@
       {"id":"BP01-014","name":"ありさか","booster":"第1弾","boosterName":"Luminous Daybreak","cardNumber":"BP01-014/100","color":"green","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/1-014"},
       {"id":"BP01-015","name":"だるまいずごっど","booster":"第1弾","boosterName":"Luminous Daybreak","cardNumber":"BP01-015/100","color":"green","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に20ダメージ。","officialCardUrl":"https://xross-stars.com/card/1-015"},
       {"id":"BP01-016","name":"nqrse","booster":"第1弾","boosterName":"Luminous Daybreak","cardNumber":"BP01-016/100","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/1-016"},
-      {"id":"bp01-selly","name":"Selly","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-103","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/1-103"},
-      {"id":"bp01-mondo","name":"Mondo","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-106","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/1-106"},
-      {"id":"bp01-ichinose-uruha","name":"一ノ瀬うるは","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-109","color":"blue","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/1-109"},
-      {"id":"bp01-kosuzume-toto","name":"小雀とと","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-111","color":"blue","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/1-111"},
-      {"id":"bp01-cpt","name":"Cpt","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-119","color":"yellow","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/1-119"},
-      {"id":"bp01-ras","name":"Ras","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-122","color":"yellow","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダーすべてに10ダメージ。","officialCardUrl":"https://xross-stars.com/card/1-122"},
-      {"id":"bp01-haname-sumire","name":"花芽すみれ","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-127","color":"green","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダーすべてに10ダメージ。","officialCardUrl":"https://xross-stars.com/card/1-127"},
-      {"id":"bp01-haname-nazuna","name":"花芽なずな","booster":"第1弾","boosterCode":"BP01","boosterName":"Luminous Daybreak","cardNumber":"BP01-128","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/1-128"},
+      {"id":"bp01-selly","name":"Selly","booster":"ST02","boosterCode":"ST02","boosterName":"魔王降臨","cardNumber":"ST02-001","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":null},
+      {"id":"bp01-mondo","name":"Mondo","booster":"ST02","boosterCode":"ST02","boosterName":"魔王降臨","cardNumber":"ST02-002","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/3-002"},
+      {"id":"bp01-ichinose-uruha","name":"一ノ瀬うるは","booster":"ST01","boosterCode":"ST01","boosterName":"初の栄冠","cardNumber":"ST01-001","color":"blue","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/2-001"},
+      {"id":"bp01-kosuzume-toto","name":"小雀とと","booster":"ST01","boosterCode":"ST01","boosterName":"初の栄冠","cardNumber":"ST01-002","color":"blue","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/2-002"},
+      {"id":"bp01-cpt","name":"Cpt","booster":"ST02","boosterCode":"ST02","boosterName":"魔王降臨","cardNumber":"ST02-003","color":"yellow","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/3-003"},
+      {"id":"bp01-ras","name":"Ras","booster":"ST02","boosterCode":"ST02","boosterName":"魔王降臨","cardNumber":"ST02-004","color":"yellow","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダーすべてに10ダメージ。","officialCardUrl":"https://xross-stars.com/card/3-004"},
+      {"id":"bp01-haname-sumire","name":"花芽すみれ","booster":"ST01","boosterCode":"ST01","boosterName":"初の栄冠","cardNumber":"ST01-003","color":"green","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダーすべてに10ダメージ。","officialCardUrl":"https://xross-stars.com/card/2-003"},
+      {"id":"bp01-haname-nazuna","name":"花芽なずな","booster":"ST01","boosterCode":"ST01","boosterName":"初の栄冠","cardNumber":"ST01-004","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/2-004"},
 
       {"id":"BP02-001","name":"赤見かるび","booster":"第2弾","boosterName":"Exceed Rampage","cardNumber":"BP02-001/082","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/5-001"},
       {"id":"BP02-002","name":"如月れん","booster":"第2弾","boosterName":"Exceed Rampage","cardNumber":"BP02-002/082","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/5-002"},
@@ -83,7 +84,13 @@
       {"id":"BP04-013","name":"乾伸一郎","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-013/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に10ダメージ。","officialCardUrl":"https://xross-stars.com/card/7-013"},
       {"id":"BP04-014","name":"銀城サイネ","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-014/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを2枚引き、手札を2枚捨てる。","officialCardUrl":"https://xross-stars.com/card/7-014"},
       {"id":"BP04-015","name":"じゃすぱー","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-015/081","color":"green","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。","officialCardUrl":"https://xross-stars.com/card/7-015"},
-      {"id":"BP04-016","name":"天帝フォルテ","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-016/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/7-016"}
+      {"id":"BP04-016","name":"天帝フォルテ","booster":"第4弾","boosterName":"Grand Resonance","cardNumber":"BP04-016/081","color":"green","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。","officialCardUrl":"https://xross-stars.com/card/7-016"},
+
+      // Xross Stars 1st Anniv. Collection PREMIUM SET（表示名は短く「1st Anniv.」）
+      {"id":"AN01-001","name":"うるか (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-001/024 LRP","color":"red","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを2枚引き、手札を2枚捨てる。"},
+      {"id":"AN01-002","name":"橘ひなの (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-002/024 LRP","color":"red","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"対戦相手のリーダー1体に20ダメージ。"},
+      {"id":"AN01-003","name":"一ノ瀬うるは (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-003/024 LRP","color":"blue","hp":110,"awakenedHp":140,"attack":30,"awakenedAttack":40,"awakeningEffect":"自分のリーダー1体を20回復する。"},
+      {"id":"AN01-004","name":"白雪レイド (AN1)","booster":"1st Anniv.","boosterName":"Collection PREMIUM SET","cardNumber":"AN01-004/024 LRP","color":"blue","hp":100,"awakenedHp":130,"attack":30,"awakenedAttack":40,"awakeningEffect":"カードを1枚引く。"}
     ]
   };
 

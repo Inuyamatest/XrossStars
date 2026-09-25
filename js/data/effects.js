@@ -19,6 +19,15 @@
       image: 'cards/BP03-080_cybernearmor.webp',
       text: 'これを装備しているリーダーが覚醒していないなら、基本の体力は140になる。これを装備しているリーダーが覚醒しているなら、基本の体力は170になる。',
       effects: [{ type: 'SET_BASE_HP', normal: 140, awakened: 170 }]
+    },
+    {
+      id: 'ST01-023',
+      name: 'ライトシールド',
+      cardNumber: 'ST01-023/025 TUC',
+      cost: 0,
+      image: 'cards/ST01-023_light-shield.webp',
+      text: '体力+30',
+      effects: [{ type: 'MAX_HP_MODIFIER', amount: 30, target: 'SELF' }]
     }
   ];
 
