@@ -185,6 +185,9 @@
         // pendingAttackBoost/pendingAfterAttackEffectsが最初の宣言で消費される実装上の帰結として、
         // 自然にN回のうち最初の1回にのみ適用される（2回目以降には引き継がれない）
         boostAndLinkedAfterAttackAppliesToFirstDeclarationOnly: true,
+        // 対象は事前にまとめて指定されるため、先の回でダウンした対象/アタッカーが指定されていた場合は
+        // 生存している先頭のリーダーに差し替え、差し替え先が無ければ残りのアタックは行わない
+        downedPredeclaredTarget: 'RETARGET_FIRST_ALIVE_ELSE_STOP',
         status: 'PROVISIONAL',
         source: 'BP03-017 ストームラッシュの文言（「アタックする」×3＋「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」という括弧書き）からの類推。他の実カードでの確認は取れていない。',
       },

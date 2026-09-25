@@ -1012,6 +1012,95 @@
     // BP03-067 気まずい空間: "〖プレイ時〗自分のデッキの上から3枚を見る。それらのカードをトラッシュに置く。"
     //   → デッキ上から直接トラッシュに置く（MILL）Actionが未実装。
     // BP03-027 仁義なき抗争: Phase Hで記載済み（任意のランダム手札破棄＋条件付きボーナス）。
+
+    // ============================================================
+    // Phase J: タクティクス/PP画像バッチで本文を確認したタクティクスのうち、既存機構で表現できるもの。
+    // 同名の別印刷は本文が一致することを確認済み（例：アドレナリンはBP01-089/ST01-019/ST02-019/BP03-074すべて同文）。
+    // 消費タクティクスの〖アタック強化〗はPhase JでplayTacticsCardWithEffectsが扱えるようにした。
+    // ============================================================
+
+    // アドレナリン："〖プレイ時〗カードを1枚引く。〖アタック強化〗次のアタックのダメージ+40。"
+    'BP01-089': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+    'ST01-019': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+    'ST02-019': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+    'BP03-074': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+
+    // 特殊弾："〖アタック強化〗次のアタックのダメージ+80。"
+    'ST01-022': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })],
+    'ST02-022': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })],
+
+    // エナジーチャージャー："〖プレイ時〗PPを1回復し、カードを1枚引く。"（BP01-090/BP02-073はBAN）
+    'BP01-090': [E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'RECOVER_PP', amount: 1 }, { type: 'DRAW', amount: 1 }] } })],
+    'BP02-073': [E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'RECOVER_PP', amount: 1 }, { type: 'DRAW', amount: 1 }] } })],
+    'ST01-020': [E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'RECOVER_PP', amount: 1 }, { type: 'DRAW', amount: 1 }] } })],
+    'ST02-020': [E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'RECOVER_PP', amount: 1 }, { type: 'DRAW', amount: 1 }] } })],
+
+    // PPチケット："〖プレイ時〗PPを1回復する。"（使用済みPPが無ければ回復量0。FAQ Q9）
+    'ST01-024': [E({ trigger: 'ON_PLAY', action: { type: 'RECOVER_PP', amount: 1 } })],
+    'ST02-024': [E({ trigger: 'ON_PLAY', action: { type: 'RECOVER_PP', amount: 1 } })],
+    'BP01-097': [E({ trigger: 'ON_PLAY', action: { type: 'RECOVER_PP', amount: 1 } })],
+    'BP02-081': [E({ trigger: 'ON_PLAY', action: { type: 'RECOVER_PP', amount: 1 } })],
+
+    // 救急キット（ST01-021/ST02-021と同文）
+    'BP01-091': [E({ trigger: 'ON_PLAY', action: { type: 'DISTRIBUTED_HEAL', total: 80 } })],
+    'BP03-073': [E({ trigger: 'ON_PLAY', action: { type: 'DISTRIBUTED_HEAL', total: 80 } })],
+
+    // ストラテジックレーダー："〖プレイ時〗カードを2枚引く。"
+    'BP01-092': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })],
+    'BP02-074': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })],
+
+    // ジャミングパルス（BP01-093と同文）
+    'BP03-075': [E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 2 } })],
+
+    // ライトシールド（BP01-095と同文）/ ボディアーマー："体力+40"
+    'ST01-023': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_HP_MODIFIER', amount: 30 } })],
+    'ST02-023': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_HP_MODIFIER', amount: 30 } })],
+    'BP01-096': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_HP_MODIFIER', amount: 40 } })],
+
+    // ドレインロッド（BP02-076と同文）
+    'BP04-074': [E({
+      trigger: 'ON_PLAY',
+      target: F.makeAnyOpponentLeaderTarget(),
+      action: { type: 'MULTI', actions: [
+        { type: 'DISTRIBUTED_HEAL', total: 40 },
+        { type: 'DAMAGE', amount: { type: 'DERIVED_AMOUNT', source: 'LAST_DISTRIBUTED_HEAL_TOTAL' } },
+      ] },
+    })],
+
+    // 攻撃要請："〖プレイ時〗対戦相手のリーダー1体に40ダメージ。"
+    'BP04-078': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 40 } })],
+
+    // 一斉攻撃："〖アタック強化〗+40。〖アタック後〗自分のトラッシュに「攻撃要請」があるなら、対戦相手のリーダー1体に40ダメージ。"
+    'BP04-077': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } }),
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: function (state, ctx) {
+          return state.players[ctx.ownerPlayerId].trash.some(function (t) {
+            var c = ctx.cardIndex && ctx.cardIndex[t.card.cardId];
+            return !!c && c.name === '攻撃要請';
+          });
+        },
+        target: F.makeAnyOpponentLeaderTarget(),
+        action: { type: 'DAMAGE', amount: 40 },
+      }),
+    ],
+
+    // 呪いの人形："〖プレイ時〗対戦相手は手札を1枚捨てる。〖アタック強化〗次のアタックのダメージ+40。"
+    'BP04-080': [E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+
+    // ファイヤークラッカー："〖プレイ時〗対戦相手のリーダーすべてに10ダメージ。カードを1枚引く。"
+    'BP03-078': [E({ trigger: 'ON_PLAY', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'MULTI', actions: [{ type: 'DAMAGE', amount: 10 }, { type: 'DRAW', amount: 1 }] } })],
+
+    // ---- 以下、Phase Jで本文を確認したが今回は未登録のタクティクス（新しい仕組みが必要なため） ----
+    // BP03-080/BP04-073 サイバネアーマー: 覚醒状態で「基本の体力」を置き換える装備（現行は加算のEQUIP_HP_MODIFIERのみ）。
+    // BP03-076 追加マガジン: トラッシュに置かれる代わりにタクティクスエリアへ戻る置換効果が未実装
+    //   （片方だけ登録すると使い切りになり本来の挙動と変わるため、全体を見送る）。
+    // BP03-077 パワーフィールド: 「このラウンド」持続する攻撃力修正と、ターン終了時にトラッシュへ置かない処理が未実装。
+    // BP03-079 ターゲットフラッグ: アタック対象を制限する装備（対象選択への制約）が未実装。
+    // BP04-079 討伐クエスト: デッキ上7枚から1枚を手札に加える（DECK_LOOK_ADD_TO_HAND相当）が未実装。
+    // BP04-076 アイテムショップ: トラッシュの裏向きカードをデッキに戻してシャッフルする処理が未実装。
+    // BP01-094/BP02-075 復活ポータル、BP02-077 オートタレット: 以前から未登録（プレイ条件/付与能力の条件が未対応）。
   };
 
   // パラレル/プロモ（例: BP01-137 超新星 SRP）は通常版と同一効果なので、通常版の登録を引く。

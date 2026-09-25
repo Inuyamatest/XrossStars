@@ -116,6 +116,7 @@
     };
   }
 
+
   // ---------- 画面状態 ----------
   var root = document.getElementById('bt-body');
   var screen = 'setup'; // 'setup' | 'battle'
@@ -130,6 +131,14 @@
   var sel = null;  // 手番プレイヤーの操作中の選択状態
   var logOpen = false;
   var lastRoundBanner = null;
+  var detailCardId = null;   // カード詳細モーダルで表示中のカード
+  var seenActive = null;     // 手番交代画面を最後に確認したプレイヤー（対戦台で相手の手札を見せないため）
+  var prevHp = {};           // 直前の描画時点の各リーダー残りHP（ダメージ/回復演出用）
+  var notice = null;         // 操作できなかった理由などの一言メッセージ（次の操作で消える）
+
+  var PLAYER_LABEL = { playerA: 'プレイヤーA', playerB: 'プレイヤーB' };
+  function pShort(pid) { return pid === 'playerA' ? 'A' : 'B'; }
+  function pBadge(pid) { return '<span class="bt-pbadge' + (pid === 'playerB' ? ' pB' : '') + '">' + pShort(pid) + '</span>'; }
 
   function deckFor(side) {
     var s = setup[side];
@@ -141,72 +150,93 @@
   function render() {
     root.innerHTML = screen === 'setup' ? renderSetup() : renderBattle();
     bindEvents();
+    syncDockHeight();
+  }
+
+  // 手札ドック（固定表示）の実際の高さに合わせて盤面の下余白を取り、最下段が隠れないようにする
+  function syncDockHeight() {
+    var dock = root.querySelector('.bt-dock');
+    document.documentElement.style.setProperty('--dock-h', (dock ? dock.offsetHeight : 0) + 'px');
+  }
+  window.addEventListener('resize', syncDockHeight);
+
+  function imgTag(card, awakened, cls) {
+    var src = cardImg(card, awakened);
+    return src ? '<img src="' + esc(src) + '" alt="' + esc(card.name) + '" loading="lazy">'
+      : '<div class="' + cls + '">' + esc(card.name) + '</div>';
   }
 
   // ================= セットアップ画面 =================
   function renderSetup() {
     return '' +
-      '<div class="bt-notice">対戦台（1台の端末で2人が交互に操作）方式のローカル対戦です。複数対象の選択などが必要な効果は、エンジン側の安全なデフォルト挙動（先頭候補を自動選択、または「してもよい」を辞退）で処理されます。カード効果はdata/cards.jsonの全カードのうち登録済みの一部のみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。</div>' +
       '<div class="bt-setup">' +
+        '<div class="bt-hero"><h2>BATTLE</h2><p>1台の端末で2人が交互に操作するローカル対戦</p></div>' +
         '<div class="bt-setup-players">' +
-          renderSetupPanel('playerA', 'プレイヤーA') +
-          renderSetupPanel('playerB', 'プレイヤーB') +
+          renderSetupPanel('playerA') +
+          '<div class="bt-vs">VS</div>' +
+          renderSetupPanel('playerB') +
         '</div>' +
         '<div class="bt-setup-options">' +
-          '<label>モード ' +
-            '<select id="opt-mode">' +
-              '<option value="STANDARD"' + (setup.mode === 'STANDARD' ? ' selected' : '') + '>スタンダード（2ラウンド先取）</option>' +
-              '<option value="QUICK"' + (setup.mode === 'QUICK' ? ' selected' : '') + '>クイック（1ラウンド先取）</option>' +
-            '</select>' +
-          '</label>' +
-          '<label>先攻 ' +
-            '<select id="opt-first">' +
-              '<option value="playerA"' + (setup.firstPlayer === 'playerA' ? ' selected' : '') + '>プレイヤーA</option>' +
-              '<option value="playerB"' + (setup.firstPlayer === 'playerB' ? ' selected' : '') + '>プレイヤーB</option>' +
-            '</select>' +
-          '</label>' +
-          '<button class="bt-btn" data-act="coinflip">じゃんけん代わりにランダムで決める</button>' +
+          '<div class="bt-opt">モード <span class="bt-seg">' +
+            '<button data-act="set-mode" data-value="STANDARD" class="' + (setup.mode === 'STANDARD' ? 'on' : '') + '">スタンダード（2本先取）</button>' +
+            '<button data-act="set-mode" data-value="QUICK" class="' + (setup.mode === 'QUICK' ? 'on' : '') + '">クイック（1本先取）</button>' +
+          '</span></div>' +
+          '<div class="bt-opt">先攻 <span class="bt-seg">' +
+            '<button data-act="set-first" data-value="playerA" class="' + (setup.firstPlayer === 'playerA' ? 'on' : '') + '">A</button>' +
+            '<button data-act="set-first" data-value="playerB" class="' + (setup.firstPlayer === 'playerB' ? 'on' : '') + '">B</button>' +
+          '</span></div>' +
+          '<button class="bt-btn ghost" data-act="coinflip">ランダムで決める</button>' +
         '</div>' +
-        '<div class="bt-start-row"><button class="bt-btn primary" data-act="start" style="min-height:44px;padding:0 28px;font-size:14px">対戦開始</button></div>' +
+        '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">対戦開始</button></div>' +
+        '<details class="bt-notes"><summary>この対戦画面について</summary>' +
+          '対象を複数から選ぶ効果などは、エンジン側の安全なデフォルト挙動（先頭候補を自動選択、または「してもよい」を辞退）で処理されます。' +
+          'カード効果はエンジンに登録済みのカードのみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。' +
+          '手札は自分の手番のときだけ表示され、手番交代時は確認画面を挟みます。' +
+        '</details>' +
       '</div>';
   }
 
-  function renderSetupPanel(side, label) {
+  function renderSetupPanel(side) {
     var s = setup[side];
     var deck = deckFor(side);
     var savedOptions = setup.savedDecks.map(function (d, i) {
       return '<option value="' + i + '"' + (s.source === 'SAVED' && s.savedIndex === i ? ' selected' : '') + '>' + esc(d.name) + '</option>';
     }).join('');
 
+    var leaderCards = deck ? (deck.leaders || []).map(function (n) { return CARD_INDEX[n]; }).filter(Boolean) : [];
+    var thumbs = '';
+    for (var i = 0; i < 4; i++) {
+      var c = leaderCards[i];
+      thumbs += c ? '<div class="bt-thumb" title="' + esc(c.name) + '">' + imgTag(c, false, 'bt-lnoimg') + '</div>'
+        : '<div class="bt-thumb empty">LEADER</div>';
+    }
+
     var summary = '';
     if (deck) {
       var validation = window.XS_DECK_RULES.validateDeck(deck, CARD_INDEX);
-      var leaderCards = (deck.leaders || []).map(function (n) { return CARD_INDEX[n]; }).filter(Boolean);
       summary = '' +
         '<div class="bt-deck-summary">' +
-          'リーダー' + leaderCards.length + '/4 ・ デッキ' + (validation.summary.mainCount) + '/50 ・ タクティクス' + (deck.tactics || []).length + '/5' +
-          (deck.generated ? ' ・ <span style="color:var(--xs-yellow)">自動生成デッキ</span>' : '') +
+          '<span class="bt-chip">リーダー ' + leaderCards.length + '/4</span>' +
+          '<span class="bt-chip">デッキ ' + validation.summary.mainCount + '/50</span>' +
+          '<span class="bt-chip">タクティクス ' + (deck.tactics || []).length + '/5</span>' +
+          (deck.generated ? '<span class="bt-chip warn">自動生成</span>' : '') +
         '</div>' +
-        '<div class="bt-deck-leaders">' + leaderCards.map(function (c) {
-          var img = cardImg(c);
-          return img ? '<img src="' + esc(img) + '" alt="' + esc(c.name) + '" title="' + esc(c.name) + '">'
-            : '<div style="width:48px;height:67px;background:var(--xs-panel2);border-radius:2px;font-size:8px;color:var(--xs-sub);display:flex;align-items:center;justify-content:center;text-align:center">' + esc(c.name) + '</div>';
-        }).join('') + '</div>' +
-        (validation.valid ? '' : '<div class="bt-deck-violations">' + validation.violations.map(function (v) { return '❌ ' + esc(v); }).join('<br>') + '</div>') +
-        (validation.warnings.length ? '<div class="bt-deck-warnings">' + validation.warnings.map(function (w) { return '⚠ ' + esc(w); }).join('<br>') + '</div>' : '');
+        (validation.valid ? '' : '<div class="bt-deck-violations">' + validation.violations.map(function (v) { return '× ' + esc(v); }).join('<br>') + '</div>') +
+        (validation.warnings.length ? '<div class="bt-deck-warnings">' + validation.warnings.map(function (w) { return '! ' + esc(w); }).join('<br>') + '</div>' : '');
     } else {
-      summary = '<div class="bt-deck-summary">デッキ未選択</div>';
+      summary = '<div class="bt-deck-summary"><span class="bt-chip">デッキ未選択</span></div>';
     }
 
     return '' +
       '<div class="bt-setup-panel" data-side="' + side + '">' +
-        '<h2>' + esc(label) + '</h2>' +
+        '<h3>' + pBadge(side) + esc(PLAYER_LABEL[side]) + (deck ? '<span style="color:var(--sub);font-weight:500;font-size:12px">— ' + esc(deck.name) + '</span>' : '') + '</h3>' +
+        '<div class="bt-deck-leaders">' + thumbs + '</div>' +
         '<div class="bt-setup-row">' +
-          '<select data-act="pick-saved" data-side="' + side + '">' +
+          '<select class="bt-select" data-act="pick-saved" data-side="' + side + '">' +
             '<option value="">保存済みデッキから選択…</option>' +
             savedOptions +
           '</select>' +
-          '<button class="bt-btn" data-act="pick-random" data-side="' + side + '">ランダムデッキで試す</button>' +
+          '<button class="bt-btn" data-act="pick-random" data-side="' + side + '">ランダムデッキ</button>' +
         '</div>' +
         summary +
       '</div>';
@@ -249,6 +279,9 @@
     game = { state: state };
     sel = null;
     lastRoundBanner = null;
+    detailCardId = null;
+    seenActive = null;
+    prevHp = {};
     screen = 'battle';
     render();
   }
@@ -256,56 +289,80 @@
   // ================= 対戦画面 =================
   function renderBattle() {
     var state = game.state;
+    var finished = state.match.status === 'FINISHED';
+    var handoffPending = !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
+    var html = renderBattleBoard(state, finished, handoffPending);
 
-    if (state.match.status === 'FINISHED') {
-      return renderBattleBoard(state, true) + renderMatchEndOverlay(state);
-    }
-    return renderBattleBoard(state, false) + (lastRoundBanner ? renderRoundEndOverlay(lastRoundBanner) : '');
+    if (finished) html += renderMatchEndOverlay(state);
+    else if (lastRoundBanner) html += renderRoundEndOverlay(lastRoundBanner);
+    else if (handoffPending) html += renderHandoffOverlay(state);
+    if (detailCardId) html += renderDetailOverlay(detailCardId);
+    if (logOpen) html += renderLogDrawer(state);
+    return html;
   }
 
-  function renderBattleBoard(state, readOnly) {
-    var activePlayerId = state.turn.activePlayer;
+  function renderBattleBoard(state, readOnly, hideHand) {
+    var bottom = state.turn.activePlayer; // 手番プレイヤーが常に下側
+    var top = opponentOf(bottom);
+    var hpNow = snapshotHp(state);
+    var deltas = {};
+    Object.keys(hpNow).forEach(function (k) { if (prevHp[k] != null && prevHp[k] !== hpNow[k]) deltas[k] = hpNow[k] - prevHp[k]; });
+    prevHp = hpNow;
+
     return '' +
       '<div class="bt-battle">' +
-        renderMatchInfo(state) +
-        renderSide(state, 'playerA', activePlayerId, readOnly) +
-        renderSide(state, 'playerB', activePlayerId, readOnly) +
-        '<div>' +
-          '<button class="bt-btn" data-act="toggle-log">ログ' + (logOpen ? '▲' : '▼') + '</button>' +
-          '<div class="bt-log' + (logOpen ? ' open' : '') + '">' + renderLog(state) + '</div>' +
-        '</div>' +
+        renderScore(state) +
+        renderSide(state, top, readOnly, deltas, false) +
+        renderCenter(state) +
+        renderSide(state, bottom, readOnly, deltas, true) +
       '</div>' +
-      (readOnly ? '' : renderHandBar(state, activePlayerId));
+      (readOnly ? '' : renderDock(state, bottom, hideHand));
   }
 
-  function renderMatchInfo(state) {
+  function snapshotHp(state) {
+    var out = {};
+    ['playerA', 'playerB'].forEach(function (pid) {
+      state.players[pid].leaders.forEach(function (l, i) {
+        out[pid + ':' + i] = l.isDown ? 0 : Eng.GameState.getLeaderCurrentHp(cardIndex, l);
+      });
+    });
+    return out;
+  }
+
+  function renderScore(state) {
+    var w = state.match.roundWins;
     return '' +
-      '<div class="bt-matchinfo">' +
-        '<span>ラウンド <b>' + state.match.roundNumber + '</b></span>' +
-        '<span>ラウンド勝利数 A:<b>' + state.match.roundWins.playerA + '</b> / B:<b>' + state.match.roundWins.playerB + '</b></span>' +
-        '<span>モード <b>' + (state.match.mode === 'QUICK' ? 'クイック' : 'スタンダード') + '</b></span>' +
-        '<span class="bt-turn-badge">手番: ' + (state.turn.activePlayer === 'playerA' ? 'プレイヤーA' : 'プレイヤーB') + '（ターン' + state.turn.turnNumber + '）</span>' +
+      '<div class="bt-score">' +
+        '<span class="bt-sc">' + pBadge('playerA') + '<b>' + w.playerA + '</b></span>' +
+        '<span class="bt-round">ROUND ' + state.match.roundNumber + '<span class="bt-mode"> ・ ' + (state.match.mode === 'QUICK' ? 'クイック' : 'スタンダード') + '</span></span>' +
+        '<span class="bt-sc"><b>' + w.playerB + '</b>' + pBadge('playerB') + '</span>' +
+        '<button class="bt-btn ghost bt-logbtn" data-act="toggle-log">ログ</button>' +
       '</div>';
   }
 
-  function renderSide(state, playerId, activePlayerId, readOnly) {
+  function renderSide(state, playerId, readOnly, deltas, isBottom) {
     var player = state.players[playerId];
-    var isActive = playerId === activePlayerId;
-    var label = playerId === 'playerA' ? 'プレイヤーA' : 'プレイヤーB';
-
-    return '' +
-      '<div class="bt-side' + (isActive ? ' is-active' : '') + '">' +
-        '<div class="bt-side-title">' +
-          '<b>' + label + (isActive ? '（手番）' : '') + '</b>' +
-          '<span>' + renderPpPips(player) + ' PP ' + (player.ppCards.max - player.ppCards.tapped) + '/' + player.ppCards.max +
-            ' ・ 山札' + player.deck.length + ' ・ トラッシュ' + player.trash.length + ' ・ 手札' + player.hand.length + '</span>' +
-        '</div>' +
-        '<div class="bt-leaders">' + player.leaders.map(function (l, i) { return renderLeader(playerId, l, i, isActive, readOnly); }).join('') + '</div>' +
-        '<div class="bt-tacticsrow">' + renderTacticsArea(state, playerId, isActive, readOnly) + '</div>' +
-        (player.playArea.length ? '<div class="bt-playarea">' + player.playArea.map(function (e) {
-          return '<span class="bt-playarea-card">' + esc(cardOf(e.card.cardId).name) + '</span>';
-        }).join('') + '</div>' : '') +
+    var isActive = playerId === state.turn.activePlayer;
+    var pp = player.ppCards.max - player.ppCards.tapped;
+    var strip = '' +
+      '<div class="bt-strip">' +
+        '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
+        (isActive ? '<span class="bt-turntag">YOUR TURN</span>' : '') +
+        '<span class="bt-pp">' + renderPpPips(player) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
+        (player.pendingAttackBoost ? '<span class="bt-boost" title="次のアタックに上乗せされるダメージ">強化 +' + player.pendingAttackBoost + '</span>' : '') +
+        '<span class="bt-counters">' +
+          '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b></span>' +
+          '<span class="bt-counter" title="手札">手札 <b>' + player.hand.length + '</b></span>' +
+          '<span class="bt-counter" title="トラッシュ">トラッシュ <b>' + player.trash.length + '</b></span>' +
+        '</span>' +
       '</div>';
+    var row = '' +
+      '<div class="bt-row">' +
+        '<div class="bt-leaders">' + player.leaders.map(function (l, i) { return renderLeader(playerId, l, i, readOnly, deltas[playerId + ':' + i]); }).join('') + '</div>' +
+        renderField(state, playerId, isActive, readOnly) +
+      '</div>';
+    return '<section class="bt-side' + (playerId === 'playerB' ? ' pB' : '') + (isActive ? ' is-active' : ' is-opp') + '">' +
+      strip + row + '</section>';
   }
 
   function renderPpPips(player) {
@@ -316,144 +373,317 @@
     return html + '</span>';
   }
 
-  function renderLeader(playerId, leader, idx, isActive, readOnly) {
+  function leaderPickState(playerId, leader, idx, readOnly) {
+    var r = { pickable: false, attacker: false, target: false, enemy: false };
+    if (readOnly || !sel || leader.isDown) {
+      if (sel && sel.kind === 'ATTACK') {
+        r.attacker = playerId === sel.ownerId && sel.attackerLeaderIndex === idx;
+        r.target = playerId === opponentOf(sel.ownerId) && sel.targetLeaderIndex === idx;
+      }
+      return r;
+    }
+    if (sel.kind === 'ATTACK') {
+      if (playerId === sel.ownerId) {
+        r.pickable = sel.mode === 'PICK_ATTACKER' || sel.mode === 'PICK_TARGET' || sel.mode === 'READY';
+        r.attacker = sel.attackerLeaderIndex === idx;
+      } else {
+        r.enemy = true;
+        r.pickable = sel.mode === 'PICK_TARGET' || sel.mode === 'READY';
+        r.target = sel.targetLeaderIndex === idx;
+      }
+    } else if (sel.mode === 'PICK_EQUIP_LEADER' && playerId === sel.ownerId) {
+      r.pickable = true;
+    }
+    return r;
+  }
+
+  function renderLeader(playerId, leader, idx, readOnly, delta) {
     var card = cardOf(leader.cardId);
     var maxHp = Eng.GameState.getLeaderMaxHp(cardIndex, leader);
     var curHp = Eng.GameState.getLeaderCurrentHp(cardIndex, leader);
     var atk = Eng.GameState.getLeaderCurrentAtk(cardIndex, leader);
-    var img = cardImg(card, leader.awakened);
     var pct = maxHp > 0 ? Math.max(0, Math.min(100, Math.round(curHp / maxHp * 100))) : 0;
+    var hpCls = pct <= 30 ? ' lo' : (pct <= 60 ? ' mid' : '');
+    var p = leaderPickState(playerId, leader, idx, readOnly);
 
-    var pickable = false, picked = false;
-    if (!readOnly && sel) {
-      if (sel.mode === 'PICK_ATTACKER' && playerId === sel.ownerId) {
-        pickable = !leader.isDown;
-        picked = sel.attackerLeaderIndex === idx;
-      } else if (sel.mode === 'PICK_TARGET' && playerId === opponentOf(sel.ownerId)) {
-        pickable = !leader.isDown;
-        picked = sel.targetLeaderIndex === idx;
-      } else if (sel.mode === 'PICK_EQUIP_LEADER' && playerId === sel.ownerId) {
-        pickable = true;
-      }
-    }
+    var cls = 'bt-leader' +
+      (leader.isDown ? ' down' : '') +
+      (leader.awakened ? ' awakened' : '') +
+      (p.pickable ? ' pickable' : '') +
+      (p.enemy ? ' pick-enemy' : '') +
+      (p.attacker ? ' is-attacker' : '') +
+      (p.target ? ' is-target' : '') +
+      (delta && delta < 0 ? ' hit' : '');
+
+    var equipNames = leader.equipment.map(function (eq) { return cardOf(eq.cardId).name; });
+    var tags = '';
+    if (leader.awakened) tags += '<span class="bt-tag awake">覚醒</span>';
+    if (equipNames.length) tags += '<span class="bt-tag equip" title="' + esc(equipNames.join('、')) + '">装備' + equipNames.length + '</span>';
+    if (p.attacker) tags += '<span class="bt-tag">アタッカー</span>';
+    if (p.target) tags += '<span class="bt-tag" style="background:var(--red)">対象</span>';
+
+    var floater = '';
+    if (delta) floater = '<span class="bt-float' + (delta > 0 ? ' heal' : '') + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
 
     return '' +
-      '<div class="bt-leader' + (leader.isDown ? ' down' : '') + (pickable ? ' pickable' : '') + (picked ? ' picked' : '') + '"' +
-        (pickable ? ' data-act="pick-leader" data-player="' + playerId + '" data-index="' + idx + '"' : '') + '>' +
-        (img ? '<img src="' + esc(img) + '" alt="">' : '<div class="bt-leader-noimg">' + esc(card.name) + '</div>') +
-        '<div class="bt-leader-name">' + esc(card.name) + (leader.awakened ? ' ★覚醒' : '') + '</div>' +
-        '<div class="bt-hpbar"><div class="bt-hpfill" style="width:' + pct + '%"></div></div>' +
-        '<div class="bt-leader-stats">HP ' + curHp + '/' + maxHp + ' ・ ATK ' + atk + '</div>' +
-        (leader.equipment.length ? '<div class="bt-equip">装備: ' + leader.equipment.map(function (eq) { return esc(cardOf(eq.cardId).name); }).join('、') + '</div>' : '') +
-        (leader.isDown ? '<div class="bt-down-badge">DOWN</div>' : '') +
+      '<div class="' + cls + '"' + (p.pickable ? ' data-act="pick-leader" data-player="' + playerId + '" data-index="' + idx + '" role="button" tabindex="0"' : '') + '>' +
+        '<div class="bt-lcard">' +
+          imgTag(card, leader.awakened, 'bt-lnoimg') +
+          '<div class="bt-badge-top">' + tags + '</div>' +
+          '<button class="bt-info" data-act="show-detail" data-card="' + esc(leader.cardId) + '" title="カード詳細">i</button>' +
+          (leader.isDown ? '<div class="bt-down-stamp"><span>DOWN</span></div>' : '') +
+          '<div class="bt-lhud">' +
+            '<div class="bt-lname">' + esc(card.name) + '</div>' +
+            '<div class="bt-lstats"><span class="bt-hpnum">' + (leader.isDown ? 0 : curHp) + '<small>/' + maxHp + '</small></span><span class="bt-atk"><i>ATK </i>' + atk + '</span></div>' +
+            '<div class="bt-hpbar"><div class="bt-hpfill' + hpCls + '" style="width:' + (leader.isDown ? 0 : pct) + '%"></div></div>' +
+          '</div>' +
+        '</div>' +
+        floater +
       '</div>';
   }
 
-  function renderTacticsArea(state, playerId, isActive, readOnly) {
+  function renderField(state, playerId, isActive, readOnly) {
     var player = state.players[playerId];
-    if (player.tacticsArea.length === 0) return '<span>タクティクスエリア: なし</span>';
     var canPlay = !readOnly && isActive && Eng.Phases.canPlayTactics(state);
-    return player.tacticsArea.map(function (t) {
-      var card = cardOf(t.card.cardId);
-      var equip = isEquipmentCard(t.card.cardId);
-      var disabled = readOnly || !isActive || !canPlay;
-      return '' +
-        '<div class="bt-tacticscard">' +
-          '<span>' + esc(card.name) + (card.cost != null ? '（C' + card.cost + '）' : '') + (equip ? ' [装備]' : ' [消費]') + '</span>' +
-          '<button data-act="play-tactics" data-instance="' + esc(t.card.instanceId) + '" data-equip="' + (equip ? 1 : 0) + '"' + (disabled ? ' disabled' : '') + '>プレイ</button>' +
-        '</div>';
-    }).join('');
-  }
-
-  function renderHandBar(state, activePlayerId) {
-    var player = state.players[activePlayerId];
     var pp = player.ppCards.max - player.ppCards.tapped;
 
-    var handHtml = player.hand.map(function (c) {
-      var card = cardOf(c.cardId);
-      var img = cardImg(card);
-      // コスト未確定（null）のカードは「(card.cost || 0)」だとコスト0として常にプレイ可能表示に
-      // なってしまう（エンジン側のPP不具合と同じ原因）。コスト不明の間はプレイ不可として表示する。
+    var tactics = player.tacticsArea.length ? player.tacticsArea.map(function (t) {
+      var card = cardOf(t.card.cardId);
+      var equip = isEquipmentCard(t.card.cardId);
       var affordable = card.cost != null && card.cost <= pp;
-      var isSel = sel && sel.cardInstanceId === c.instanceId;
+      var disabled = !canPlay || !affordable;
       return '' +
-        '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable ? '' : ' unplayable') + '" data-act="select-hand" data-instance="' + esc(c.instanceId) + '">' +
-          (img ? '<img src="' + esc(img) + '" alt="">' : '<div class="bt-card-noimg">' + esc(card.name) + '</div>') +
-          '<div class="bt-handcard-meta">' + esc(card.name) + '　C' + (card.cost != null ? card.cost : '?') + ' ・ ' + (TYPE_JA[card.cardType] || card.cardType) + '</div>' +
+        '<div class="bt-mini tactics" title="' + esc(card.name) + '（C' + (card.cost != null ? card.cost : '?') + '・' + (equip ? '装備' : '消費') + '）">' +
+          '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '">' + imgTag(card, false, 'bt-mnoimg') + '</div>' +
+          (isActive && !readOnly ? '<button class="bt-mplay' + (disabled ? '' : ' ready') + '" data-act="play-tactics" data-instance="' + esc(t.card.instanceId) + '" data-equip="' + (equip ? 1 : 0) + '"' + (disabled ? ' disabled' : '') + '>' + (equip ? '装備' : '使う') + '</button>' : '') +
         '</div>';
-    }).join('');
+    }).join('') : '<span class="bt-zone-empty">なし</span>';
+
+    var play = player.playArea.length ? player.playArea.map(function (e) {
+      var card = cardOf(e.card.cardId);
+      return '<div class="bt-mini" title="' + esc(card.name) + '" data-act="show-detail" data-card="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div></div>';
+    }).join('') : '<span class="bt-zone-empty">なし</span>';
 
     return '' +
-      '<div class="bt-handbar">' +
-        '<div class="bt-actionbar">' + renderActionBar(state, activePlayerId) + '</div>' +
-        '<div class="bt-hand">' + (handHtml || '<span style="color:var(--xs-sub);font-size:12px">手札がありません</span>') + '</div>' +
+      '<div class="bt-field">' +
+        '<div><div class="bt-zone-label">TACTICS</div><div class="bt-zone">' + tactics + '</div></div>' +
+        '<div><div class="bt-zone-label">PLAY AREA</div><div class="bt-zone">' + play + '</div></div>' +
       '</div>';
   }
 
-  function renderActionBar(state, activePlayerId) {
-    var html = '';
-    if (sel && sel.kind === 'ATTACK') {
-      var card = cardOf(sel.cardId);
-      html += '<b>' + esc(card.name) + '</b>（アタック）を使用中: ';
-      if (sel.mode === 'PICK_ATTACKER') html += 'アタッカーにするリーダーを選んでください';
-      else if (sel.mode === 'PICK_TARGET') html += 'アタック対象（相手リーダー）を選んでください';
-      else if (sel.mode === 'READY') {
-        html += 'アタッカー: ' + esc(cardOf(state.players[sel.ownerId].leaders[sel.attackerLeaderIndex].cardId).name) +
-          ' → 対象: ' + esc(cardOf(state.players[opponentOf(sel.ownerId)].leaders[sel.targetLeaderIndex].cardId).name) +
-          ' <button class="bt-btn primary" data-act="confirm-attack">このカードでアタック</button>';
-      }
-      html += ' <button class="bt-btn" data-act="cancel-select">キャンセル</button>';
-    } else if (sel && sel.kind === 'MEMORIA') {
-      var mcard = cardOf(sel.cardId);
-      html += '<b>' + esc(mcard.name) + '</b>（メモリア）をプレイします ' +
-        '<button class="bt-btn primary" data-act="confirm-memoria">プレイする</button>' +
-        '<button class="bt-btn" data-act="cancel-select">キャンセル</button>';
-    } else if (sel && sel.mode === 'PICK_EQUIP_LEADER') {
-      html += '装備先のリーダーを選んでください <button class="bt-btn" data-act="cancel-select">キャンセル</button>';
-    } else {
-      html += '手札のカードを選択してください';
-    }
-    html += ' <button class="bt-btn danger" data-act="end-turn" style="margin-left:auto">ターン終了</button>';
-    return html;
+  // ---------- 直近の出来事（ログを読みやすい日本語に） ----------
+  function leaderNameOf(pid, idx) {
+    var p = game && game.state.players[pid];
+    var l = p && p.leaders[idx];
+    return l ? cardOf(l.cardId).name : '?';
   }
 
-  var EVENT_JA = {
-    GAME_STARTED: '対戦開始', MATCH_SETUP_COMPLETED: 'マッチ準備完了', ROUND_STARTED: 'ラウンド開始',
-    TURN_STARTED: 'ターン開始', CARD_DRAWN: 'カードを引いた', CARD_PLAYED: 'アタックカードをプレイ',
-    MEMORIA_PLAYED: 'メモリアカードをプレイ', TACTICS_PLAYED: 'タクティクスカードをプレイ',
-    EQUIPMENT_ATTACHED: '装備した', DAMAGE_DEALT: 'ダメージ', LEADER_DOWNED: 'ダウン',
-    LEADER_AWAKENED: '覚醒', ROUND_ENDED: 'ラウンド終了', MATCH_ENDED: 'マッチ終了',
-    TURN_ENDED: 'ターン終了', DECK_OUT_LOSS: 'デッキ切れ敗北',
-  };
-  function renderLog(state) {
-    var entries = state.actionLog.slice(-60).reverse();
-    return entries.map(function (e) {
-      var label = EVENT_JA[e.type] || e.type;
-      var extra = JSON.stringify(e.payload || {});
-      return '<div>R' + e.roundNumber + 'T' + e.turnNumber + ' ・ ' + esc(label) + ' ' + esc(extra) + '</div>';
+  function describeEvent(e) {
+    var p = e.payload || {};
+    switch (e.type) {
+      case 'TURN_STARTED': return { cls: 'turn', text: PLAYER_LABEL[p.playerId] + 'のターン' };
+      case 'ROUND_STARTED': return { cls: 'turn', text: 'ラウンド' + p.roundNumber + '開始' };
+      case 'CARD_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：アタック「' + cardOf(p.cardId).name + '」' };
+      case 'MEMORIA_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：メモリア「' + cardOf(p.cardId).name + '」' };
+      case 'TACTICS_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：タクティクス「' + cardOf(p.cardId).name + '」' };
+      case 'ATTACK_BOOSTED': return { cls: '', text: pShort(p.playerId) + '：アタック強化 +' + p.amount };
+      case 'DAMAGE_DEALT': {
+        var tp = p.targetPlayerId || p.playerId;
+        var ti = p.targetLeaderIndex != null ? p.targetLeaderIndex : p.leaderIndex;
+        return { cls: 'dmg', text: pShort(tp) + '「' + leaderNameOf(tp, ti) + '」に' + p.amount + 'ダメージ' };
+      }
+      case 'LEADER_DOWNED': return { cls: 'down', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」ダウン' };
+      case 'LEADER_AWAKENED': return { cls: 'awake', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」覚醒！' };
+      case 'EQUIPMENT_ATTACHED': return { cls: 'play', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」に「' + cardOf(p.cardId).name + '」を装備' };
+      case 'CARD_DISCARDED_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」を捨てた' };
+      case 'END_PHASE_DRAW': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：残りPPで' + p.count + '枚ドロー' } : null;
+      case 'HAND_DISCARDED_OVER_LIMIT': return { cls: '', text: pShort(p.playerId) + '：手札上限で' + p.count + '枚捨てた' };
+      case 'DECK_RESHUFFLED_FROM_TRASH': return { cls: '', text: pShort(p.playerId) + '：トラッシュを山札に戻した' };
+      case 'ROUND_ENDED': return { cls: 'turn', text: p.simultaneous ? 'ラウンド終了（両者同時敗北）' : 'ラウンド終了：' + PLAYER_LABEL[p.winner] + 'の勝利' };
+      case 'MATCH_ENDED': return { cls: 'turn', text: p.winner === 'DRAW' ? '試合終了（引き分け）' : '試合終了：' + PLAYER_LABEL[p.winner] + 'の勝利' };
+      case 'DECK_OUT_LOSS': return { cls: 'down', text: pShort(p.loserId) + '：デッキ切れで敗北' };
+      default: return null;
+    }
+  }
+
+  function renderCenter(state) {
+    // 現在のターン内の出来事だけを最大4件表示する
+    var log = state.actionLog;
+    var items = [];
+    for (var i = log.length - 1; i >= 0 && items.length < 4; i--) {
+      var e = log[i];
+      if (e.type === 'TURN_STARTED') break;
+      var d = describeEvent(e);
+      if (d) items.unshift(d);
+    }
+    var html = items.length ? items.map(function (d) { return '<span class="bt-ev ' + d.cls + '">' + esc(d.text) + '</span>'; }).join('')
+      : '<span class="bt-ev">' + esc(PLAYER_LABEL[state.turn.activePlayer]) + 'のターン ' + state.turn.turnNumber + '</span>';
+    return '<div class="bt-center"><div class="bt-ticker">' + html + '</div></div>';
+  }
+
+  // ---------- 手札ドック ----------
+  function renderDock(state, playerId, hideHand) {
+    var player = state.players[playerId];
+    var pp = player.ppCards.max - player.ppCards.tapped;
+    var handHtml;
+    if (hideHand) {
+      handHtml = '<div class="bt-hand-hidden">' + player.hand.map(function () { return '<span class="bt-cardback"></span>'; }).join('') + '<span>手札 ' + player.hand.length + '枚</span></div>';
+    } else if (player.hand.length === 0) {
+      handHtml = '<div class="bt-hand-hidden">手札がありません</div>';
+    } else {
+      handHtml = '<div class="bt-hand">' + player.hand.map(function (c) {
+        var card = cardOf(c.cardId);
+        var affordable = card.cost != null && card.cost <= pp;
+        var reason = card.cost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
+        var isSel = sel && sel.cardInstanceId === c.instanceId;
+        return '' +
+          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable ? '' : ' unplayable') + '" data-act="select-hand" data-instance="' + esc(c.instanceId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
+            '<span class="bt-cost">' + (card.cost != null ? card.cost : '?') + '</span>' +
+            '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
+            '<div class="bt-hname">' + esc(card.name) + '</div>' +
+          '</div>';
+      }).join('') + '</div>';
+    }
+
+    return '' +
+      '<div class="bt-dock"><div class="bt-dock-inner">' +
+        '<div class="bt-prompt">' + renderPrompt(state) + '</div>' +
+        handHtml +
+      '</div></div>';
+  }
+
+  function stepChip(label, idx, cur) {
+    return '<span class="bt-step' + (idx === cur ? ' on' : (idx < cur ? ' done' : '')) + '">' + label + '</span>';
+  }
+
+  function renderPrompt(state) {
+    var endBtn = '<button class="bt-btn danger" data-act="end-turn">ターン終了</button>';
+    if (sel && sel.kind === 'ATTACK') {
+      var card = cardOf(sel.cardId);
+      var step = sel.mode === 'PICK_ATTACKER' ? 0 : (sel.mode === 'PICK_TARGET' ? 1 : 2);
+      var msg = step === 0 ? 'アタックする自分のリーダーを選んでください'
+        : step === 1 ? 'アタックする相手のリーダーを選んでください'
+          : esc(leaderNameOf(sel.ownerId, sel.attackerLeaderIndex)) + ' → ' + esc(leaderNameOf(opponentOf(sel.ownerId), sel.targetLeaderIndex));
+      var multiInfo = '';
+      if (sel.multi > 1) {
+        multiInfo = '<span class="bt-step on" style="background:var(--yellow);border-color:var(--yellow)">アタック ' + (sel.attacks.length + 1) + '/' + sel.multi + '</span> ';
+        if (sel.attacks.length) {
+          multiInfo += '<span class="bt-ctext">予約済み: ' + sel.attacks.map(function (a, i) {
+            return (i + 1) + '回目 ' + esc(leaderNameOf(sel.ownerId, a.attackerLeaderIndex)) + '→' + esc(leaderNameOf(a.targetPlayerId, a.targetLeaderIndex));
+          }).join(' / ') + '</span>';
+        }
+      }
+      var lastOfMulti = sel.multi <= 1 || sel.attacks.length === sel.multi - 1;
+      return '' +
+        '<div class="bt-prompt-text">' + multiInfo + '<b>' + esc(card.name) + '</b>　' + msg + '<span class="bt-ctext">' + esc(card.text || '') + '</span></div>' +
+        '<div class="bt-steps">' + stepChip('① アタッカー', 0, step) + stepChip('② 対象', 1, step) + stepChip('③ 確定', 2, step) + '</div>' +
+        '<div class="bt-prompt-actions">' +
+          '<button class="bt-btn ghost" data-act="show-detail" data-card="' + esc(sel.cardId) + '">詳細</button>' +
+          '<button class="bt-btn ghost" data-act="cancel-select">キャンセル</button>' +
+          (step === 2 ? '<button class="bt-btn attack" data-act="confirm-attack">' + (lastOfMulti ? 'アタック！' : '次のアタックへ') + '</button>' : '') +
+        '</div>';
+    }
+    if (sel && sel.kind === 'MEMORIA') {
+      var mcard = cardOf(sel.cardId);
+      return '' +
+        '<div class="bt-prompt-text"><b>' + esc(mcard.name) + '</b>（メモリア）をプレイしますか？<span class="bt-ctext">' + esc(mcard.text || '') + '</span></div>' +
+        '<div class="bt-prompt-actions">' +
+          '<button class="bt-btn ghost" data-act="show-detail" data-card="' + esc(sel.cardId) + '">詳細</button>' +
+          '<button class="bt-btn ghost" data-act="cancel-select">キャンセル</button>' +
+          '<button class="bt-btn primary" data-act="confirm-memoria">プレイする</button>' +
+        '</div>';
+    }
+    if (sel && sel.mode === 'PICK_EQUIP_LEADER') {
+      return '<div class="bt-prompt-text">装備させる自分のリーダーを選んでください</div>' +
+        '<div class="bt-prompt-actions"><button class="bt-btn ghost" data-act="cancel-select">キャンセル</button></div>';
+    }
+    return '<div class="bt-prompt-text">' + (notice ? '<b style="color:#ffb3c7">' + esc(notice) + '</b>' : '手札のカードを選ぶか、タクティクスを使ってください') + '</div>' +
+      '<div class="bt-prompt-actions">' + endBtn + '</div>';
+  }
+
+  // ---------- ログ・オーバーレイ ----------
+  function renderLogDrawer(state) {
+    var entries = state.actionLog.slice(-200).reverse().map(function (e) {
+      var d = describeEvent(e);
+      if (!d) return '';
+      return '<div class="bt-logitem ' + d.cls + '"><span class="t">R' + e.roundNumber + ' T' + e.turnNumber + '</span><span>' + esc(d.text) + '</span></div>';
     }).join('');
+    return '' +
+      '<aside class="bt-drawer">' +
+        '<header>バトルログ <button class="bt-btn ghost" data-act="toggle-log">閉じる</button></header>' +
+        '<div class="bt-loglist">' + (entries || '<div class="bt-logitem">まだ記録がありません</div>') + '</div>' +
+      '</aside>';
+  }
+
+  function renderHandoffOverlay(state) {
+    var pid = state.turn.activePlayer;
+    var first = seenActive === null;
+    return '' +
+      '<div class="bt-overlay bt-handoff' + (pid === 'playerB' ? ' pB' : '') + '">' +
+        '<div class="bt-overlay-box">' +
+          '<p>' + (first ? '先攻' : 'ターン交代') + '</p>' +
+          '<div class="bt-big-title">PLAYER ' + pShort(pid) + '</div>' +
+          '<p>' + esc(PLAYER_LABEL[pid]) + 'に端末を渡してください。<br>準備ができたらタップして手札を表示します。</p>' +
+          '<button class="bt-btn primary big" data-act="dismiss-handoff">ターンを始める</button>' +
+        '</div>' +
+      '</div>';
   }
 
   function renderRoundEndOverlay(banner) {
+    var w = game.state.match.roundWins;
     return '' +
       '<div class="bt-overlay">' +
         '<div class="bt-overlay-box">' +
-          '<h2>ラウンド終了</h2>' +
+          '<div class="bt-big-title">ROUND END</div>' +
+          '<div class="bt-result-score">' + pBadge('playerA') + '<span>' + w.playerA + ' - ' + w.playerB + '</span>' + pBadge('playerB') + '</div>' +
           '<p>' + esc(banner) + '</p>' +
-          '<button class="bt-btn primary" data-act="dismiss-round-banner">次のラウンドへ</button>' +
+          '<button class="bt-btn primary big" data-act="dismiss-round-banner">次のラウンドへ</button>' +
         '</div>' +
       '</div>';
   }
 
   function renderMatchEndOverlay(state) {
-    var text = state.match.winner === 'DRAW' ? '両者同時敗北による引き分けです。' :
-      (state.match.winner === 'playerA' ? 'プレイヤーAの勝利です！' : 'プレイヤーBの勝利です！');
+    var w = state.match.roundWins;
+    var winner = state.match.winner;
+    var title = winner === 'DRAW' ? 'DRAW' : 'PLAYER ' + pShort(winner) + ' WIN';
+    var text = winner === 'DRAW' ? '両者同時敗北による引き分けです。' : PLAYER_LABEL[winner] + 'の勝利です！';
     return '' +
-      '<div class="bt-overlay">' +
+      '<div class="bt-overlay bt-handoff' + (winner === 'playerB' ? ' pB' : '') + '">' +
         '<div class="bt-overlay-box">' +
-          '<h2>試合終了</h2>' +
+          '<p>試合終了</p>' +
+          '<div class="bt-big-title">' + esc(title) + '</div>' +
+          '<div class="bt-result-score">' + pBadge('playerA') + '<span>' + w.playerA + ' - ' + w.playerB + '</span>' + pBadge('playerB') + '</div>' +
           '<p>' + esc(text) + '</p>' +
-          '<button class="bt-btn primary" data-act="back-to-setup">セットアップ画面に戻る</button>' +
+          '<button class="bt-btn primary big" data-act="back-to-setup">セットアップに戻る</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderDetailOverlay(cardId) {
+    var c = cardOf(cardId);
+    var chips = [];
+    if (c.cardType) chips.push(TYPE_JA[c.cardType] || c.cardType);
+    if (c.color) chips.push(COLOR_JA[c.color] || c.color);
+    if (c.cost != null) chips.push('コスト ' + c.cost);
+    if (c.rarity) chips.push(c.rarity);
+    if (c.ace) chips.push('ACE');
+    if (c.cardType === 'LEADER') {
+      chips.push('HP ' + c.hp + ' / ATK ' + c.atk);
+      if (c.awakenHp != null) chips.push('覚醒後 HP ' + c.awakenHp + ' / ATK ' + c.awakenAtk);
+    }
+    var text = c.text || (c.cardType === 'LEADER' ? '' : '（テキスト未登録）');
+    return '' +
+      '<div class="bt-overlay bt-detail' + (c.cardType === 'TACTICS' || c.cardType === 'PP_TICKET' ? ' landscape' : '') + '" data-act="close-detail">' +
+        '<div class="bt-overlay-box" data-act="noop">' +
+          '<div class="bt-dimg">' + imgTag(c, false, 'bt-lnoimg') + '</div>' +
+          '<div class="bt-dbody">' +
+            '<div style="color:var(--sub);font-size:12px">' + esc(c.cardNumber) + '</div>' +
+            '<h2>' + esc(c.name) + '</h2>' +
+            '<div class="bt-deck-summary">' + chips.map(function (x) { return '<span class="bt-chip">' + esc(x) + '</span>'; }).join('') + '</div>' +
+            (c.buildRule ? '<div class="bt-chip warn" style="align-self:flex-start">ビルドルール：' + esc(c.buildRule) + '</div>' : '') +
+            (text ? '<div class="bt-dtext">' + (c.cardType === 'LEADER' ? '覚醒時：' : '') + esc(text) + '</div>' : '') +
+            '<button class="bt-btn" data-act="close-detail" style="align-self:flex-start">閉じる</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
   }
@@ -477,12 +707,18 @@
   function doConfirmAttack() {
     var state = game.state;
     var playerId = sel.ownerId;
+    var current = { attackerLeaderIndex: sel.attackerLeaderIndex, targetPlayerId: opponentOf(playerId), targetLeaderIndex: sel.targetLeaderIndex };
+    // 複数回アタック（例: ストームラッシュ）は、回数分のアタッカー/対象を順に選んでからまとめて実行する
+    if (sel.multi > 1 && sel.attacks.length < sel.multi - 1) {
+      sel.attacks.push(current);
+      sel.targetLeaderIndex = null;
+      sel.mode = 'PICK_TARGET';
+      render();
+      return;
+    }
+    var options = sel.multi > 1 ? { attacks: sel.attacks.concat([current]) } : current;
     try {
-      Eng.Resolver.playAttackCardWithEffects(state, playerId, sel.cardInstanceId, {
-        attackerLeaderIndex: sel.attackerLeaderIndex,
-        targetPlayerId: opponentOf(playerId),
-        targetLeaderIndex: sel.targetLeaderIndex,
-      }, cardIndex);
+      Eng.Resolver.playAttackCardWithEffects(state, playerId, sel.cardInstanceId, options, cardIndex);
     } catch (e) { alert(e.message); return; }
     afterAction();
   }
@@ -530,12 +766,17 @@
   // ================= イベント束縛 =================
   function bindEvents() {
     root.querySelectorAll('[data-act]').forEach(function (el) {
-      el.addEventListener('click', function () { handleAction(el.getAttribute('data-act'), el); });
+      if (el.tagName === 'SELECT') return;
+      el.addEventListener('click', function (ev) {
+        ev.stopPropagation(); // 入れ子（リーダー内の詳細ボタン等）で外側の操作が二重に走らないようにする
+        handleAction(el.getAttribute('data-act'), el);
+      });
     });
-    var modeSel = document.getElementById('opt-mode');
-    if (modeSel) modeSel.addEventListener('change', function (e) { setup.mode = e.target.value; });
-    var firstSel = document.getElementById('opt-first');
-    if (firstSel) firstSel.addEventListener('change', function (e) { setup.firstPlayer = e.target.value; });
+    root.querySelectorAll('[data-act="pick-leader"]').forEach(function (el) {
+      el.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); handleAction('pick-leader', el); }
+      });
+    });
     root.querySelectorAll('[data-act="pick-saved"]').forEach(function (el) {
       el.addEventListener('change', function (e) {
         var side = el.getAttribute('data-side');
@@ -548,6 +789,8 @@
   }
 
   function handleAction(act, el) {
+    if (act === 'noop') return;
+    notice = null;
     if (act === 'pick-random') {
       var side = el.getAttribute('data-side');
       setup[side].source = 'RANDOM';
@@ -555,6 +798,8 @@
       render();
       return;
     }
+    if (act === 'set-mode') { setup.mode = el.getAttribute('data-value'); render(); return; }
+    if (act === 'set-first') { setup.firstPlayer = el.getAttribute('data-value'); render(); return; }
     if (act === 'coinflip') {
       setup.firstPlayer = Math.random() < 0.5 ? 'playerA' : 'playerB';
       render();
@@ -563,8 +808,11 @@
     if (act === 'start') { startMatch(); return; }
 
     if (act === 'toggle-log') { logOpen = !logOpen; render(); return; }
+    if (act === 'show-detail') { detailCardId = el.getAttribute('data-card'); render(); return; }
+    if (act === 'close-detail') { detailCardId = null; render(); return; }
+    if (act === 'dismiss-handoff') { seenActive = game.state.turn.activePlayer; render(); return; }
     if (act === 'back-to-setup') {
-      game = null; sel = null; lastRoundBanner = null;
+      game = null; sel = null; lastRoundBanner = null; detailCardId = null; logOpen = false;
       setup.savedDecks = loadSavedDecks();
       screen = 'setup';
       render();
@@ -578,11 +826,19 @@
       var state = game.state;
       var playerId = state.turn.activePlayer;
       var instanceId = el.getAttribute('data-instance');
+      if (sel && sel.cardInstanceId === instanceId) { sel = null; render(); return; } // もう一度押すと選択解除
       var handCard = state.players[playerId].hand.find(function (c) { return c.instanceId === instanceId; });
       if (!handCard) return;
       var card = cardOf(handCard.cardId);
+      var ppLeft = state.players[playerId].ppCards.max - state.players[playerId].ppCards.tapped;
+      if (card.cost == null) { sel = null; notice = '「' + card.name + '」はコストが未確定のためプレイできません'; render(); return; }
+      if (card.cost > ppLeft) { sel = null; notice = '「' + card.name + '」はPPが足りません（必要 ' + card.cost + ' / 残り ' + ppLeft + '）'; render(); return; }
       if (card.cardType === 'ATTACK') {
-        sel = { kind: 'ATTACK', ownerId: playerId, cardInstanceId: instanceId, cardId: handCard.cardId, mode: 'PICK_ATTACKER', attackerLeaderIndex: null, targetLeaderIndex: null };
+        sel = { kind: 'ATTACK', ownerId: playerId, cardInstanceId: instanceId, cardId: handCard.cardId, mode: 'PICK_ATTACKER', attackerLeaderIndex: null, targetLeaderIndex: null,
+          multi: Eng.Resolver.getMultiAttackCount(handCard.cardId) || 1, attacks: [] };
+        // 生存リーダーが1体だけならアタッカー選択を省略する
+        var alive = state.players[playerId].leaders.map(function (l, i) { return l.isDown ? -1 : i; }).filter(function (i) { return i >= 0; });
+        if (alive.length === 1) { sel.attackerLeaderIndex = alive[0]; sel.mode = 'PICK_TARGET'; }
       } else if (card.cardType === 'MEMORIA') {
         sel = { kind: 'MEMORIA', ownerId: playerId, cardInstanceId: instanceId, cardId: handCard.cardId };
       } else {
@@ -597,10 +853,11 @@
       if (!sel) return;
       var pIdx = Number(el.getAttribute('data-index'));
       var pPlayer = el.getAttribute('data-player');
-      if (sel.mode === 'PICK_ATTACKER' && pPlayer === sel.ownerId) {
+      if (sel.kind === 'ATTACK' && pPlayer === sel.ownerId) {
+        // アタッカーはいつでも選び直せる
         sel.attackerLeaderIndex = pIdx;
-        sel.mode = 'PICK_TARGET';
-      } else if (sel.mode === 'PICK_TARGET' && pPlayer === opponentOf(sel.ownerId)) {
+        sel.mode = sel.targetLeaderIndex == null ? 'PICK_TARGET' : 'READY';
+      } else if (sel.kind === 'ATTACK' && pPlayer === opponentOf(sel.ownerId) && sel.attackerLeaderIndex != null) {
         sel.targetLeaderIndex = pIdx;
         sel.mode = 'READY';
       } else if (sel.mode === 'PICK_EQUIP_LEADER' && pPlayer === sel.ownerId) {
@@ -628,6 +885,13 @@
       return;
     }
   }
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key !== 'Escape' || screen !== 'battle') return;
+    if (detailCardId) { detailCardId = null; render(); }
+    else if (logOpen) { logOpen = false; render(); }
+    else if (sel) { sel = null; render(); }
+  });
 
   render();
 })();

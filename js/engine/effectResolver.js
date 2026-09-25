@@ -595,6 +595,21 @@
     }
     if (cardId) {
       queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, extractChoiceOptions(options));
+      // 消費タクティクスの〖アタック強化〗（例：アドレナリン・特殊弾）と、それに紐づく〖アタック後〗は
+      // メモリアと同じく「次のアタック」に上乗せする。装備タクティクスの〖アタック後〗は装備の付与能力
+      // （EQUIP_GRANT_ABILITY）として別経路で扱うため、ここでは消費型のみ対象にする。
+      if (!options || options.subType !== 'EQUIPMENT') {
+        player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+        var boostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstanceId, cardIndex: cardIndex };
+        CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
+          if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+            if (e.condition && !e.condition(state, boostCtx)) return;
+            Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstanceId);
+          } else if (e.trigger === 'AFTER_ATTACK') {
+            player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstanceId });
+          }
+        });
+      }
     }
     return result;
   }
@@ -707,6 +722,11 @@
     var player = state.players[playerId];
     var idx = player.hand.findIndex(function (c) { return c.instanceId === cardInstanceId; });
     var cardData = GameState.getCardData(cardIndex, cardId);
+    // 件数の検証はPP支払い・カード移動より前に行う（後で投げると支払い済みの中途半端な状態が残るため）
+    var attacks = (options && options.attacks) || [];
+    if (attacks.length !== count) {
+      throw new Error('MULTI_ATTACK（' + count + '回）に対してoptions.attacksの指定が' + attacks.length + '件です（' + count + '件必要）');
+    }
     var multiAttackCost = Phases.requireKnownCost(cardData);
     if (!Phases.payPP(player, multiAttackCost)) {
       throw new Error('PPが不足しています（必要:' + multiAttackCost + '）');
@@ -715,19 +735,30 @@
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
     Events.logEvent(state, 'CARD_PLAYED', { playerId: playerId, cardId: instance.cardId, kind: 'ATTACK' });
 
-    var attacks = (options && options.attacks) || [];
-    if (attacks.length !== count) {
-      throw new Error('MULTI_ATTACK（' + count + '回）に対してoptions.attacksの指定が' + attacks.length + '件です（' + count + '件必要）');
+    function firstAliveIndex(pid) {
+      return state.players[pid].leaders.findIndex(function (l) { return !l.isDown; });
     }
 
     var lastResult = null;
-    attacks.forEach(function (atk, i) {
+    var drained = false;
+    for (var i = 0; i < attacks.length; i++) {
+      var atk = attacks[i];
+      // PROVISIONAL（ruleConfig.js multiAttackSemantics.downedPredeclaredTarget）: 対象はプレイ時にまとめて
+      // 指定されるため、先の回で既にダウンした対象/アタッカーが指定されていることがある。その場合は
+      // 生存している先頭のリーダーに差し替え、差し替え先が無ければ残りのアタックを打ち切る。
+      var attackerIndex = atk.attackerLeaderIndex;
+      if (!state.players[playerId].leaders[attackerIndex] || state.players[playerId].leaders[attackerIndex].isDown) attackerIndex = firstAliveIndex(playerId);
+      var targetIndex = atk.targetLeaderIndex;
+      var targetLeader = state.players[atk.targetPlayerId].leaders[targetIndex];
+      if (!targetLeader || targetLeader.isDown) targetIndex = firstAliveIndex(atk.targetPlayerId);
+      if (attackerIndex < 0 || targetIndex < 0) break;
       lastResult = declareOneAttackForMultiAttack(
         state, playerId, cardInstanceId, cardId, attackCardEffects,
-        atk.attackerLeaderIndex, atk.targetPlayerId, atk.targetLeaderIndex,
-        options.chooseTarget, options.chooseHealTarget, i === 0, cardIndex
+        attackerIndex, atk.targetPlayerId, targetIndex,
+        options.chooseTarget, options.chooseHealTarget, !drained, cardIndex
       );
-    });
+      drained = true;
+    }
     return lastResult;
   }
 
