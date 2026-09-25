@@ -208,6 +208,40 @@
     };
   }
 
+  // 対戦相手の生存リーダー「全員」を返す（makeAnyOpponentLeaderTargetは単体選択な点が異なる。
+  // makeAllOwnAliveLeadersTargetの対戦相手版）。アタックに紐づかないON_PLAY効果（例：勝利へのジャンプ
+  // 「対戦相手のリーダーすべてに50ダメージ」）用。
+  function makeAllAliveOpponentLeadersTarget() {
+    return function (state, ctx) {
+      var opponentId = GameState.getOpponentId(ctx.ownerPlayerId);
+      var opponent = state.players[opponentId];
+      var results = [];
+      opponent.leaders.forEach(function (l, i) { if (!l.isDown) results.push({ playerId: opponentId, leaderIndex: i }); });
+      return results;
+    };
+  }
+
+  // ---- Phase E: 条件付きON_ATTACK/ATTACK_BOOSTボーナス用の追加Condition ----
+
+  // 「自分のリーダーの色がすべて異なるなら」（アナイアレーション実装のために新設）。
+  // リーダーの色はデッキ構築時に固定される属性であり、ダウン状態などの盤面状況では変化しないため、
+  // isDownに関わらず4体全員の色を見る（生存リーダーだけに絞る、という解釈は取らない）。
+  // ctx.cardIndexが無い、またはいずれかのリーダーの色が引けない場合は安全にfalseを返す。
+  function makeAllLeadersDifferentColorsCondition() {
+    return function (state, ctx) {
+      if (!ctx.cardIndex) return false;
+      var leaders = state.players[ctx.ownerPlayerId].leaders;
+      var colors = leaders.map(function (l) {
+        var card = ctx.cardIndex[l.cardId];
+        return card && card.color;
+      });
+      if (colors.some(function (c) { return !c; })) return false;
+      var unique = {};
+      colors.forEach(function (c) { unique[c] = true; });
+      return Object.keys(unique).length === colors.length;
+    };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -222,5 +256,7 @@
     makeOwnAliveLeaderTarget: makeOwnAliveLeaderTarget,
     makeAllOwnAliveLeadersTarget: makeAllOwnAliveLeadersTarget,
     makeAnyOpponentLeaderTarget: makeAnyOpponentLeaderTarget,
+    makeAllAliveOpponentLeadersTarget: makeAllAliveOpponentLeadersTarget,
+    makeAllLeadersDifferentColorsCondition: makeAllLeadersDifferentColorsCondition,
   };
 }));

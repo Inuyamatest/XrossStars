@@ -286,17 +286,17 @@
       var card = num ? CARD_INDEX[num] : null;
       if (card) {
         html += '' +
-          '<button class="db-leader-slot" data-act="open-picker" data-slot="' + i + '">' +
+          '<div class="db-leader-slot" data-act="open-picker" data-slot="' + i + '">' +
             '<span class="db-swatch" style="background:' + (COLOR_HEX[card.color] || '#9b9797') + '"></span>' +
             (cardImg(card) ? '<img src="' + esc(cardImg(card)) + '" alt="" loading="lazy">' : '<div class="db-leader-empty">' + esc(card.cardNumber) + '<br>' + esc(card.name) + '</div>') +
             '<span class="db-leader-name">' + esc(card.name) + '</span>' +
             '<button class="db-remove" data-act="remove-leader" data-slot="' + i + '" title="外す">✕</button>' +
-          '</button>';
+          '</div>';
       } else {
         html += '' +
-          '<button class="db-leader-slot" data-act="open-picker" data-slot="' + i + '">' +
+          '<div class="db-leader-slot" data-act="open-picker" data-slot="' + i + '">' +
             '<div class="db-leader-empty">＋<br>リーダー ' + (i + 1) + '</div>' +
-          '</button>';
+          '</div>';
       }
     }
     html += '</div></div>';
@@ -564,11 +564,11 @@
     });
   }
 
-  function handleAction(act, el) {
+  function handleAction(act, el, e) {
     if (act === 'open-picker') { state.picker = { slot: Number(el.getAttribute('data-slot')) }; state.filters.pickerQ = ''; render(); return; }
     if (act === 'close-picker') { state.picker = null; render(); return; }
     if (act === 'pick-leader') { setLeader(state.picker.slot, el.getAttribute('data-number')); return; }
-    if (act === 'remove-leader') { removeLeader(Number(el.getAttribute('data-slot'))); return; }
+    if (act === 'remove-leader') { removeLeader(Number(el.getAttribute('data-slot')), e); return; }
     if (act === 'tab') { state.activeTab = el.getAttribute('data-tab'); state.page = 0; render(); return; }
     if (act === 'toggle') { var f = el.getAttribute('data-f'); state.filters[f] = !state.filters[f]; state.page = 0; render(); return; }
     if (act === 'page') { state.page += Number(el.getAttribute('data-dir')); render(); return; }

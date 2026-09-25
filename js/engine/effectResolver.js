@@ -128,12 +128,92 @@
         return state;
       }
 
+      case 'FREE_PLAY_MEMORIA_FROM_HAND': {
+        // Phase G: 一騎当千「自分の手札のエース以外のメモリアカードを、コストの合計がaction.costLimit以下に
+        // なるように好きな枚数公開する。公開したカードを、コストを支払わず好きな順番でプレイする。」
+        // PROVISIONAL: 選択はctx.chooseFreePlayFromHand(candidates, costLimit, state) => instanceId[]（順序＝プレイ順）に
+        // 委ねる。省略時は「してもよい」を辞退したものとして何もしない。コスト合計超過分・重複・不正な
+        // instanceIdは安全に無視する（申告どおりに信頼せず、こちら側で合計を再計算して打ち切る）。
+        var freePlayer = state.players[ctx.ownerPlayerId];
+        var freeCandidates = freePlayer.hand.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: ctx.cardIndex[c.cardId].cost || 0 }; });
+        if (freeCandidates.length === 0) return state;
+        var chosenFreeIds = (ctx.chooseFreePlayFromHand ? ctx.chooseFreePlayFromHand(freeCandidates.slice(), action.costLimit, state) : []) || [];
+        var freeTotalCost = 0;
+        var seenFreeIds = {};
+        chosenFreeIds.forEach(function (instanceId) {
+          if (seenFreeIds[instanceId]) return;
+          var cand = freeCandidates.find(function (c) { return c.instanceId === instanceId; });
+          if (!cand) return; // 候補にないIDは無視
+          if (freeTotalCost + cand.cost > action.costLimit) return; // 上限超過分は無視（安全側）
+          seenFreeIds[instanceId] = true;
+          freeTotalCost += cand.cost;
+          var idx = freePlayer.hand.findIndex(function (c) { return c.instanceId === instanceId; });
+          if (idx < 0) return;
+          var instance = freePlayer.hand.splice(idx, 1)[0];
+          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, instance, cardIndex, { chooseTarget: ctx.chooseTarget });
+        });
+        return state;
+      }
+
+      case 'DECK_LOOK_FREE_PLAY_MEMORIA': {
+        // Phase G: リンク・アサルト「自分のデッキの上から{action.count}枚を見る。その中からコスト
+        // {action.maxCost}以下のメモリアカード1枚を、コストを支払わずにプレイしてもよい。残りのカードを
+        // トラッシュに置く。」PROVISIONAL: 選択はctx.chooseDeckLookPlay(candidates, state) => instanceId|null
+        // に委ねる（省略時・null＝辞退）。見た残り（プレイした1枚以外）は裏向きでトラッシュへ置く
+        // （ruleConfig.js deckLookTrashOrientation参照。公式資料に表裏の明記なし）。
+        var deckLookPlayer = state.players[ctx.ownerPlayerId];
+        var revealed = deckLookPlayer.deck.splice(0, Math.min(action.count, deckLookPlayer.deck.length));
+        var deckLookCandidates = revealed.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          return cd && cd.cardType === 'MEMORIA' && (cd.cost || 0) <= action.maxCost;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
+        var chosenId = (deckLookCandidates.length > 0 && ctx.chooseDeckLookPlay) ? ctx.chooseDeckLookPlay(deckLookCandidates.slice(), state) : null;
+        var chosenCard = chosenId ? revealed.find(function (c) { return c.instanceId === chosenId; }) : null;
+        revealed.forEach(function (c) {
+          if (chosenCard && c.instanceId === chosenCard.instanceId) return;
+          deckLookPlayer.trash.push({ card: c, faceUp: false });
+        });
+        if (chosenCard) {
+          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, chosenCard, cardIndex, { chooseTarget: ctx.chooseTarget });
+        }
+        return state;
+      }
+
+      case 'REPLAY_SELECTED_FROM_PLAY_AREA': {
+        // Phase G: 三銃士「プレイエリアのエース以外のコスト{action.maxCost}のメモリアカードを最大
+        // {action.maxCount}枚選び、プレイし直す。」対象カードはプレイエリアから移動しない（そのまま）。
+        // PROVISIONAL: 再トリガーするのはON_PLAY効果のみとする（ATTACK_BOOST/AFTER_ATTACKへの
+        // 再リンクは、公式資料に「プレイし直す」の対象Trigger範囲の明記が無いため見送る）。
+        // 選択はctx.chooseReplayFromPlayArea(candidates, maxCount, state) => instanceId[]に委ねる
+        // （省略時は「してもよい」を辞退）。
+        var replayPlayer = state.players[ctx.ownerPlayerId];
+        var replayCandidates = replayPlayer.playArea.filter(function (entry) {
+          var cd = ctx.cardIndex[entry.card.cardId];
+          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true && (action.maxCost == null || (cd.cost || 0) <= action.maxCost);
+        }).map(function (entry) { return { instanceId: entry.card.instanceId, cardId: entry.card.cardId }; });
+        if (replayCandidates.length === 0) return state;
+        var chosenReplayIds = (ctx.chooseReplayFromPlayArea ? ctx.chooseReplayFromPlayArea(replayCandidates.slice(), action.maxCount, state) : []) || [];
+        var seenReplayIds = {};
+        chosenReplayIds.slice(0, action.maxCount).forEach(function (instanceId) {
+          if (seenReplayIds[instanceId]) return;
+          seenReplayIds[instanceId] = true;
+          var cand = replayCandidates.find(function (c) { return c.instanceId === instanceId; });
+          if (!cand) return;
+          queueOnPlayEffects(state, ctx.ownerPlayerId, { instanceId: cand.instanceId, cardId: cand.cardId }, cardIndex, { chooseTarget: ctx.chooseTarget });
+        });
+        return state;
+      }
+
       case 'ATTACK_DAMAGE_BONUS':
       case 'EQUIP_HP_MODIFIER':
       case 'EQUIP_ATK_MODIFIER':
       case 'EQUIP_GRANT_ABILITY':
+      case 'MULTI_ATTACK':
         // これらはdeclareAttackWithEffects/getEffectiveMaxHp/getEquipmentAtkModifier/
-        // computeGrantedAbilitiesForCardが個別に参照する値であり、
+        // computeGrantedAbilitiesForCard/getMultiAttackCountが個別に参照する値であり、
         // 「即時にGameStateを書き換えるAction」としては扱わない。ここに来た場合は呼び出し側の誤りとする。
         throw new Error(action.type + ' はapplyAction()ではなく専用の計算関数から参照してください');
 
@@ -420,6 +500,33 @@
     return state;
   }
 
+  // ---- Phase G: メモリアカードをコストを支払わずにプレイする（FREE_PLAY系）----
+  // cardInstanceは呼び出し側が既に本来の置き場（手札・デッキ等）から取り出し済みのものを渡す
+  // （このヘルパー自身は取り出し処理を行わない）。playMemoriaCardWithEffectsの「プレイエリアへ積む・
+  // ON_PLAYをResolutionStackへ積む・ATTACK_BOOST/紐づくAFTER_ATTACKを処理する」の3点を再現するが、
+  // Phases.playMemoriaCard自体は呼ばない（PP支払い・手札からの取り出しは既に済んでいるか、
+  // 元々手札に無いカード〔デッキルック由来〕のため）。ATTACK専用カードは対応しない
+  // （攻撃には新たな攻撃者/対象の選択が必要になり、このヘルパーの対象外。呼び出し側が保証する）。
+  function playMemoriaForFreeAndQueueEffects(state, playerId, cardInstance, cardIndex, extraCtx) {
+    var player = state.players[playerId];
+    player.playArea.push({ card: cardInstance, order: player.playArea.length, pendingTriggers: [] });
+    Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: cardInstance.cardId });
+
+    queueOnPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
+
+    player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+    var attackBoostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId, cardIndex: cardIndex };
+    CardEffectData.getEffectsForCard(cardInstance.cardId).forEach(function (e) {
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, attackBoostCtx)) return;
+        Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstance.instanceId);
+      } else if (e.trigger === 'AFTER_ATTACK') {
+        player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstance.instanceId });
+      }
+    });
+    return state;
+  }
+
   // ---- メモリアカードのプレイ：既存のPhases.playMemoriaCardを土台に、
   //      登録済み効果（ON_PLAY即時効果／ATTACK_BOOST／次のアタックに紐づくAFTER_ATTACK）を統合する ----
   // ON_PLAYはqueueOnPlayEffects()と同じ経路でResolutionStackへ積む（プレイ時効果の入口を一本化する）。
@@ -436,8 +543,14 @@
     queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, extractChoiceOptions(options));
 
     player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+    // Phase E: ATTACK_BOOSTにconditionが付いている場合、このメモリアをプレイした「今」の時点
+    // （このカード自身は既にPhases.playMemoriaCardでプレイエリアへ積まれた後）で判定する。
+    // We are...!の「メモリアカードの数は【アタック強化】を実行するときに数える」という printedルーリングに
+    // 基づく（ctx.ownerPlayerId/cardIndexがあればPLAY_AREA_TYPE_COUNT等の既存Conditionがそのまま使える）。
+    var attackBoostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstanceId, cardIndex: cardIndex };
     CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
       if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, attackBoostCtx)) return;
         Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstanceId);
       } else if (e.trigger === 'AFTER_ATTACK') {
         // このAFTER_ATTACK効果は「次のアタック」に付随する。ctxは次のplayAttackCardWithEffects呼び出し時に完成させる。
@@ -481,18 +594,141 @@
   }
 
   // ---- ON_ATTACK：アタックカード自身の固有ダメージをattackCardBaseDamageとして算出 ----
-  function computeAttackCardBaseDamage(cardId) {
+  // Phase E: state/ctxを受け取り、ATTACK_DAMAGE_BONUSにconditionが付いていれば評価する
+  // （例：アナイアレーション「自分のリーダーの色がすべて異なるなら」、オールスターコンボ
+  //  「プレイエリアに他のアタックカードがN枚以上あるなら」）。conditionが無いエントリは
+  // 従来どおり常に加算する（既存の全登録カードと完全後方互換）。呼び出し側
+  // （playAttackCardWithEffects）がこの関数を呼ぶ時点では、このカード自身はまだ
+  // プレイエリアに積まれていない（Phases.playAttackCardの前）ため、PLAY_AREA_TYPE_COUNTで
+  // 「他の」アタックカードを数える場合も自分自身を除外する特別扱いは不要（タイミング上自然に除外される）。
+  function computeAttackCardBaseDamage(cardId, state, ctx) {
     var total = 0;
     CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
-      if (e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'ATTACK_DAMAGE_BONUS') total += e.action.amount;
+      if (e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'ATTACK_DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, ctx)) return;
+        total += e.action.amount;
+      }
     });
     return total;
+  }
+
+  // ---- MULTI_ATTACK（Phase F）：1回のカードプレイで複数回アタック宣言する（例：ストームラッシュ
+  //      「アタックする」×3、「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」）----
+  // マーカーの持ち方はEQUIP_*系と同じ：ON_ATTACKのActionに{type:'MULTI_ATTACK', count:N}を持たせ、
+  // applyAction()の一般ディスパッチには乗せない（専用の呼び出し元だけが参照する）。
+  function getMultiAttackCount(cardId) {
+    var found = null;
+    CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
+      if (e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'MULTI_ATTACK') found = e.action.count;
+    });
+    return found; // null = 通常の単発アタックカード
+  }
+
+  // 1回分のアタック宣言後処理（ON_ATTACKの条件付きボーナス計算・Combat.declareAttack呼び出し・
+  // オーバーキル計算・AFTER_ATTACK/装備付与能力のキュー積み・ON_AWAKEN判定）。
+  // playAttackCardWithEffectsの単発アタック経路（既存・テスト済み、無改修）と全く同じロジックを、
+  // MULTI_ATTACK用に複製している（combat.jsを変更せずdealDamageAndCheckDownが計算を複製している
+  // 前例と同じ考え方）。drainPendingAfterAttackがtrueの回だけ、メモリア側が積んでおいた
+  // 「次の1回のアタックのみ」のAFTER_ATTACK効果を消費する（1回目の宣言でだけtrueにすることで、
+  // pendingAttackBoostと同様に自然と「最初の1回のみ」に限定される）。
+  function declareOneAttackForMultiAttack(state, playerId, cardInstanceId, cardId, attackCardEffects, attackerLeaderIndex, targetPlayerId, targetLeaderIndex, chooseTarget, chooseHealTarget, drainPendingAfterAttack, cardIndex) {
+    var player = state.players[playerId];
+    var ctx = {
+      ownerPlayerId: playerId,
+      sourceInstanceId: cardInstanceId,
+      attackerPlayerId: playerId,
+      attackerLeaderIndex: attackerLeaderIndex,
+      targetPlayerId: targetPlayerId,
+      targetLeaderIndex: targetLeaderIndex,
+      cardIndex: cardIndex,
+    };
+    var baseDamage = computeAttackCardBaseDamage(cardId, state, ctx);
+
+    var targetLeaderBeforeAttack = state.players[targetPlayerId].leaders[targetLeaderIndex];
+    var targetHpBeforeAttack = GameState.getLeaderCurrentHp(cardIndex, targetLeaderBeforeAttack);
+    var attackerLeaderForOverkill = state.players[playerId].leaders[attackerLeaderIndex];
+    var boostBeforeConsumption = player.pendingAttackBoost || 0;
+    var totalDamageForOverkill = boostBeforeConsumption + baseDamage + GameState.getLeaderCurrentAtk(cardIndex, attackerLeaderForOverkill);
+    // バグ修正（Phase F、MULTI_ATTACKの実装過程で発見）：ON_AWAKENは「覚醒した瞬間」の
+    // 一度きりのTriggerのはずだが、単発アタック経路の既存実装は「現在覚醒しているか」だけを見ていたため、
+    // 既に覚醒済みのリーダーが（同じカードプレイ内であれ、別ターンであれ）ダウンを取るたびに
+    // ON_AWAKEN効果を再発火させてしまうバグがあった。MULTI_ATTACKで同じリーダーが1回のプレイ内で
+    // 複数回攻撃できるようになったことでこのバグが顕在化しやすくなったため、ここで併せて修正する。
+    var attackerWasAwakenedBefore = attackerLeaderForOverkill.awakened;
+
+    var result = Combat.declareAttack(state, {
+      attackerPlayerId: playerId,
+      attackerLeaderIndex: attackerLeaderIndex,
+      targetPlayerId: targetPlayerId,
+      targetLeaderIndex: targetLeaderIndex,
+      attackCardBaseDamage: baseDamage,
+    }, cardIndex);
+
+    var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
+    ctx.chooseTarget = chooseTarget;
+    ctx.overkillAmount = overkillAmount;
+
+    attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
+      .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
+
+    queueEquipmentGrantedAfterAttackEffects(state, playerId, attackerLeaderIndex, ctx, cardIndex);
+
+    if (drainPendingAfterAttack) {
+      var queued = player.pendingAfterAttackEffects || [];
+      player.pendingAfterAttackEffects = [];
+      queued.forEach(function (item) {
+        var itemCtx = Object.assign({}, ctx, { sourceInstanceId: item.sourceInstanceId });
+        ResolutionStack.push(state.resolutionStack, buildPendingEffect(item.effect, itemCtx, cardIndex));
+      });
+    }
+
+    if (!attackerWasAwakenedBefore && result.state.players[playerId].leaders[attackerLeaderIndex].awakened) {
+      var awakenCtx = Object.assign({}, ctx, { chooseTarget: chooseHealTarget || chooseTarget });
+      CardEffectData.getEffectsForCard(result.state.players[playerId].leaders[attackerLeaderIndex].cardId)
+        .filter(function (e) { return e.trigger === 'ON_AWAKEN'; })
+        .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, awakenCtx, cardIndex)); });
+    }
+
+    return result;
+  }
+
+  // options: { attacks: [{attackerLeaderIndex, targetPlayerId, targetLeaderIndex}, ...]（ちょうどcount件必要）,
+  //            chooseTarget?, chooseHealTarget? }
+  // PP支払い・手札からの除去・プレイエリアへの追加は（カード1枚のプレイなので）1回だけ行う
+  // （Phases.playAttackCardをcount回呼ぶとカードがcount回消費される不整合になるため、
+  // ここではPhases.payPPのみ使い、それ以外はこの関数が直接行う。Phases.playAttackCard自体は無改修）。
+  function playMultiAttackCardWithEffects(state, playerId, cardInstanceId, cardId, attackCardEffects, count, options, cardIndex) {
+    var player = state.players[playerId];
+    var idx = player.hand.findIndex(function (c) { return c.instanceId === cardInstanceId; });
+    var cardData = GameState.getCardData(cardIndex, cardId);
+    if (!Phases.payPP(player, cardData.cost || 0)) {
+      throw new Error('PPが不足しています（必要:' + (cardData.cost || 0) + '）');
+    }
+    var instance = player.hand.splice(idx, 1)[0];
+    player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
+    Events.logEvent(state, 'CARD_PLAYED', { playerId: playerId, cardId: instance.cardId, kind: 'ATTACK' });
+
+    var attacks = (options && options.attacks) || [];
+    if (attacks.length !== count) {
+      throw new Error('MULTI_ATTACK（' + count + '回）に対してoptions.attacksの指定が' + attacks.length + '件です（' + count + '件必要）');
+    }
+
+    var lastResult = null;
+    attacks.forEach(function (atk, i) {
+      lastResult = declareOneAttackForMultiAttack(
+        state, playerId, cardInstanceId, cardId, attackCardEffects,
+        atk.attackerLeaderIndex, atk.targetPlayerId, atk.targetLeaderIndex,
+        options.chooseTarget, options.chooseHealTarget, i === 0, cardIndex
+      );
+    });
+    return lastResult;
   }
 
   // ---- アタック実行：既存のPhases.playAttackCard / Combat.declareAttackを土台に、
   //      登録済み効果（自身のON_ATTACKダメージ、AFTER_ATTACK、メモリアが積んでおいたAFTER_ATTACK、
   //      ダウン後のON_AWAKEN）を統合する ----
   // options: { attackerLeaderIndex, targetPlayerId, targetLeaderIndex, chooseTarget?, chooseHealTarget? }
+  //          MULTI_ATTACKカードの場合は代わりに { attacks: [...], chooseTarget?, chooseHealTarget? }
   function playAttackCardWithEffects(state, playerId, cardInstanceId, options, cardIndex) {
     var player = state.players[playerId];
     var handEntry = player.hand.find(function (c) { return c.instanceId === cardInstanceId; });
@@ -500,7 +736,26 @@
     var cardId = handEntry.cardId;
 
     var attackCardEffects = CardEffectData.getEffectsForCard(cardId);
-    var baseDamage = computeAttackCardBaseDamage(cardId);
+
+    var multiAttackCount = getMultiAttackCount(cardId);
+    if (multiAttackCount) {
+      return playMultiAttackCardWithEffects(state, playerId, cardInstanceId, cardId, attackCardEffects, multiAttackCount, options, cardIndex);
+    }
+
+    // Phase E: ON_ATTACKのATTACK_DAMAGE_BONUSがconditionを持つ場合に備え、
+    // Phases.playAttackCard呼び出し前（＝このカードがまだプレイエリアに積まれる前）の
+    // 時点で判定に必要なctxを組み立てておく。overkillAmount/chooseTargetはこの時点では
+    // まだ確定しないため後で同じオブジェクトに追記する（ctxを二重に作らない）。
+    var ctx = {
+      ownerPlayerId: playerId,
+      sourceInstanceId: cardInstanceId,
+      attackerPlayerId: playerId,
+      attackerLeaderIndex: options.attackerLeaderIndex,
+      targetPlayerId: options.targetPlayerId,
+      targetLeaderIndex: options.targetLeaderIndex,
+      cardIndex: cardIndex,
+    };
+    var baseDamage = computeAttackCardBaseDamage(cardId, state, ctx);
 
     // Phase D-2-D: OVERKILL_AMOUNT用に、combat.js内で計算される合計ダメージと同じ式を
     // ここで独立して事前計算しておく（combat.js自体は無改修。既存のdealDamageAndCheckDownが
@@ -510,6 +765,10 @@
     var attackerLeaderForOverkill = state.players[playerId].leaders[options.attackerLeaderIndex];
     var boostBeforeConsumption = player.pendingAttackBoost || 0; // declareAttack内で消費・リセットされる直前の値
     var totalDamageForOverkill = boostBeforeConsumption + baseDamage + GameState.getLeaderCurrentAtk(cardIndex, attackerLeaderForOverkill);
+    // バグ修正（Phase F）：ON_AWAKENは「覚醒した瞬間」の一度きりのTriggerのはずだが、
+    // 「現在覚醒しているか」だけを見ていたため、既に覚醒済みのリーダーが別ターンで再びダウンを取ると
+    // ON_AWAKEN効果を再発火させてしまうバグがあった。MULTI_ATTACK実装時に発見したため併せて修正する。
+    var attackerWasAwakenedBefore = attackerLeaderForOverkill.awakened;
 
     var result = Phases.playAttackCard(state, playerId, cardInstanceId, {
       attackerLeaderIndex: options.attackerLeaderIndex,
@@ -521,16 +780,15 @@
     // ダウンした場合のみOverkillの概念が成立する（PROVISIONAL、ruleConfig.js参照）
     var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
 
-    var ctx = {
-      ownerPlayerId: playerId,
-      sourceInstanceId: cardInstanceId,
-      attackerPlayerId: playerId,
-      attackerLeaderIndex: options.attackerLeaderIndex,
-      targetPlayerId: options.targetPlayerId,
-      targetLeaderIndex: options.targetLeaderIndex,
-      chooseTarget: options.chooseTarget,
-      overkillAmount: overkillAmount,
-    };
+    // 上で組み立てたctxに、この時点で確定した値を追記する（cardIndexは既に入っている）
+    ctx.chooseTarget = options.chooseTarget;
+    ctx.overkillAmount = overkillAmount;
+    // Phase G: FREE_PLAY_MEMORIA_FROM_HAND/DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA用の
+    // 選択コールバック（一騎当千・リンク・アサルト・三銃士はいずれもこのカード自身のAFTER_ATTACKなので、
+    // このctx経由で渡す）。省略時はapplyAction側の安全なデフォルト（辞退）に委ねる。
+    ctx.chooseFreePlayFromHand = options.chooseFreePlayFromHand;
+    ctx.chooseDeckLookPlay = options.chooseDeckLookPlay;
+    ctx.chooseReplayFromPlayArea = options.chooseReplayFromPlayArea;
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
@@ -548,8 +806,9 @@
       ResolutionStack.push(state.resolutionStack, buildPendingEffect(item.effect, itemCtx, cardIndex));
     });
 
-    // ON_AWAKEN：declareAttack内で覚醒していれば、そのリーダーの覚醒時効果を解決する
-    if (result.state.players[playerId].leaders[options.attackerLeaderIndex].awakened) {
+    // ON_AWAKEN：このアタックで新たに覚醒した場合のみ、そのリーダーの覚醒時効果を解決する
+    // （既に覚醒済みだった場合は再発火させない。Phase Fで修正）
+    if (!attackerWasAwakenedBefore && result.state.players[playerId].leaders[options.attackerLeaderIndex].awakened) {
       var awakenCtx = Object.assign({}, ctx, { chooseTarget: options.chooseHealTarget || options.chooseTarget });
       CardEffectData.getEffectsForCard(result.state.players[playerId].leaders[options.attackerLeaderIndex].cardId)
         .filter(function (e) { return e.trigger === 'ON_AWAKEN'; })
@@ -577,6 +836,7 @@
     queueEquipmentGrantedAfterAttackEffects: queueEquipmentGrantedAfterAttackEffects,
     computeAttackCardBaseDamage: computeAttackCardBaseDamage,
     playAttackCardWithEffects: playAttackCardWithEffects,
+    getMultiAttackCount: getMultiAttackCount,
     // Phase D-2: Condition / Target ファクトリ（実体はeffectFactories.js。循環依存を避けるため
     // cardEffectData.jsはeffectFactories.jsを直接requireし、ここでは既存API利用側のために再エクスポートする）
     countPlayAreaByType: EffectFactories.countPlayAreaByType,
@@ -591,6 +851,8 @@
     makeOwnAliveLeaderTarget: EffectFactories.makeOwnAliveLeaderTarget,
     makeAllOwnAliveLeadersTarget: EffectFactories.makeAllOwnAliveLeadersTarget,
     makeAnyOpponentLeaderTarget: EffectFactories.makeAnyOpponentLeaderTarget,
+    makeAllLeadersDifferentColorsCondition: EffectFactories.makeAllLeadersDifferentColorsCondition,
+    makeAllAliveOpponentLeadersTarget: EffectFactories.makeAllAliveOpponentLeadersTarget,
     // Phase D-3: MOVE_EQUIPMENT / TEMP_ATK_MODIFIER / DISTRIBUTED_HEAL / DERIVED_AMOUNT
     resolveActionAmount: resolveActionAmount,
     applyDistributedHeal: applyDistributedHeal,

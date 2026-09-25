@@ -155,6 +155,58 @@
         status: 'PROVISIONAL',
         source: 'data/cards.json内のconfirmStatus/confirmedフィールド自体が未確認を示している',
       },
+      // Phase E: 条件付きのON_ATTACK（ATTACK_DAMAGE_BONUS）・ATTACK_BOOST（DAMAGE_BONUS）ボーナスを
+      // いつ評価するかは、これまでcomputeAttackCardBaseDamage/queueAttackBoostのどちらも
+      // 「常に無条件で発動する」設計だったため、新たに決める必要があった。
+      // ON_ATTACK: アタック宣言時（Phases.playAttackCard呼び出し直前、このカード自身がまだ
+      //   プレイエリアに積まれる前）に評価する（アナイアレーション・オールスターコンボで確認できる
+      //   範囲では、宣言時点の状態で確定して問題ない）。
+      // ATTACK_BOOST: メモリアをプレイした瞬間（このカード自身は既にプレイエリアに積まれた後）に
+      //   評価する。We are...!の括弧書き「メモリアカードの数は【アタック強化】を実行するときに数える」
+      //   という個別カードの明記されたルーリングを、条件付きATTACK_BOOST全般の評価タイミングとして
+      //   一般化したもの（他のカードでの確認は取れていない）。
+      conditionalAttackBonusEvaluationTiming: {
+        onAttack: 'AT_ATTACK_DECLARATION_BEFORE_PLAY_AREA_PUSH',
+        attackBoost: 'AT_MEMORIA_PLAY_TIME_AFTER_PLAY_AREA_PUSH',
+        status: 'PROVISIONAL',
+        source: 'BP03-059 We are...!の括弧書き（ATTACK_BOOST側のみ明記）からの一般化。ON_ATTACK側は該当カードのテキストに評価タイミングの明記なし。',
+      },
+      // Phase F: MULTI_ATTACK（例：ストームラッシュ「アタックする」×3、アタックのたびにアタッカー/
+      // 対象を選ぶ）を、カード1枚のプレイ内で独立したCombat.declareAttackをcount回呼ぶ形で実装した際の
+      // 設計判断。公式資料に「複数回アタックする」効果の一般ルールとしての明記は見当たらず、各カードの
+      // テキスト（「アタックする」を複数回書く形式）からの類推。
+      multiAttackSemantics: {
+        // カードのPP支払い・手札からの除去・プレイエリアへの追加は1回のみ（カードは1枚のまま）
+        costAndPlayAreaHandling: 'ONCE_PER_CARD_PLAY',
+        // 各回の宣言は完全に独立したアタックイベントとして扱う
+        // （オーバーキル計算・カード自身/装備のAFTER_ATTACK・ON_AWAKEN判定をそれぞれ個別に行う）
+        eachDeclarationIsIndependentAttackEvent: true,
+        // メモリア等が付与する「次の1回のアタックのみ」のアタック強化/紐づくAFTER_ATTACK効果は、
+        // pendingAttackBoost/pendingAfterAttackEffectsが最初の宣言で消費される実装上の帰結として、
+        // 自然にN回のうち最初の1回にのみ適用される（2回目以降には引き継がれない）
+        boostAndLinkedAfterAttackAppliesToFirstDeclarationOnly: true,
+        status: 'PROVISIONAL',
+        source: 'BP03-017 ストームラッシュの文言（「アタックする」×3＋「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」という括弧書き）からの類推。他の実カードでの確認は取れていない。',
+      },
+      // Phase G: FREE_PLAY系（手札/デッキルック/プレイエリアから選んでコストを支払わずプレイする）
+      // カードの共通の設計判断。
+      freePlayAndReplayPolicy: {
+        // 選択コールバック未提供時は、他のPROVISIONAL項目と同様「してもよい」を辞退したものとして扱う
+        // （FREE_PLAY_MEMORIA_FROM_HAND/DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA共通）
+        defaultWhenNoChoice: 'DECLINE',
+        // 一騎当千のコスト合計上限は、申告された選択をそのまま信頼せず、こちら側で合計を再計算しながら
+        // 順に加算し、上限を超える時点のカードは無視する（安全側。呼び出し元の不正/バグに強くする）
+        costLimitEnforcement: 'RECOMPUTED_SERVER_SIDE_NOT_TRUSTED_FROM_CALLER',
+        // リンク・アサルトの「デッキの上から見て、選ばなかった残りをトラッシュに置く」の表裏は
+        // 公式資料に明記が無い。他の非公開情報の扱い（手札からの破棄=裏向き）に合わせて裏向きとする。
+        deckLookRestOrientation: 'FACE_DOWN',
+        // 三銃士「プレイエリアのカードをプレイし直す」で再トリガーするのはON_PLAY効果のみとし、
+        // ATTACK_BOOST/AFTER_ATTACKへの再リンクは行わない（公式資料に対象Trigger範囲の明記が無く、
+        // 対象が「コスト0のメモリア」に限定されている実例からON_PLAYのみと解釈するのが安全側）
+        replayFromPlayAreaTriggerScope: 'ON_PLAY_ONLY',
+        status: 'PROVISIONAL',
+        source: 'BP01-017 一騎当千 / BP01-044 リンク・アサルト / BP02-024 三銃士 のテキストからの類推。公式資料にFREE_PLAY/デッキルック/リプレイの一般ルールとしての明記は無い。',
+      },
     };
   }
 

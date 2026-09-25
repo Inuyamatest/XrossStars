@@ -28,16 +28,24 @@ function baseDeck(overrides) {
 }
 
 function fillMainDeck(count, pickFn) {
-  // 適当な赤カードを積み増して合計count枚にする（同名4枚制限に注意して複数カードに分散）
+  // 適当な赤カードを積み増して合計count枚にする（同名4枚制限に注意して複数カードに分散）。
+  // 同名4枚制限はカード名基準なので、収録弾違いの重複カード名（例: BP01-019とST02-007は
+  // 共に「インパクトショット」という同一カードの別収録）を二重に数えないよう、カード名
+  // 単位で1つずつしか採用しない。
   const redNonAce = cards.filter((c) => c.color === 'red' && (c.cardType === 'ATTACK' || c.cardType === 'MEMORIA') && !c.ban && !c.buildRule && c.ace !== true);
   const entries = [];
+  const usedGroups = {};
   let remaining = count;
   let i = 0;
   while (remaining > 0 && i < redNonAce.length) {
-    const take = Math.min(4, remaining);
-    entries.push({ cardNumber: redNonAce[i].cardNumber, count: take });
-    remaining -= take;
+    const card = redNonAce[i];
+    const groupKey = card.name;
     i++;
+    if (usedGroups[groupKey]) continue;
+    usedGroups[groupKey] = true;
+    const take = Math.min(4, remaining);
+    entries.push({ cardNumber: card.cardNumber, count: take });
+    remaining -= take;
   }
   if (remaining > 0) throw new Error('not enough distinct red cards in fixture data to build test deck');
   return pickFn ? pickFn(entries) : entries;
