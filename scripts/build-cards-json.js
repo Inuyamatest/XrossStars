@@ -148,7 +148,13 @@ function main() {
   });
 
   // --- パラレルカード（通常版とは別カードとして追加。デッキ枚数カウント用に parallelGroupId を通常版に合わせる）---
+  // パラレル/プロモは通常版と同名・同効果なので、コスト・テキスト・ビルドルール・BANは通常版から引き継ぐ
+  // （cost: null のままだと対戦エンジンでコスト未確定としてプレイできなくなる）。
+  const byNumber = {};
+  out.forEach((c) => { byNumber[c.cardNumber] = c; });
   parallels.forEach((p) => {
+    const base = byNumber[p.baseCardNumber];
+    if (!base) throw new Error('パラレルの通常版が見つかりません: ' + p.cardNumber + ' -> ' + p.baseCardNumber);
     out.push({
       cardNumber: p.cardNumber,
       name: p.name,
@@ -157,14 +163,14 @@ function main() {
       set: p.set,
       color: COLOR_MAP[p.color] || null,
       rarity: p.rarity,
-      cost: null,
+      cost: base.cost,
       hp: null, atk: null, awakenHp: null, awakenAtk: null,
-      buildRule: null,
-      buildRuleParsed: null,
+      buildRule: base.buildRule,
+      buildRuleParsed: base.buildRuleParsed,
       ace: p.ace === true,
-      ban: false,
-      text: null,
-      effectSummary: null,
+      ban: base.ban,
+      text: base.text,
+      effectSummary: base.effectSummary,
       officialUrl: p.officialUrl || null,
       confirmStatus: p.confirmStatus || null,
       confirmed: p.confirmStatus === '公式カードページ確認済',
@@ -185,6 +191,23 @@ function main() {
     + "  document.dispatchEvent(new CustomEvent('xs-deckbuilder-cards-ready'));\n"
     + '})();\n';
   fs.writeFileSync(path.join(ROOT, 'js/deckbuilder/cards-data.js'), jsOut);
+
+  // 対戦エンジンがパラレルのカード番号からでも通常版の効果登録（cardEffectData.js）を引けるよう、
+  // パラレル→通常版の対応表をエンジン用モジュールとして生成する。
+  const aliases = {};
+  parallels.forEach((p) => { aliases[p.cardNumber] = p.baseCardNumber; });
+  const aliasOut = '/* 自動生成: node scripts/build-cards-json.js で再生成。手編集しないこと。\n'
+    + ' * パラレル/プロモのカード番号 → 通常版のカード番号（効果は通常版と同一）。 */\n'
+    + '(function (root, factory) {\n'
+    + "  if (typeof module !== 'undefined' && module.exports) {\n"
+    + '    module.exports = factory();\n'
+    + '  } else {\n'
+    + '    root.XS_ENGINE_PARALLEL_ALIASES = factory();\n'
+    + '  }\n'
+    + "}(typeof self !== 'undefined' ? self : this, function () {\n"
+    + '  return ' + JSON.stringify(aliases, null, 2).replace(/\n/g, '\n  ') + ';\n'
+    + '}));\n';
+  fs.writeFileSync(path.join(ROOT, 'js/engine/parallelAliases.js'), aliasOut);
 
   const byType = {};
   out.forEach((c) => { byType[c.cardType] = (byType[c.cardType] || 0) + 1; });

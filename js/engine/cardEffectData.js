@@ -10,11 +10,11 @@
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('./cardEffect.js'), require('./effectFactories.js'));
+    module.exports = factory(require('./cardEffect.js'), require('./effectFactories.js'), require('./parallelAliases.js'));
   } else {
-    root.XS_ENGINE_CARD_EFFECT_DATA = factory(root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_EFFECT_FACTORIES);
+    root.XS_ENGINE_CARD_EFFECT_DATA = factory(root.XS_ENGINE_CARD_EFFECT, root.XS_ENGINE_EFFECT_FACTORIES, root.XS_ENGINE_PARALLEL_ALIASES);
   }
-}(typeof self !== 'undefined' ? self : this, function (CardEffectCore, EffectFactories) {
+}(typeof self !== 'undefined' ? self : this, function (CardEffectCore, EffectFactories, ParallelAliases) {
   'use strict';
 
   var E = CardEffectCore.createCardEffect;
@@ -943,14 +943,89 @@
     // 「デッキの上から複数枚を見て、条件に合う1枚だけ手札に加え、残りをトラッシュに置く」は、
     // Phase Gで実装したDECK_LOOK_FREE_PLAY_MEMORIA（見た中から即プレイ）とは異なり「手札に加える」
     // という結果になる新しいAction type（DECK_LOOK_ADD_TO_HAND相当）が必要なため見送る。
+
+    // ============================================================
+    // Phase I: アタック/メモリア全種の画像バッチで本文を確認・補完したカードのうち、
+    // 既存の機構だけで表現できるものを登録する（テキストはdata/source/all-cards.json参照）。
+    // パラレル/プロモ（PR-xxx・SRP・CP）はparallelAliases.js経由で通常版の登録を共有する。
+    // ============================================================
+
+    // --- ATTACK_BOOSTのみ（無条件） ---
+    'BP04-046': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // もう一人のボク
+    'BP03-053': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // 闘技場の主
+    'BP04-054': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // 放課後補習組
+    'BP03-060': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // 戦場のお茶会
+    'BP04-061': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // 通過儀礼
+    'BP03-068': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // かるび人狼
+    'BP04-067': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // リトルエンプレス
+    'AN01-013': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // 必要な犠牲？
+    'PR-053': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // CR LIVE 2026
+    'BP03-062': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 掴んだ運命
+
+    // --- ATTACK_BOOST条件付き（Phase E機構） ---
+    'BP03-071': [E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // 街角の芸術家
+    'BP03-072': [ // ストレイ・プリンセス：無条件+20、メモリア3枚以上でさらに+50（換気と同型）
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } }),
+      E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+    ],
+    'BP04-047': [ // ベッドでチキン：+40、プレイエリアにタクティクスカードがあるならさらに+20
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } }),
+      E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'TACTICS', operator: 'GTE', count: 1 }), modifier: { type: 'DAMAGE_BONUS', amount: 20 } }),
+    ],
+
+    // --- ON_PLAY回復 + ATTACK_BOOST ---
+    'BP03-054': [E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 30 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // 闇の加護
+    'BP04-060': [E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 30 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // 一蓮托生
+    'BP04-053': [E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 10 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 10 } })], // 穏やかな一時
+
+    // --- ON_PLAYのみ ---
+    'BP03-058': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })], // 彼こそがロック
+    'BP03-061': [E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 1 } })], // セレブリティーエレガンス
+    'BP03-063': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 極上のアゲ↑↑
+
+    // --- ON_PLAY条件付きdraw + ATTACK_BOOST（シャンパンコール！と同型） ---
+    'BP03-064': [E({ trigger: 'ON_PLAY', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 1 }), action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })], // 引率のお兄さん
+
+    // --- ATTACK_BOOST + AFTER_ATTACK無条件 ---
+    'BP03-051': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })], // 露骨な挑発
+
+    // --- ON_ATTACK固定/条件付きボーナス ---
+    'BP04-026': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } })], // コンセントレイト
+    'BP04-033': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 70 } })], // パン売りの少女
+    'BP04-025': [E({ trigger: 'ON_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'TACTICS', operator: 'GTE', count: 1 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // 伝説のアルバム
+    // 大旋風 / ステークアウト：「アタッカーが覚醒しているなら、ダメージ+10」。ctx.attackerLeaderIndexは
+    // computeAttackCardBaseDamage呼び出し時点で設定済み（アタック宣言前＝このアタックで覚醒する前の状態を見る）。
+    'BP04-039': [E({ trigger: 'ON_ATTACK', condition: function (state, ctx) { var l = state.players[ctx.ownerPlayerId].leaders[ctx.attackerLeaderIndex]; return !!(l && l.awakened); }, action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    'AN01-005': [E({ trigger: 'ON_ATTACK', condition: function (state, ctx) { var l = state.players[ctx.ownerPlayerId].leaders[ctx.attackerLeaderIndex]; return !!(l && l.awakened); }, action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+
+    // --- AFTER_ATTACK ---
+    'BP04-032': [E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 40 } })], // ビリオンシャワー
+    'AN01-009': [E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // オールオアナッシング
+    'BP03-020': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 縦横無尽
+    'BP03-023': [E({ trigger: 'AFTER_ATTACK', condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 10 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })], // 影と道連れ
+    'BP04-019': [E({ trigger: 'AFTER_ATTACK', target: F.makeSameColorAsAttackedLeaderTarget(), action: { type: 'DAMAGE', amount: 40 } })], // バッドカンパニー（ポイズンボムと同型）
+    'BP04-018': [E({ trigger: 'AFTER_ATTACK', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 1 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 1 }] } })], // 1TAP
+
+    // ---- 以下、Phase Iで本文を確認したが今回は未登録のカード（新しい仕組みが必要なため） ----
+    // BP03-025 短気な爆弾魔: "〖アタックする〗このターン、あなたが手札を1枚以上捨てているなら、ダメージ+10。"
+    //   → 「このターンに手札を捨てたか」を記録するターン単位のカウンタが現行のstateに無い。
+    // BP03-067 気まずい空間: "〖プレイ時〗自分のデッキの上から3枚を見る。それらのカードをトラッシュに置く。"
+    //   → デッキ上から直接トラッシュに置く（MILL）Actionが未実装。
+    // BP03-027 仁義なき抗争: Phase Hで記載済み（任意のランダム手札破棄＋条件付きボーナス）。
   };
 
+  // パラレル/プロモ（例: BP01-137 超新星 SRP）は通常版と同一効果なので、通常版の登録を引く。
+  function resolveCardId(cardId) {
+    return (ParallelAliases && !REGISTRY[cardId] && ParallelAliases[cardId]) || cardId;
+  }
+
   function getEffectsForCard(cardId) {
-    return REGISTRY[cardId] || [];
+    return REGISTRY[resolveCardId(cardId)] || [];
   }
 
   function hasEffects(cardId) {
-    return !!REGISTRY[cardId] && REGISTRY[cardId].length > 0;
+    var effects = REGISTRY[resolveCardId(cardId)];
+    return !!effects && effects.length > 0;
   }
 
   return {
