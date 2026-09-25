@@ -636,9 +636,10 @@
     // BP03-066 ジェイルブレイク：「このターン中にメモリア/アタックカードの効果で引いたカード枚数」という
     //   ターンをまたいだ累積カウンターの新設と、それを元にした割り振りダメージが必要なため見送る。
     //
-    // BP02-024 三銃士／BP02-045 巡り合う二人／BP01-017 一騎当千／BP01-044 リンク・アサルト：
-    //   いずれもデッキ/プレイエリアから複数カードを選んでコスト無しでプレイする系統
-    //   （DECK_LOOK・FREE_PLAY・REPLAY_FROM_PLAY_AREA、過去のPhaseで明示的に対象外）。
+    // BP02-045 巡り合う二人：デッキルック5枚から、コスト1以下のメモリア最大1枚"と"コスト1以下の
+    //   アタックカード最大1枚を選んでコスト無しでプレイする。Phase GのFREE_PLAY_MEMORIA系はメモリア専用の
+    //   ヘルパー（playMemoriaForFreeAndQueueEffects）しか無く、アタックカードを無償プレイするには
+    //   新たな攻撃者/対象の選択（新しい選択コールバック）が追加で必要になるため、今回は見送る。
     //
     // BP01-026 CLUTCH!!!：手札のコスト0カードを公開・破棄してもよい、という任意コストのボーナス
     //   （OPTIONAL_DISCARD_THEN_BONUS、過去のPhaseで対象外）。
@@ -700,6 +701,36 @@
     // makeAllAliveOpponentLeadersTarget（Phase Fで新設）を使うだけで表現できる、単純なON_PLAY。
     'BP01-080': [
       E({ trigger: 'ON_PLAY', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 50 } }),
+    ],
+
+    // ============================================================
+    // Phase G: FREE_PLAY_MEMORIA_FROM_HAND / DECK_LOOK_FREE_PLAY_MEMORIA /
+    // REPLAY_SELECTED_FROM_PLAY_AREA機構を追加したことで登録可能になったカード
+    // ============================================================
+
+    // BP01-017 一騎当千（アタック, 赤, cost2, ACE）
+    // カードテキスト: "〖アタックする〗〖アタック後〗自分の手札のエース以外のメモリアカードを、
+    //  コストの合計が3以下になるように好きな枚数公開する。公開したカードを、コストを支払わず
+    //  好きな順番でプレイする。（プレイしたカードは、このカードの右側に置く。それらの効果は、
+    //  このアタックが終わってから左から順番に実行する。）"
+    'BP01-017': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'FREE_PLAY_MEMORIA_FROM_HAND', costLimit: 3 } }),
+    ],
+
+    // BP01-044 リンク・アサルト（アタック, 緑, cost1, ACE）
+    // カードテキスト: "〖アタックする〗〖アタック後〗自分のデッキの上から3枚を見る。その中から
+    //  コスト1以下のメモリアカード1枚を、コストを支払わずにプレイしてもよい。残りのカードを
+    //  トラッシュに置く。"
+    'BP01-044': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_FREE_PLAY_MEMORIA', count: 3, maxCost: 1 } }),
+    ],
+
+    // BP02-024 三銃士（アタック, 無色, cost1, ACE）
+    // カードテキスト: "〖アタックする〗〖アタック後〗プレイエリアのエース以外のコスト0のメモリア
+    //  カードを最大2枚選び、プレイし直す。（選んだカードを、このカードの右側に置く。プレイした
+    //  カードの効果は、このアタックが終わってから左から順番に実行する。）"
+    'BP02-024': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'REPLAY_SELECTED_FROM_PLAY_AREA', maxCount: 2, maxCost: 0 } }),
     ],
   };
 

@@ -303,8 +303,11 @@ console.log('=== 新しい仕組みが必要なため未登録のカード（意
 // ON_ATTACK/ATTACK_BOOSTボーナス機構を追加した際に登録されたため、この一覧から除外している
 // （test/phaseE.test.js参照）。BP03-017・BP01-080も、後のPhase FでMULTI_ATTACK機構・
 // makeAllAliveOpponentLeadersTargetを追加した際に登録されたため除外している（test/phaseF.test.js参照）。
+// BP01-017・BP01-044・BP02-024も、後のPhase GでFREE_PLAY_MEMORIA_FROM_HAND/
+// DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA機構を追加した際に登録されたため
+// 除外している（test/phaseG.test.js参照）。
 ['BP04-045', 'BP04-052', 'BP04-059', 'BP03-024', 'BP03-031', 'BP03-066',
-  'BP02-024', 'BP02-045', 'BP01-017', 'BP01-026', 'BP01-044',
+  'BP02-045', 'BP01-026',
   'ST01-005', 'ST01-016', 'ST02-009', 'ST02-012'].forEach((cardId) => {
   test(`${cardId}は新機構が必要なため未登録のまま`, () => {
     assert.deepStrictEqual(CardEffectData.getEffectsForCard(cardId), []);

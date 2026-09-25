@@ -128,6 +128,85 @@
         return state;
       }
 
+      case 'FREE_PLAY_MEMORIA_FROM_HAND': {
+        // Phase G: 一騎当千「自分の手札のエース以外のメモリアカードを、コストの合計がaction.costLimit以下に
+        // なるように好きな枚数公開する。公開したカードを、コストを支払わず好きな順番でプレイする。」
+        // PROVISIONAL: 選択はctx.chooseFreePlayFromHand(candidates, costLimit, state) => instanceId[]（順序＝プレイ順）に
+        // 委ねる。省略時は「してもよい」を辞退したものとして何もしない。コスト合計超過分・重複・不正な
+        // instanceIdは安全に無視する（申告どおりに信頼せず、こちら側で合計を再計算して打ち切る）。
+        var freePlayer = state.players[ctx.ownerPlayerId];
+        var freeCandidates = freePlayer.hand.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: ctx.cardIndex[c.cardId].cost || 0 }; });
+        if (freeCandidates.length === 0) return state;
+        var chosenFreeIds = (ctx.chooseFreePlayFromHand ? ctx.chooseFreePlayFromHand(freeCandidates.slice(), action.costLimit, state) : []) || [];
+        var freeTotalCost = 0;
+        var seenFreeIds = {};
+        chosenFreeIds.forEach(function (instanceId) {
+          if (seenFreeIds[instanceId]) return;
+          var cand = freeCandidates.find(function (c) { return c.instanceId === instanceId; });
+          if (!cand) return; // 候補にないIDは無視
+          if (freeTotalCost + cand.cost > action.costLimit) return; // 上限超過分は無視（安全側）
+          seenFreeIds[instanceId] = true;
+          freeTotalCost += cand.cost;
+          var idx = freePlayer.hand.findIndex(function (c) { return c.instanceId === instanceId; });
+          if (idx < 0) return;
+          var instance = freePlayer.hand.splice(idx, 1)[0];
+          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, instance, cardIndex, { chooseTarget: ctx.chooseTarget });
+        });
+        return state;
+      }
+
+      case 'DECK_LOOK_FREE_PLAY_MEMORIA': {
+        // Phase G: リンク・アサルト「自分のデッキの上から{action.count}枚を見る。その中からコスト
+        // {action.maxCost}以下のメモリアカード1枚を、コストを支払わずにプレイしてもよい。残りのカードを
+        // トラッシュに置く。」PROVISIONAL: 選択はctx.chooseDeckLookPlay(candidates, state) => instanceId|null
+        // に委ねる（省略時・null＝辞退）。見た残り（プレイした1枚以外）は裏向きでトラッシュへ置く
+        // （ruleConfig.js deckLookTrashOrientation参照。公式資料に表裏の明記なし）。
+        var deckLookPlayer = state.players[ctx.ownerPlayerId];
+        var revealed = deckLookPlayer.deck.splice(0, Math.min(action.count, deckLookPlayer.deck.length));
+        var deckLookCandidates = revealed.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          return cd && cd.cardType === 'MEMORIA' && (cd.cost || 0) <= action.maxCost;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
+        var chosenId = (deckLookCandidates.length > 0 && ctx.chooseDeckLookPlay) ? ctx.chooseDeckLookPlay(deckLookCandidates.slice(), state) : null;
+        var chosenCard = chosenId ? revealed.find(function (c) { return c.instanceId === chosenId; }) : null;
+        revealed.forEach(function (c) {
+          if (chosenCard && c.instanceId === chosenCard.instanceId) return;
+          deckLookPlayer.trash.push({ card: c, faceUp: false });
+        });
+        if (chosenCard) {
+          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, chosenCard, cardIndex, { chooseTarget: ctx.chooseTarget });
+        }
+        return state;
+      }
+
+      case 'REPLAY_SELECTED_FROM_PLAY_AREA': {
+        // Phase G: 三銃士「プレイエリアのエース以外のコスト{action.maxCost}のメモリアカードを最大
+        // {action.maxCount}枚選び、プレイし直す。」対象カードはプレイエリアから移動しない（そのまま）。
+        // PROVISIONAL: 再トリガーするのはON_PLAY効果のみとする（ATTACK_BOOST/AFTER_ATTACKへの
+        // 再リンクは、公式資料に「プレイし直す」の対象Trigger範囲の明記が無いため見送る）。
+        // 選択はctx.chooseReplayFromPlayArea(candidates, maxCount, state) => instanceId[]に委ねる
+        // （省略時は「してもよい」を辞退）。
+        var replayPlayer = state.players[ctx.ownerPlayerId];
+        var replayCandidates = replayPlayer.playArea.filter(function (entry) {
+          var cd = ctx.cardIndex[entry.card.cardId];
+          return cd && cd.cardType === 'MEMORIA' && cd.ace !== true && (action.maxCost == null || (cd.cost || 0) <= action.maxCost);
+        }).map(function (entry) { return { instanceId: entry.card.instanceId, cardId: entry.card.cardId }; });
+        if (replayCandidates.length === 0) return state;
+        var chosenReplayIds = (ctx.chooseReplayFromPlayArea ? ctx.chooseReplayFromPlayArea(replayCandidates.slice(), action.maxCount, state) : []) || [];
+        var seenReplayIds = {};
+        chosenReplayIds.slice(0, action.maxCount).forEach(function (instanceId) {
+          if (seenReplayIds[instanceId]) return;
+          seenReplayIds[instanceId] = true;
+          var cand = replayCandidates.find(function (c) { return c.instanceId === instanceId; });
+          if (!cand) return;
+          queueOnPlayEffects(state, ctx.ownerPlayerId, { instanceId: cand.instanceId, cardId: cand.cardId }, cardIndex, { chooseTarget: ctx.chooseTarget });
+        });
+        return state;
+      }
+
       case 'ATTACK_DAMAGE_BONUS':
       case 'EQUIP_HP_MODIFIER':
       case 'EQUIP_ATK_MODIFIER':
@@ -421,6 +500,33 @@
     return state;
   }
 
+  // ---- Phase G: メモリアカードをコストを支払わずにプレイする（FREE_PLAY系）----
+  // cardInstanceは呼び出し側が既に本来の置き場（手札・デッキ等）から取り出し済みのものを渡す
+  // （このヘルパー自身は取り出し処理を行わない）。playMemoriaCardWithEffectsの「プレイエリアへ積む・
+  // ON_PLAYをResolutionStackへ積む・ATTACK_BOOST/紐づくAFTER_ATTACKを処理する」の3点を再現するが、
+  // Phases.playMemoriaCard自体は呼ばない（PP支払い・手札からの取り出しは既に済んでいるか、
+  // 元々手札に無いカード〔デッキルック由来〕のため）。ATTACK専用カードは対応しない
+  // （攻撃には新たな攻撃者/対象の選択が必要になり、このヘルパーの対象外。呼び出し側が保証する）。
+  function playMemoriaForFreeAndQueueEffects(state, playerId, cardInstance, cardIndex, extraCtx) {
+    var player = state.players[playerId];
+    player.playArea.push({ card: cardInstance, order: player.playArea.length, pendingTriggers: [] });
+    Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: cardInstance.cardId });
+
+    queueOnPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
+
+    player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+    var attackBoostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId, cardIndex: cardIndex };
+    CardEffectData.getEffectsForCard(cardInstance.cardId).forEach(function (e) {
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, attackBoostCtx)) return;
+        Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstance.instanceId);
+      } else if (e.trigger === 'AFTER_ATTACK') {
+        player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstance.instanceId });
+      }
+    });
+    return state;
+  }
+
   // ---- メモリアカードのプレイ：既存のPhases.playMemoriaCardを土台に、
   //      登録済み効果（ON_PLAY即時効果／ATTACK_BOOST／次のアタックに紐づくAFTER_ATTACK）を統合する ----
   // ON_PLAYはqueueOnPlayEffects()と同じ経路でResolutionStackへ積む（プレイ時効果の入口を一本化する）。
@@ -677,6 +783,12 @@
     // 上で組み立てたctxに、この時点で確定した値を追記する（cardIndexは既に入っている）
     ctx.chooseTarget = options.chooseTarget;
     ctx.overkillAmount = overkillAmount;
+    // Phase G: FREE_PLAY_MEMORIA_FROM_HAND/DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA用の
+    // 選択コールバック（一騎当千・リンク・アサルト・三銃士はいずれもこのカード自身のAFTER_ATTACKなので、
+    // このctx経由で渡す）。省略時はapplyAction側の安全なデフォルト（辞退）に委ねる。
+    ctx.chooseFreePlayFromHand = options.chooseFreePlayFromHand;
+    ctx.chooseDeckLookPlay = options.chooseDeckLookPlay;
+    ctx.chooseReplayFromPlayArea = options.chooseReplayFromPlayArea;
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })

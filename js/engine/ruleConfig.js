@@ -188,6 +188,25 @@
         status: 'PROVISIONAL',
         source: 'BP03-017 ストームラッシュの文言（「アタックする」×3＋「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」という括弧書き）からの類推。他の実カードでの確認は取れていない。',
       },
+      // Phase G: FREE_PLAY系（手札/デッキルック/プレイエリアから選んでコストを支払わずプレイする）
+      // カードの共通の設計判断。
+      freePlayAndReplayPolicy: {
+        // 選択コールバック未提供時は、他のPROVISIONAL項目と同様「してもよい」を辞退したものとして扱う
+        // （FREE_PLAY_MEMORIA_FROM_HAND/DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA共通）
+        defaultWhenNoChoice: 'DECLINE',
+        // 一騎当千のコスト合計上限は、申告された選択をそのまま信頼せず、こちら側で合計を再計算しながら
+        // 順に加算し、上限を超える時点のカードは無視する（安全側。呼び出し元の不正/バグに強くする）
+        costLimitEnforcement: 'RECOMPUTED_SERVER_SIDE_NOT_TRUSTED_FROM_CALLER',
+        // リンク・アサルトの「デッキの上から見て、選ばなかった残りをトラッシュに置く」の表裏は
+        // 公式資料に明記が無い。他の非公開情報の扱い（手札からの破棄=裏向き）に合わせて裏向きとする。
+        deckLookRestOrientation: 'FACE_DOWN',
+        // 三銃士「プレイエリアのカードをプレイし直す」で再トリガーするのはON_PLAY効果のみとし、
+        // ATTACK_BOOST/AFTER_ATTACKへの再リンクは行わない（公式資料に対象Trigger範囲の明記が無く、
+        // 対象が「コスト0のメモリア」に限定されている実例からON_PLAYのみと解釈するのが安全側）
+        replayFromPlayAreaTriggerScope: 'ON_PLAY_ONLY',
+        status: 'PROVISIONAL',
+        source: 'BP01-017 一騎当千 / BP01-044 リンク・アサルト / BP02-024 三銃士 のテキストからの類推。公式資料にFREE_PLAY/デッキルック/リプレイの一般ルールとしての明記は無い。',
+      },
     };
   }
 
