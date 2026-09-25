@@ -58,6 +58,17 @@
     return true;
   }
 
+  // data/source/all-cards.json由来のcostがnull（公式ページ未確認等で未確定）のカードを
+  // 「card.cost || 0」のように扱うと、コスト不明カードが常にコスト0としてプレイされてしまい、
+  // PPをほとんど消費せずに何枚も連続プレイできてしまう（実際に対戦ログで確認された不具合）。
+  // コスト未確定のカードは「プレイできない」ものとして明確にエラーにする（推測で0扱いしない）。
+  function requireKnownCost(card) {
+    if (typeof card.cost !== 'number') {
+      throw new Error('このカードはコストが未確定のためプレイできません（カードデータ未整備）: ' + card.cardNumber + ' ' + card.name);
+    }
+    return card.cost;
+  }
+
   // ---- START_PHASE（spec 6章：①PP全回復 ②1枚ドロー）----
   function runStartPhase(state) {
     state.turn.phase = PHASES.START_PHASE;
@@ -93,8 +104,9 @@
     var player = state.players[playerId];
     var idx = findInHand(player, cardInstanceId);
     var card = GameState.getCardData(cardIndex, player.hand[idx].cardId);
-    if (!payPP(player, card.cost || 0)) {
-      throw new Error('PPが不足しています（必要:' + card.cost + '）');
+    var cost = requireKnownCost(card);
+    if (!payPP(player, cost)) {
+      throw new Error('PPが不足しています（必要:' + cost + '）');
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
@@ -120,8 +132,9 @@
     var player = state.players[playerId];
     var idx = findInHand(player, cardInstanceId);
     var card = GameState.getCardData(cardIndex, player.hand[idx].cardId);
-    if (!payPP(player, card.cost || 0)) {
-      throw new Error('PPが不足しています（必要:' + card.cost + '）');
+    var cost = requireKnownCost(card);
+    if (!payPP(player, cost)) {
+      throw new Error('PPが不足しています（必要:' + cost + '）');
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
@@ -144,8 +157,9 @@
 
     var entry = player.tacticsArea[areaIdx];
     var card = GameState.getCardData(cardIndex, entry.card.cardId);
-    if (!payPP(player, card.cost || 0)) {
-      throw new Error('PPが不足しています（必要:' + card.cost + '）');
+    var cost = requireKnownCost(card);
+    if (!payPP(player, cost)) {
+      throw new Error('PPが不足しています（必要:' + cost + '）');
     }
 
     player.tacticsArea.splice(areaIdx, 1);
@@ -218,6 +232,7 @@
     canPlayTactics: canPlayTactics,
     isFirstTurnOfRoundForFirstPlayer: isFirstTurnOfRoundForFirstPlayer,
     payPP: payPP,
+    requireKnownCost: requireKnownCost,
     runStartPhase: runStartPhase,
     playAttackCard: playAttackCard,
     playMemoriaCard: playMemoriaCard,
