@@ -167,6 +167,31 @@ test('BP04-033 パン売りの少女：ダメージ+70（HP超過ならダウン
   if (70 + atk >= hp) assert.strictEqual(state.players.playerB.leaders[0].isDown, true);
   else assert.strictEqual(state.players.playerB.leaders[0].damage, 70 + atk);
 });
+// ============================================================
+console.log('=== MULTI_ATTACK（ストームラッシュ）の対戦UI対応に伴うエンジン修正 ===');
+// ============================================================
+test('アタック指定の件数不足はPP支払い・カード移動の前にエラーになる（中途半端な状態を残さない）', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  const id = injectHand(state, 'playerA', 'BP03-017');
+  const tappedBefore = state.players.playerA.ppCards.tapped;
+  const handBefore = state.players.playerA.hand.length;
+  assert.throws(() => EffectResolver.playAttackCardWithEffects(state, 'playerA', id, { attacks: [] }, cardIndex), /MULTI_ATTACK/);
+  assert.strictEqual(state.players.playerA.ppCards.tapped, tappedBefore);
+  assert.strictEqual(state.players.playerA.hand.length, handBefore);
+  assert.strictEqual(state.players.playerA.playArea.length, 0);
+});
+test('先の回でダウンした対象が後の回にも指定されていたら、生存している先頭のリーダーに差し替える', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  const hp = GameState.getLeaderCurrentHp(cardIndex, state.players.playerB.leaders[0]);
+  state.players.playerB.leaders[0].damage = hp - 1; // 1回目のアタックで確実にダウン
+  const id = injectHand(state, 'playerA', 'BP03-017');
+  const same = { attackerLeaderIndex: 0, targetPlayerId: 'playerB', targetLeaderIndex: 0 };
+  EffectResolver.playAttackCardWithEffects(state, 'playerA', id, { attacks: [same, same, same] }, cardIndex);
+  assert.strictEqual(state.players.playerB.leaders[0].isDown, true);
+  const hitOthers = state.players.playerB.leaders.slice(1).reduce((s, l) => s + l.damage + (l.isDown ? 1 : 0), 0);
+  assert.ok(hitOthers > 0, '2回目以降のアタックは生存リーダーに差し替えられているはず');
+});
+
 test('未登録として見送ったカード（BP03-025 短気な爆弾魔 / BP03-067 気まずい空間）は未登録のまま', () => {
   assert.strictEqual(CardEffectData.hasEffects('BP03-025'), false);
   assert.strictEqual(CardEffectData.hasEffects('BP03-067'), false);

@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Xross Stars 対戦</title>
 
-<link rel="stylesheet" href="css/fonts.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Rajdhani:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/battle.css">
 
 <!-- カードマスタ（js/data 以下と同じ方式：<script>で直接 window に載せる。file:// でも動く） -->
@@ -33,11 +35,13 @@
 </head>
 <body>
 <div id="bt-root" class="bt-app">
-  <div class="bt-topbar">
-    <h1>XROSS STARS 対戦</h1>
-    <a class="bt-back" href="index.html">← HP管理へ</a>
-    <a class="bt-back" href="deckbuilder.html">デッキビルダー</a>
-  </div>
+  <header class="bt-topbar">
+    <h1 class="bt-logo">XROSS <span>STARS</span></h1>
+    <nav>
+      <a href="deckbuilder.html">デッキビルダー</a>
+      <a href="index.html">HP管理</a>
+    </nav>
+  </header>
   <div id="bt-body">読み込み中…</div>
 </div>
 <script src="js/battle/app.js"></script>
