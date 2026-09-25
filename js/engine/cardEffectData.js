@@ -494,6 +494,158 @@
     // AN01-008 ラストスタンド（アタック, 青, cost0, ACE）
     // カードテキスト: 画像で確認済み。「アタックする」以外の追加テキストなし（バニラのアタックカード）。
     // 追加効果が無いため、cardEffectData.jsへの登録は不要（未登録＝上乗せダメージ0のアタックカードとして扱われる）。
+
+    // ============================================================
+    // ACEカード バッチ2（画像37枚で送付分）。既存のAction/Target/Conditionファクトリだけで
+    // 表現できるものだけを登録する。新しいFactory関数は今回は追加しない（設計判断が要るため）。
+    // ============================================================
+
+    // BP01-035 ロケットランチャー（アタック, 黄, cost2, ACE）
+    // カードテキスト: "〖アタックする〗ダメージ+40。〖アタック後〗対戦相手の他のリーダー1体に30ダメージ。"
+    // BP01-018エレガントドミネートと全く同じ「対戦相手の他のリーダー1体」パターン（既存ファクトリを再利用）。
+    'BP01-035': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } }),
+    ],
+
+    // BP01-062 Never Fall（メモリア, 青, cost1, ACE）
+    // カードテキスト: "〖プレイ時〗カードを3枚引く。"
+    'BP01-062': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 3 } }),
+    ],
+
+    // BP02-017 ビクトリーランページ（アタック, 赤, cost1, ACE）
+    // カードテキスト: "〖アタックする〗〖アタック後〗オーバーキル40：対戦相手の他のリーダー1体に90ダメージ。"
+    // Phase D-2で作ったOVERKILL_AMOUNT Conditionの実カード適用例（このカードのために用意した機構）。
+    'BP02-017': [
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 40 }),
+        target: F.makeSingleOtherOpponentLeaderTarget(),
+        action: { type: 'DAMAGE', amount: 90 },
+      }),
+    ],
+
+    // BP02-031 勝利の雄たけび（アタック, 黄, cost2, ACE）
+    // カードテキスト: "〖アタックする〗ダメージ+30。〖アタック後〗カードを2枚引く。"（条件なし・無条件で発動）
+    'BP02-031': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 30 } }),
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DRAW', amount: 2 } }),
+    ],
+
+    // BP02-052 恐怖の迷宮（メモリア, 青, cost0, ACE）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+20。〖アタック後〗対戦相手の他のリーダーすべてに10ダメージ。"
+    'BP02-052': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } }),
+    ],
+
+    // BP02-059 逆転のハイドギャル（メモリア, 黄, cost1, ACE）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。"（これのみ）
+    'BP02-059': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } }),
+    ],
+
+    // BP02-066 流行語大賞（メモリア, 緑, cost0, ACE）
+    // カードテキスト: "〖プレイ時〗自分のリーダー1体を40回復する。カードを1枚引く。"
+    'BP02-066': [
+      E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'MULTI', actions: [{ type: 'HEAL', amount: 40 }, { type: 'DRAW', amount: 1 }] } }),
+    ],
+
+    // BP03-038 強奪の宴（アタック, 緑, cost1, ACE）
+    // カードテキスト: "〖アタックする〗〖アタック後〗このアタックを受けたリーダーがダウンしているなら、
+    //  カードを1枚引き、対戦相手は手札を1枚捨てる。"
+    // BP01-021ギャングの襲撃と同じダウン判定Condition＋既存のDISCARD_HAND(who:'OPPONENT')の組み合わせ。
+    'BP03-038': [
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; },
+        action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 1 }, { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 1 }] },
+      }),
+    ],
+
+    // BP03-052 参拝・乾杯・超喝采（メモリア, 青, cost2, ACE）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。〖アタック後〗アタッカーが青なら、
+    //  対戦相手の他のリーダー1体に50ダメージ。アタッカーが黄なら、カードを2枚引く。"
+    // 「アタッカーの色」で分岐する条件は新しいFactoryを作らず、Phase D-2で追加したctx.cardIndexを使った
+    // 生のクロージャで判定する（BP01-053等、既存の生クロージャConditionと同じ書き方）。
+    'BP03-052': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } }),
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: function (state, ctx) {
+          var attacker = state.players[ctx.attackerPlayerId].leaders[ctx.attackerLeaderIndex];
+          return ctx.cardIndex[attacker.cardId].color === 'blue';
+        },
+        target: F.makeSingleOtherOpponentLeaderTarget(),
+        action: { type: 'DAMAGE', amount: 50 },
+      }),
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: function (state, ctx) {
+          var attacker = state.players[ctx.attackerPlayerId].leaders[ctx.attackerLeaderIndex];
+          return ctx.cardIndex[attacker.cardId].color === 'yellow';
+        },
+        action: { type: 'DRAW', amount: 2 },
+      }),
+    ],
+
+    // BP04-066 収穫の刻（メモリア, 緑, cost1, ACE）
+    // カードテキスト: "〖プレイ時〗対戦相手のリーダー1体に20ダメージ。カードを1枚引く。〖アタック後〗
+    //  アタッカーが緑なら、自分の手札のコスト1のメモリアカード1枚を、コストを支払わずにプレイしてもよい。
+    //  アタッカーが赤なら、自分の手札のコスト1のアタックカード1枚を、コストを支払わずにプレイしてもよい。"
+    // アタック後の「手札から選んでコスト無しでプレイしてもよい」（FREE_PLAY系）は、過去のPhaseで対象外と
+    // されたAction系統で現行エンジンに存在しないため未実装。プレイ時の20ダメージ+ドロー1のみ登録する。
+    'BP04-066': [
+      E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'MULTI', actions: [{ type: 'DAMAGE', amount: 20 }, { type: 'DRAW', amount: 1 }] } }),
+    ],
+
+    // ---- 以下、バッチ2で画像確認したが今回は未登録のカード（新しい仕組みが必要なため）----
+    //
+    // BP04-045 エリートコマンダー／BP04-052 ダイナミックデュオ：
+    //   「エコー」（ターン終了時にトラッシュへ行く代わりに横向きになり、次のメインフェイズ開始時に
+    //   コスト無しで横向きのままプレイし直す）という、プレイエリアのカードに「向き」という新しい状態を
+    //   持たせる必要のある新機構。playArea.entryに新フィールドを追加し、END_PHASE/START_PHASEの処理へ
+    //   フックする設計が必要なため、推測で実装しない。
+    //
+    // BP04-059 グレイトフルファーマー：アタックカードを実行後に同じカードをもう一度実行し直す
+    //   （REPLAY_FROM_PLAY_AREA、過去のPhaseで明示的に対象外とした機構）。
+    //
+    // BP03-017 ストームラッシュ：1回のプレイで3回アタックする（MULTI_ATTACK、過去のPhaseで対象外）。
+    //
+    // BP03-024 頂きの景色：アタック後、プレイエリアのメモリアカードのコスト合計と同じ枚数を引く。
+    //   DERIVED_AMOUNTは現状LAST_DISTRIBUTED_HEAL_TOTALのみ対応で、「プレイエリアのコスト合計」を
+    //   ソースにするには新しいDERIVED_AMOUNT sourceの追加が必要なため見送る。
+    //
+    // BP03-031 ソニックチェイサー：アタック後、対戦相手のダメージを受けている他のリーダーすべてに20ダメージ。
+    //   「ダメージを受けている（damage>0）」で絞り込む新しいTarget Factoryが必要（既存のmakeAllOtherOpponentLeadersTarget
+    //   はisDownでしか絞り込まない）。既存Factoryの単純な模倣で作れるが、新設計になるため今回は見送る。
+    //
+    // BP03-059 We are...!：プレイ時条件（プレイエリアのアタックカード枚数）はPLAY_AREA_TYPE_COUNTで表現できるが、
+    //   アタック強化側の条件（プレイエリアのメモリアカード枚数で+70）は、Combat.queueAttackBoostが常に無条件で
+    //   呼ばれる設計になっており、ATTACK_BOOST自体を条件付きにする仕組みが無い。BP04-038と同種の設計課題のため見送る。
+    //
+    // BP03-066 ジェイルブレイク：「このターン中にメモリア/アタックカードの効果で引いたカード枚数」という
+    //   ターンをまたいだ累積カウンターの新設と、それを元にした割り振りダメージが必要なため見送る。
+    //
+    // BP02-024 三銃士／BP02-045 巡り合う二人／BP01-017 一騎当千／BP01-044 リンク・アサルト：
+    //   いずれもデッキ/プレイエリアから複数カードを選んでコスト無しでプレイする系統
+    //   （DECK_LOOK・FREE_PLAY・REPLAY_FROM_PLAY_AREA、過去のPhaseで明示的に対象外）。
+    //
+    // BP02-038 オールスターコンボ：プレイエリアの他アタックカード枚数によるON_ATTACKの段階的ボーナス。
+    //   BP04-038・BP03-059と同じ「ON_ATTACKボーナスを条件付きにできない」設計課題のため見送る。
+    //
+    // BP01-026 CLUTCH!!!：手札のコスト0カードを公開・破棄してもよい、という任意コストのボーナス
+    //   （OPTIONAL_DISCARD_THEN_BONUS、過去のPhaseで対象外）。
+    //
+    // BP01-080 勝利へのジャンプ：プレイ時に対戦相手のリーダーすべてに50ダメージ。
+    //   既存のmakeAllOtherOpponentLeadersTargetはアタック文脈（ctx.targetLeaderIndex）が前提のため、
+    //   アタックに紐づかないON_PLAYから「対戦相手の生存リーダー全員」を取る新しいTarget Factoryが必要
+    //   （makeAnyOpponentLeaderTargetは単体選択なので流用不可）。新設計になるため今回は見送る。
+    //
+    // ST01-005 クロスファイア／ST01-016 初の栄冠／ST02-009 魔王降臨／ST02-012 変わらない関係：
+    //   「自分のリーダーすべてが特定のタグ（VSPO!/CR等）を持つなら」という判定は、過去のPhaseで
+    //   明示的に対象外とされたタグデータ・TAG_CONDITION機構が必要なため見送る。
   };
 
   function getEffectsForCard(cardId) {
