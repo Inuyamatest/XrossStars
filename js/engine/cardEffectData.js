@@ -732,6 +732,217 @@
     'BP02-024': [
       E({ trigger: 'AFTER_ATTACK', action: { type: 'REPLAY_SELECTED_FROM_PLAY_AREA', maxCount: 2, maxCost: 0 } }),
     ],
+
+    // ============================================================
+    // Phase H: 「専用カード」（buildRule: リーダー：<推し名>）画像バッチで確認したカードのうち、
+    // 既存のAction/Target/Condition機構だけで表現できるものを登録する。
+    // カードテキストはdata/source/all-cards.json（このバッチで確認・補完済み）を参照。
+    // ============================================================
+
+    // --- ON_ATTACK+10のみ（単純なダメージ加算） ---
+    'BP03-022': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // ピアッシングバレット
+    'BP04-022': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // タレットマスタリー
+    'BP04-030': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // シールドスラム
+    'BP04-034': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // トリッキームーブ
+    'BP03-041': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // ルーキーチェイス
+    'BP01-034': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // 巧みな裏取り
+    'BP01-049': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // 冷静沈着
+    'BP02-041': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // エアリアルアックス
+    'BP04-044': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // ハイパーボルテージ
+    'BP01-038': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })], // クラッチクイーン
+
+    // BP04-020 ワールドクラス：〖アタックする〗ダメージ-10。（画像で確認した通りの負の値。
+    // ATTACK_DAMAGE_BONUSはamountの符号を問わずそのまま加算するだけなので、そのまま表現できる。）
+    'BP04-020': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: -20 } })],
+
+    // --- ATTACK_BOOSTのみ（無条件） ---
+    'BP04-058': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 「またね」
+    'BP01-076': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 優勝請負人
+    'BP02-051': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 初めての歓声
+    'BP04-063': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 気合十分
+    'AN01-014': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // プリティサベージ
+    'BP03-070': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 大人気キッチンカー
+    'BP03-055': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 22HZ♪
+    'BP04-051': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 士官学校
+    'BP01-065': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 汚部屋の住人
+    'BP04-069': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 深淵の強者たち
+    'BP01-083': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // バトンを繋いで
+    'AN01-017': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 差し迫る閃光
+    'BP01-059': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })], // 笑ってはいけない
+
+    // --- ATTACK_BOOST：プレイエリアにメモリアカードが3枚以上ならダメージ+30（Phase E機構の再利用） ---
+    'BP04-050': [E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // ヤー!
+    'BP04-065': [E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // 雪降る夜に
+    'BP01-077': [E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // 777
+
+    // BP02-069 換気：〖アタック強化〗次のアタックのダメージ+20。プレイエリアにメモリアカードが3枚以上あるなら、
+    // さらにダメージ+30。無条件+20と条件付き+30は独立したATTACK_BOOSTエントリとして両方登録する
+    // （どちらも同じカードのプレイ時にqueueAttackBoostされ、合算される）。
+    'BP02-069': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } }),
+      E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+    ],
+
+    // --- ON_PLAY draw1 + ATTACK_BOOST+30（無条件） ---
+    'BP02-072': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // トリプルティアラ
+    'BP03-050': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // 祭典の開幕
+    'BP04-064': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // デンジャーゾーン
+    'BP02-063': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // ギャルスタイル
+    'BP04-057': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // シェフの一存
+    'AN01-015': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })], // ゴールデンルート
+
+    // --- ON_PLAY draw2のみ ---
+    'BP03-069': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })], // アクアリウムツアー
+    'BP04-048': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })], // 入念な準備
+    'BP01-086': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })], // なずNEWS
+    'BP01-074': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })], // 来てくれてありがとう
+    'BP01-067': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })], // いつも安全運転
+
+    // --- ON_PLAY：対戦相手のリーダー1体に20ダメージ ---
+    // ON_PLAYはアタックに紐づかないため、ctx.targetPlayerId/targetLeaderIndexに依存する
+    // makeSingleOtherOpponentLeaderTargetではなく、ctx.ownerPlayerId基準のmakeAnyOpponentLeaderTarget
+    // （既存カードのON_PLAY単体ダメージで使われているのと同じファクトリ）を使う。
+    'BP01-070': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // BEAUTY SALON -HANABUSA-
+    'BP02-062': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // クッキングパニック
+    'BP04-070': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 淑女の回答
+    'BP03-049': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // カーコレクター
+    'BP04-056': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // でからむち♪
+
+    // --- AFTER_ATTACK：このアタックを受けたリーダーがダウンしているならカードを1枚引く ---
+    'BP02-044': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // セクシーアローべにショット
+    'BP03-028': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // パワーセットアップ
+    'BP02-023': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // 圧倒的わたし!!
+    'BP01-043': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // ブービートラップ
+    'BP04-037': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // シンリャク開始
+    'BP01-031': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // 勝利の一撃
+    'AN01-011': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })], // リーサルフューズ
+
+    // BP02-049 究極自摸：〖アタック後〗カードを1枚引く。（メモリアカードだがATTACK_BOOSTなしでAFTER_ATTACKのみを
+    // 持つ。playMemoriaCardWithEffects/playMemoriaForFreeAndQueueEffectsはATTACK_BOOSTの有無に関わらず
+    // AFTER_ATTACK効果をpendingAfterAttackEffectsに積むため、無条件でそのまま表現できる。）
+    'BP02-049': [E({ trigger: 'AFTER_ATTACK', action: { type: 'DRAW', amount: 1 } })],
+
+    // --- AFTER_ATTACK：このアタックを受けたリーダーがダウンしているなら対戦相手の他のリーダー1体に20ダメージ ---
+    'BP03-029': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 漢の強行突破
+    'BP04-035': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 進歩の光
+    'BP01-025': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // キリングスプリー
+    'BP04-042': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // マシュマロピッチャー
+    'BP01-041': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 固定砲台みみたや
+
+    // --- AFTER_ATTACK：プレイエリアにメモリアカードが2枚以上あるなら対戦相手の他のリーダー1体に20ダメージ ---
+    'AN01-010': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 容疑者連行中
+    'BP04-021': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 攻防一体
+    'BP03-021': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 抜群のウデマエ
+
+    // --- AFTER_ATTACK：プレイエリアにメモリアカードが2枚以上あるなら対戦相手の他のリーダーすべてに10ダメージ ---
+    'AN01-006': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 肩乗りコーチング
+    'BP04-036': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // ドラゴンブレス
+    'BP01-050': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // ブラインドショット
+    'BP04-027': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 古の呪い
+
+    // --- ATTACK_BOOST+50 + AFTER_ATTACK：対戦相手の他のリーダー1体に10ダメージ（無条件） ---
+    'BP01-079': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 小さなビデオレター
+    'BP01-085': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 風紀チェック
+    'AN01-016': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 会議招集!
+    'BP04-055': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 懺悔のフリーフォール
+    'BP02-048': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // ちる!
+
+    // BP03-057 救いの手：〖アタック強化〗+50、〖アタック後〗対戦相手の他のリーダー1体に10ダメージ（無条件）
+    'BP03-057': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })],
+
+    // BP01-057 新たなる場所へ：〖アタック強化〗+30、〖アタック後〗対戦相手の他のリーダーすべてに10ダメージ（無条件）
+    'BP01-057': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })],
+
+    // BP04-062 OISタクシー：〖アタック強化〗+30、〖アタック後〗対戦相手の他のリーダー1体に30ダメージ（無条件）
+    'BP04-062': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })],
+
+    // --- ATTACK_BOOST+50 + AFTER_ATTACK：プレイエリアにメモリアカードが3枚以上あるなら対戦相手の他のリーダー1体に20ダメージ ---
+    'BP04-071': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 快適な空の旅
+    'BP03-065': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // ノブレス・オブリージュ
+
+    // --- ON_PLAY：条件付き（自分の場にアタックカードが1枚以上）draw1 + ATTACK_BOOST+30/+40（無条件） ---
+    'BP03-056': [E({ trigger: 'ON_PLAY', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 1 }), action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })], // シャンパンコール！
+    'BP04-072': [E({ trigger: 'ON_PLAY', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 1 }), action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })], // ペーパードライバー
+
+    // --- AFTER_ATTACK OVERKILL（Phase D-2機構の再利用） ---
+    'AN01-007': [E({ trigger: 'AFTER_ATTACK', condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 20 }), action: { type: 'RECOVER_PP', amount: 1 } })], // 悲願の開花
+    'BP04-029': [E({ trigger: 'AFTER_ATTACK', condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 10 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })], // 一斧両断
+
+    // --- ON_PLAY：すべてのプレイヤーは手札を1枚捨てる + ATTACK_BOOST+50（無条件） ---
+    // DISCARD_HAND（Phase B/D-2で既にwho:'ALL'対応済み）をそのまま流用する。
+    'BP04-049': [E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'ALL', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })], // なんだコイツ…
+
+    // BP03-037 Tango Down（アタック, 黄, cost1, buildRule: リーダー：猫麦とろろ）
+    // カードテキスト（画像で確認）: "〖プレイ時〗プレイエリアに他のカードがないなら、PPを1回復する。
+    //  〖アタックする〗ダメージ-10。"
+    // 「プレイエリアに他のカードがない（総数0枚）」を判定するConditionが現行のPLAY_AREA_TYPE_COUNTには
+    // 存在しない（既存はcardType別カウントのみで、全タイプ合計・自分自身を除く枚数という条件は
+    // 別物として新設が必要）。そのためプレイ時効果は未実装。アタック時のダメージ-10のみ登録する
+    // （ATTACK_DAMAGE_BONUSは符号を問わず加算するだけなので、負の値をそのまま表現できる）。
+    'BP03-037': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: -10 } }),
+    ],
+
+    // BP01-069 運もミスもない（メモリア, 青, cost0, buildRule: リーダー：白雪レイド）
+    // カードテキスト（画像で確認）: "〖プレイ時〗自分のデッキの上から1枚を見る。そのカードをトラッシュに
+    //  置いてもよい。〖アタック強化〗次のアタックのダメージ+10。"
+    // プレイ時の「デッキの上から1枚を見て、任意でトラッシュに置く」は既存のMILL/DECK_LOOK系Actionが
+    // 対象外としてきた「山札を覗いて選択する」機構であり、現行のFREE_PLAY/DECK_LOOK_FREE_PLAY系とも
+    // 形が異なる（引く/プレイするのではなく「捨てるか残すか」の二択）ため未実装。ATTACK_BOOSTのみ登録する。
+    'BP01-069': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 10 } }),
+    ],
+
+    // ---- 以下、Phase Hで画像確認したが今回は未登録のカード（新しい仕組みが必要なため） ----
+
+    // BP01-040 Lastman Standing（アタック, 黄, cost1, buildRule: リーダー：Cpt）
+    // カードテキスト: "〖アタックする〗手札を1枚捨ててもよい。そうしたならダメージ+20。"
+    // 「手札を1枚捨てるかどうかを選び、捨てた場合のみ固定ボーナスが付く」という条件付き任意コストは
+    // 既存のATTACK_DAMAGE_BONUS（固定値のみ）やDISCARD_HAND（無条件・枚数指定のみ）では表現できない。
+    // 選択コールバック＋捨てたかどうかで分岐するAction設計が必要なため、推測で実装せず見送る。
+
+    // BP01-022 壁ジャンプ（アタック, 赤, cost1, buildRule: リーダー：Selly）
+    // カードテキスト: "プレイエリアに別の「壁ジャンプ」が1枚あるなら、コストを支払わずにこのカードを
+    //  プレイしてもよい（2枚以上あるときはコストを支払う）。〖アタックする〗"
+    // 「同名カードが場にあるかどうかでコスト免除が変わる」プレイ条件は、既存のFREE_PLAY系
+    // （手札/デッキ/プレイエリアから選んでプレイする）とは全く別の「通常のプレイそのものの
+    // コスト計算に介入する」機構であり、現行のカード効果レイヤーには対応する仕組みがない。
+    // 推測で実装せず見送る。
+
+    // BP01-061 逃走成功（メモリア, 赤, cost1, buildRule: リーダー：Mondo）
+    // BP01-088 モラルからのハミダシ（メモリア, 緑, cost1, buildRule: リーダー：nqrse）
+    // カードテキスト（共通の型）: "〖プレイ時〗すべてのプレイヤーはカードを1枚引く。〖アタック強化〗次の
+    //  アタックのダメージ+50。"
+    // 既存のDRAW Actionはctx.ownerPlayerId固定で1人分しか引けない（DISCARD_HANDのwho:'SELF'|'OPPONENT'|'ALL'
+    // に相当する仕組みが無い）。DISCARD_HANDと全く同じ形でDRAWにwhoパラメータを追加すれば表現できる、
+    // 小さく明確なスコープの拡張だが、既存Actionの挙動を変える変更なので今回は実装せず、
+    // 次回「システム追加」で対応候補として提示する。
+
+    // BP03-027 仁義なき抗争（アタック, 青, cost1, buildRule: リーダー：ズズ）
+    // カードテキスト: "〖アタックする〗手札を1枚ランダムに捨ててもよい。そうしたならダメージ+30。"
+    // BP01-040と同型の「捨てるかどうかを選び、捨てた場合のみボーナス」に加え「ランダムに1枚」という
+    // 追加の乱数選択も必要。同じ理由で見送る。
+
+    // BP04-023 天衣無縫（アタック, 赤, cost1, buildRule: リーダー：らいじん）
+    // カードテキスト: "〖アタックする〗対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードが
+    //  メモリアカードなら、ダメージ+20。"
+    // 「相手のデッキの上から公開して、公開したカードの種類によって自分のダメージが変わる」は、
+    // 既存のMILL/DECK_LOOK系（自分のデッキ対象のみ）ともOVERKILL_AMOUNT型の事後条件とも異なる、
+    // 新規の「公開結果に応じた分岐」を持つActionが必要なため見送る。
+
+    // BP01-068 運命のルーレット（メモリア, 青, cost1, buildRule: リーダー：渋谷ハル）
+    // カードテキスト: "〖プレイ時〗メモリアカードかアタックカードのどちらかを宣言し、自分のデッキの上から
+    //  1枚を公開する。そのカードが宣言したカードタイプならカードを4枚引く。それ以外なら公開したカードを
+    //  トラッシュに置く。"
+    // 「事前に種類を宣言し、公開結果と一致するかどうかで結果が分岐する」機構は現行のDECK_LOOK系にも
+    // OVERKILL_AMOUNT型の条件にも存在しない、新規のAction設計が必要なため見送る。
+
+    // BP04-028 シンクロトリニティ（アタック, 青, cost1, buildRule: リーダー：白波らむね）
+    // カードテキスト: "〖アタックする〗〖アタック後〗自分のデッキの上から3枚を見る。その中からエース以外の
+    //  コスト0のカード1枚を公開し、手札に加えてもよい。残りのカードをトラッシュに置く。"
+    // 「デッキの上から複数枚を見て、条件に合う1枚だけ手札に加え、残りをトラッシュに置く」は、
+    // Phase Gで実装したDECK_LOOK_FREE_PLAY_MEMORIA（見た中から即プレイ）とは異なり「手札に加える」
+    // という結果になる新しいAction type（DECK_LOOK_ADD_TO_HAND相当）が必要なため見送る。
   };
 
   function getEffectsForCard(cardId) {
