@@ -436,8 +436,14 @@
     queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, extractChoiceOptions(options));
 
     player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+    // Phase E: ATTACK_BOOSTにconditionが付いている場合、このメモリアをプレイした「今」の時点
+    // （このカード自身は既にPhases.playMemoriaCardでプレイエリアへ積まれた後）で判定する。
+    // We are...!の「メモリアカードの数は【アタック強化】を実行するときに数える」という printedルーリングに
+    // 基づく（ctx.ownerPlayerId/cardIndexがあればPLAY_AREA_TYPE_COUNT等の既存Conditionがそのまま使える）。
+    var attackBoostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstanceId, cardIndex: cardIndex };
     CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
       if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, attackBoostCtx)) return;
         Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstanceId);
       } else if (e.trigger === 'AFTER_ATTACK') {
         // このAFTER_ATTACK効果は「次のアタック」に付随する。ctxは次のplayAttackCardWithEffects呼び出し時に完成させる。
@@ -481,10 +487,20 @@
   }
 
   // ---- ON_ATTACK：アタックカード自身の固有ダメージをattackCardBaseDamageとして算出 ----
-  function computeAttackCardBaseDamage(cardId) {
+  // Phase E: state/ctxを受け取り、ATTACK_DAMAGE_BONUSにconditionが付いていれば評価する
+  // （例：アナイアレーション「自分のリーダーの色がすべて異なるなら」、オールスターコンボ
+  //  「プレイエリアに他のアタックカードがN枚以上あるなら」）。conditionが無いエントリは
+  // 従来どおり常に加算する（既存の全登録カードと完全後方互換）。呼び出し側
+  // （playAttackCardWithEffects）がこの関数を呼ぶ時点では、このカード自身はまだ
+  // プレイエリアに積まれていない（Phases.playAttackCardの前）ため、PLAY_AREA_TYPE_COUNTで
+  // 「他の」アタックカードを数える場合も自分自身を除外する特別扱いは不要（タイミング上自然に除外される）。
+  function computeAttackCardBaseDamage(cardId, state, ctx) {
     var total = 0;
     CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
-      if (e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'ATTACK_DAMAGE_BONUS') total += e.action.amount;
+      if (e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'ATTACK_DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, ctx)) return;
+        total += e.action.amount;
+      }
     });
     return total;
   }
@@ -500,7 +516,20 @@
     var cardId = handEntry.cardId;
 
     var attackCardEffects = CardEffectData.getEffectsForCard(cardId);
-    var baseDamage = computeAttackCardBaseDamage(cardId);
+    // Phase E: ON_ATTACKのATTACK_DAMAGE_BONUSがconditionを持つ場合に備え、
+    // Phases.playAttackCard呼び出し前（＝このカードがまだプレイエリアに積まれる前）の
+    // 時点で判定に必要なctxを組み立てておく。overkillAmount/chooseTargetはこの時点では
+    // まだ確定しないため後で同じオブジェクトに追記する（ctxを二重に作らない）。
+    var ctx = {
+      ownerPlayerId: playerId,
+      sourceInstanceId: cardInstanceId,
+      attackerPlayerId: playerId,
+      attackerLeaderIndex: options.attackerLeaderIndex,
+      targetPlayerId: options.targetPlayerId,
+      targetLeaderIndex: options.targetLeaderIndex,
+      cardIndex: cardIndex,
+    };
+    var baseDamage = computeAttackCardBaseDamage(cardId, state, ctx);
 
     // Phase D-2-D: OVERKILL_AMOUNT用に、combat.js内で計算される合計ダメージと同じ式を
     // ここで独立して事前計算しておく（combat.js自体は無改修。既存のdealDamageAndCheckDownが
@@ -521,16 +550,9 @@
     // ダウンした場合のみOverkillの概念が成立する（PROVISIONAL、ruleConfig.js参照）
     var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
 
-    var ctx = {
-      ownerPlayerId: playerId,
-      sourceInstanceId: cardInstanceId,
-      attackerPlayerId: playerId,
-      attackerLeaderIndex: options.attackerLeaderIndex,
-      targetPlayerId: options.targetPlayerId,
-      targetLeaderIndex: options.targetLeaderIndex,
-      chooseTarget: options.chooseTarget,
-      overkillAmount: overkillAmount,
-    };
+    // 上で組み立てたctxに、この時点で確定した値を追記する（cardIndexは既に入っている）
+    ctx.chooseTarget = options.chooseTarget;
+    ctx.overkillAmount = overkillAmount;
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
@@ -591,6 +613,7 @@
     makeOwnAliveLeaderTarget: EffectFactories.makeOwnAliveLeaderTarget,
     makeAllOwnAliveLeadersTarget: EffectFactories.makeAllOwnAliveLeadersTarget,
     makeAnyOpponentLeaderTarget: EffectFactories.makeAnyOpponentLeaderTarget,
+    makeAllLeadersDifferentColorsCondition: EffectFactories.makeAllLeadersDifferentColorsCondition,
     // Phase D-3: MOVE_EQUIPMENT / TEMP_ATK_MODIFIER / DISTRIBUTED_HEAL / DERIVED_AMOUNT
     resolveActionAmount: resolveActionAmount,
     applyDistributedHeal: applyDistributedHeal,

@@ -196,7 +196,9 @@
     // Phase D-2: PLAY_AREA_TYPE_COUNT / SAME_COLOR_AS / OVERKILL_AMOUNT
     // 該当カードのテキストを個別に確認し、単一条件・単一Actionで正確に表現できるものだけ登録する。
     // 「アタック強化」の段階的加算・カウントタイミング注記付きのカード（BP01-056/075/077/069,
-    // BP02-038/058）はPROVISIONALとして見送る（最終報告に一覧化）。
+    // BP02-058）はPROVISIONALとして見送る（最終報告に一覧化）。
+    // （BP02-038オールスターコンボは、Phase Eで条件付きON_ATTACKボーナス機構を追加した際に
+    //  実カードテキストを確認のうえ別途登録済み。本コメント作成時点では未確認のため誤って含めていた）
     // ============================================================
 
     // --- PLAY_AREA_TYPE_COUNT: 自分の場にメモリアが2枚以上→対戦相手の他のリーダー1体に20ダメージ ---
@@ -480,16 +482,28 @@
     // 仕組みは、既存のDISCARD_HAND（枚数指定のみ・種類別カウント無し）やATTACK_DAMAGE_BONUS（固定値のみ）
     // では表現できない。新しいAction type設計が必要なため、推測で実装せず今回は見送る。
 
-    // BP04-038 アナイアレーション（アタック, 緑, cost2）— 未実装（登録しない）
+    // BP04-038 アナイアレーション（アタック, 緑, cost2）
     // カードテキスト: "〖アタックする〗自分のリーダーの色がすべて異なるなら、ダメージ+30。
     //  〖アタック後〗自分のリーダーの色がすべて異なるなら、対戦相手の他のリーダー1体に30ダメージ、
     //  自分のリーダー1体を30回復し、カードを1枚引く。"
-    // 阻害要因が2つある。(1)「自分のリーダーの色がすべて異なる」という条件を判定するConditionが
-    // effectFactories.jsに存在しない（新設が必要）。(2) ON_ATTACKのATTACK_DAMAGE_BONUSは
-    // computeAttackCardBaseDamage(cardId)がcardIdのみを受け取りcondition評価ができない設計になっており
-    // （state/ctxを渡さない）、条件付きのアタック時ボーナスに対応するにはeffectResolver.js側の設計変更が
-    // 必要になる。既存のCondition/Action基盤を壊さずに対応するには専用のPhase（設計・テスト込み）が
-    // 必要なため、今回は推測で実装せず見送る。
+    // Phase E: 条件付きON_ATTACKボーナス機構＋makeAllLeadersDifferentColorsConditionを新設して対応。
+    // AFTER_ATTACKは対象が「対戦相手の他のリーダー」（DAMAGE）と「自分のリーダー」（HEAL+DRAW）で
+    // 異なるため、ドレインロッド（BP02-076）と同じ理由でMULTIにまとめず2つの登録に分ける。
+    'BP04-038': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeAllLeadersDifferentColorsCondition(), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 30 } }),
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: F.makeAllLeadersDifferentColorsCondition(),
+        target: F.makeSingleOtherOpponentLeaderTarget(),
+        action: { type: 'DAMAGE', amount: 30 },
+      }),
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: F.makeAllLeadersDifferentColorsCondition(),
+        target: F.makeOwnAliveLeaderTarget(),
+        action: { type: 'MULTI', actions: [{ type: 'HEAL', amount: 30 }, { type: 'DRAW', amount: 1 }] },
+      }),
+    ],
 
     // AN01-008 ラストスタンド（アタック, 青, cost0, ACE）
     // カードテキスト: 画像で確認済み。「アタックする」以外の追加テキストなし（バニラのアタックカード）。
@@ -621,19 +635,12 @@
     //   「ダメージを受けている（damage>0）」で絞り込む新しいTarget Factoryが必要（既存のmakeAllOtherOpponentLeadersTarget
     //   はisDownでしか絞り込まない）。既存Factoryの単純な模倣で作れるが、新設計になるため今回は見送る。
     //
-    // BP03-059 We are...!：プレイ時条件（プレイエリアのアタックカード枚数）はPLAY_AREA_TYPE_COUNTで表現できるが、
-    //   アタック強化側の条件（プレイエリアのメモリアカード枚数で+70）は、Combat.queueAttackBoostが常に無条件で
-    //   呼ばれる設計になっており、ATTACK_BOOST自体を条件付きにする仕組みが無い。BP04-038と同種の設計課題のため見送る。
-    //
     // BP03-066 ジェイルブレイク：「このターン中にメモリア/アタックカードの効果で引いたカード枚数」という
     //   ターンをまたいだ累積カウンターの新設と、それを元にした割り振りダメージが必要なため見送る。
     //
     // BP02-024 三銃士／BP02-045 巡り合う二人／BP01-017 一騎当千／BP01-044 リンク・アサルト：
     //   いずれもデッキ/プレイエリアから複数カードを選んでコスト無しでプレイする系統
     //   （DECK_LOOK・FREE_PLAY・REPLAY_FROM_PLAY_AREA、過去のPhaseで明示的に対象外）。
-    //
-    // BP02-038 オールスターコンボ：プレイエリアの他アタックカード枚数によるON_ATTACKの段階的ボーナス。
-    //   BP04-038・BP03-059と同じ「ON_ATTACKボーナスを条件付きにできない」設計課題のため見送る。
     //
     // BP01-026 CLUTCH!!!：手札のコスト0カードを公開・破棄してもよい、という任意コストのボーナス
     //   （OPTIONAL_DISCARD_THEN_BONUS、過去のPhaseで対象外）。
@@ -646,6 +653,41 @@
     // ST01-005 クロスファイア／ST01-016 初の栄冠／ST02-009 魔王降臨／ST02-012 変わらない関係：
     //   「自分のリーダーすべてが特定のタグ（VSPO!/CR等）を持つなら」という判定は、過去のPhaseで
     //   明示的に対象外とされたタグデータ・TAG_CONDITION機構が必要なため見送る。
+
+    // ============================================================
+    // Phase E: 条件付きON_ATTACK/ATTACK_BOOSTボーナス機構を追加したことで登録可能になったカード
+    // ============================================================
+
+    // BP03-059 We are...!（メモリア, 黄, cost1, ACE）
+    // カードテキスト: "〖プレイ時〗プレイエリアにアタックカードが2枚以上あるなら、自分のリーダー1体を
+    //  30回復し、カードを2枚引く。〖アタック強化〗プレイエリアにメモリアカードが3枚以上あるなら、
+    //  次のアタックのダメージ+70。（メモリアカードの数は【アタック強化】を実行するときに数える。）"
+    // ON_PLAY側はPLAY_AREA_TYPE_COUNTが元々対応済み（ResolutionStack解決時にconditionを評価するため）。
+    // ATTACK_BOOST側がPhase Eで新たに条件評価に対応した部分（カード自身の括弧書きどおり、
+    // このカードをプレイした時点＝プレイエリアに積まれた後のメモリア枚数で判定する）。
+    'BP03-059': [
+      E({
+        trigger: 'ON_PLAY',
+        condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 2 }),
+        target: F.makeOwnAliveLeaderTarget(),
+        action: { type: 'MULTI', actions: [{ type: 'HEAL', amount: 30 }, { type: 'DRAW', amount: 2 }] },
+      }),
+      E({
+        trigger: 'ATTACK_BOOST',
+        condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }),
+        modifier: { type: 'DAMAGE_BONUS', amount: 70 },
+      }),
+    ],
+
+    // BP02-038 オールスターコンボ（アタック, 緑, cost1, ACE）
+    // カードテキスト: "〖アタックする〗プレイエリアに他のアタックカードが2枚以上あるなら、ダメージ+40。
+    //  プレイエリアに他のアタックカードが4枚以上あるなら、さらにダメージ+20。"
+    // このカード自身はcomputeAttackCardBaseDamage呼び出し時点ではまだプレイエリアに積まれていないため、
+    // PLAY_AREA_TYPE_COUNTでカウントすれば自然に「他の」アタックカードだけが数えられる。
+    'BP02-038': [
+      E({ trigger: 'ON_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 2 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } }),
+      E({ trigger: 'ON_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 4 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 20 } }),
+    ],
   };
 
   function getEffectsForCard(cardId) {

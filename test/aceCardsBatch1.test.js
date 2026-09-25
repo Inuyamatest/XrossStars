@@ -6,11 +6,13 @@
  * および、意図的に未登録のままにしたカードが本当に効果なしとして扱われることの確認
  *   - AN01-008 ラストスタンド（追加効果なしのバニラアタックカード）
  *   - BP04-024 オーバードライブ（手札の種類別カウントに基づく効果。新Action type設計が必要なため未実装）
- *   - BP04-038 アナイアレーション（「自分のリーダーの色がすべて異なるなら」という新Conditionと、
- *     ON_ATTACKボーナスの条件付き化という設計変更の両方が必要なため未実装）
  *
  * 既存のjs/engine/*.jsは一切変更していない（cardEffectData.jsへのエントリ追加のみ）ため、
  * 既存のtest/*.test.jsは無改修・無影響である。
+ *
+ * 注: BP04-038アナイアレーションはこのバッチ作成時点では未登録だったが、後のPhase Eで
+ * 条件付きON_ATTACKボーナス機構を追加した際に登録された（test/aceCardsBatch2.test.js参照）。
+ * このファイルからは「未登録の確認」を削除済み。
  */
 const assert = require('assert');
 const CardLookup = require('../js/engine/cardLookup.js');
@@ -181,10 +183,6 @@ test('AN01-008（バニラのアタックカード）には登録済み効果が
 
 test('BP04-024オーバードライブは新Action type設計が必要なため未登録のまま', () => {
   assert.deepStrictEqual(CardEffectData.getEffectsForCard('BP04-024'), []);
-});
-
-test('BP04-038アナイアレーションは新Condition・エンジン設計変更が必要なため未登録のまま', () => {
-  assert.deepStrictEqual(CardEffectData.getEffectsForCard('BP04-038'), []);
 });
 
 // ============================================================

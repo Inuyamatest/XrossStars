@@ -208,6 +208,27 @@
     };
   }
 
+  // ---- Phase E: 条件付きON_ATTACK/ATTACK_BOOSTボーナス用の追加Condition ----
+
+  // 「自分のリーダーの色がすべて異なるなら」（アナイアレーション実装のために新設）。
+  // リーダーの色はデッキ構築時に固定される属性であり、ダウン状態などの盤面状況では変化しないため、
+  // isDownに関わらず4体全員の色を見る（生存リーダーだけに絞る、という解釈は取らない）。
+  // ctx.cardIndexが無い、またはいずれかのリーダーの色が引けない場合は安全にfalseを返す。
+  function makeAllLeadersDifferentColorsCondition() {
+    return function (state, ctx) {
+      if (!ctx.cardIndex) return false;
+      var leaders = state.players[ctx.ownerPlayerId].leaders;
+      var colors = leaders.map(function (l) {
+        var card = ctx.cardIndex[l.cardId];
+        return card && card.color;
+      });
+      if (colors.some(function (c) { return !c; })) return false;
+      var unique = {};
+      colors.forEach(function (c) { unique[c] = true; });
+      return Object.keys(unique).length === colors.length;
+    };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -222,5 +243,6 @@
     makeOwnAliveLeaderTarget: makeOwnAliveLeaderTarget,
     makeAllOwnAliveLeadersTarget: makeAllOwnAliveLeadersTarget,
     makeAnyOpponentLeaderTarget: makeAnyOpponentLeaderTarget,
+    makeAllLeadersDifferentColorsCondition: makeAllLeadersDifferentColorsCondition,
   };
 }));
