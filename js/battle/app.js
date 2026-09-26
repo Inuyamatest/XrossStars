@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20260927a';
+  var APP_VERSION = '20260927b';
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -149,6 +149,7 @@
   var detailCardId = null;   // カード詳細モーダルで表示中のカード
   var seenActive = null;     // 手番交代画面を最後に確認したプレイヤー（対戦台で相手の手札を見せないため）
   var prevHp = {};           // 直前の描画時点の各リーダー残りHP（ダメージ/回復演出用）
+  var prevPp = {};           // 直前の描画時点の各プレイヤーのPP { max, tapped }（PPカードを倒す/起こす演出用）
   var notice = null;         // 操作できなかった理由などの一言メッセージ（次の操作で消える）
   var pendingChoice = null;  // 選択待ちの行動 { base, seed, answers, fn, onDone, question, preview, selection, revealed }
 
@@ -350,6 +351,7 @@
     detailCardId = null;
     seenActive = null;
     prevHp = {};
+    prevPp = {};
     screen = 'battle';
     render();
   }
@@ -423,6 +425,12 @@
     Object.keys(hpNow).forEach(function (k) { if (prevHp[k] != null && prevHp[k] !== hpNow[k]) deltas[k] = hpNow[k] - prevHp[k]; });
     if (Object.keys(deltas).some(function (k) { return deltas[k] > 0 && hpNow[k] > 0; })) healSoundPending = true;
     prevHp = hpNow;
+    ['playerA', 'playerB'].forEach(function (pid) {
+      var cur = state.players[pid].ppCards;
+      var was = prevPp[pid];
+      if (was && (was.max !== cur.max || was.tapped !== cur.tapped)) deltas['pp:' + pid] = was;
+      prevPp[pid] = { max: cur.max, tapped: cur.tapped };
+    });
 
     return '' +
       '<div class="bt-battle">' +
@@ -465,7 +473,7 @@
       '<div class="bt-strip">' +
         '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
         (isActive ? '<span class="bt-turntag">' + (isCpu(playerId) ? 'CPU TURN' : (game.online && isRemoteSide(playerId) ? 'OPPONENT TURN' : 'YOUR TURN')) + '</span>' : '') +
-        '<span class="bt-pp">' + renderPpPips(player) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
+        '<span class="bt-pp" title="PP（プレイポイントカード）：縦向き＝使える ' + pp + '枚 / 横向き＝使用済み ' + player.ppCards.tapped + '枚">' + renderPpCards(player, deltas['pp:' + playerId]) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
         renderBoostBadge(player) +
         '<span class="bt-counters">' +
           '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b></span>' +
@@ -482,12 +490,32 @@
       strip + row + '</section>';
   }
 
-  function renderPpPips(player) {
-    var html = '<span class="bt-pp-pips">';
-    for (var i = 0; i < player.ppCards.max; i++) {
-      html += '<span class="bt-pp-pip' + (i < (player.ppCards.max - player.ppCards.tapped) ? ' filled' : '') + '"></span>';
+  // PPはプレイポイントカードで表す。使える分は縦向き、使った分は横向き（右から倒れていく）。
+  // was: 直前の描画時点の { max, tapped }（変化があったときだけ）。倒れた/起きた/増えたカードに演出を付ける
+  function renderPpCards(player, was) {
+    var max = player.ppCards.max;
+    var tapped = player.ppCards.tapped;
+    var untappedNow = max - tapped;
+    var untappedWas = was ? Math.min(was.max, was.max - was.tapped) : untappedNow;
+    var html = '<span class="bt-ppcards">';
+    for (var i = 0; i < max; i++) {
+      var used = i >= untappedNow;
+      var cls = 'bt-ppc' + (used ? ' used' : '');
+      if (was) {
+        if (was.max <= i) cls += ' added';                                   // ラウンドで増えたPPカード
+        else if (used && i < untappedWas) cls += ' tapping';                 // いま払った
+        else if (!used && i >= untappedWas) cls += ' untapping';             // いま回復した
+      }
+      html += '<span class="' + cls + '"><img src="cards/pp-mini.webp" alt="" draggable="false"></span>';
     }
-    return html + '</span>';
+    html += '</span>';
+    if (was) {
+      var diff = untappedNow - untappedWas;
+      if (was.max < max) html += '<span class="bt-pp-float up">PPカード+' + (max - was.max) + '</span>';
+      else if (diff < 0) html += '<span class="bt-pp-float down">PP' + diff + '</span>';
+      else if (diff > 0) html += '<span class="bt-pp-float up">PP+' + diff + '</span>';
+    }
+    return html;
   }
 
   function leaderPickState(playerId, leader, idx, readOnly) {
@@ -607,14 +635,21 @@
     return l ? cardOf(l.cardId).name : '?';
   }
 
+  // 使ったPPの表示（コストを支払わずにプレイしたときはその旨）
+  function ppPaidText(p) {
+    if (p.free) return '（コストなし）';
+    return typeof p.ppPaid === 'number' ? '（PP−' + p.ppPaid + '）' : '';
+  }
+
   function describeEvent(e) {
     var p = e.payload || {};
     switch (e.type) {
       case 'TURN_STARTED': return { cls: 'turn', text: PLAYER_LABEL[p.playerId] + 'のターン' };
       case 'ROUND_STARTED': return { cls: 'turn', text: 'ラウンド' + p.roundNumber + '開始' };
-      case 'CARD_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：アタック「' + cardOf(p.cardId).name + '」' };
-      case 'MEMORIA_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：メモリア「' + cardOf(p.cardId).name + '」' };
-      case 'TACTICS_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：タクティクス「' + cardOf(p.cardId).name + '」' };
+      case 'CARD_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：アタック「' + cardOf(p.cardId).name + '」' + ppPaidText(p) };
+      case 'MEMORIA_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：メモリア「' + cardOf(p.cardId).name + '」' + ppPaidText(p) };
+      case 'TACTICS_PLAYED': return { cls: 'play', text: pShort(p.playerId) + '：タクティクス「' + cardOf(p.cardId).name + '」' + ppPaidText(p) };
+      case 'PP_RECOVERED': return { cls: '', text: pShort(p.playerId) + '：PPを' + p.amount + '回復' + (p.cardId ? '（「' + cardOf(p.cardId).name + '」）' : '') };
       case 'ATTACK_BOOSTED': return { cls: '', text: pShort(p.playerId) + '：アタック強化 +' + p.amount };
       case 'DAMAGE_DEALT': {
         var tp = p.targetPlayerId || p.playerId;
@@ -968,6 +1003,7 @@
       lastRoundBanner = null;
       game.hold = null;
       prevHp = {};
+      prevPp = {};
     }
     pendingChoice = {
       base: game.state,
@@ -1067,6 +1103,7 @@
     if (!h) return;
     game.hold = null;
     prevHp = {}; // 次のラウンドでHPが戻るのを回復の演出として出さない
+    prevPp = {};
     if (h.banner) lastRoundBanner = h.banner;
     render();
   }
@@ -1239,6 +1276,7 @@
     detailCardId = null;
     seenActive = null;
     prevHp = {};
+    prevPp = {};
     screen = 'battle';
     render();
   }

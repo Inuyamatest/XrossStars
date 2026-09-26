@@ -106,10 +106,23 @@ img{display:block}
 .bt-counter{display:flex;align-items:center;gap:5px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:11px}
 .bt-counter b{font-family:var(--num);font-size:14px;color:var(--text)}
 
-.bt-pp{display:flex;align-items:center;gap:6px}
-.bt-pp-pips{display:flex;gap:4px}
-.bt-pp-pip{width:14px;height:14px;transform:rotate(45deg);border-radius:3px;border:1.5px solid #6b5a1a;background:transparent}
-.bt-pp-pip.filled{background:linear-gradient(135deg,#ffe27a,var(--yellow));border-color:var(--yellow);box-shadow:0 0 8px rgba(245,197,24,.55)}
+.bt-pp{display:flex;align-items:center;gap:6px;position:relative}
+/* PP：プレイポイントカード。縦向き＝使える、横向き＝使用済み */
+.bt-ppcards{display:flex;align-items:center;gap:1px;height:22px}
+.bt-ppc{width:21px;height:22px;display:flex;align-items:center;justify-content:center;flex:none}
+.bt-ppc img{width:15px;height:21px;border-radius:2px;display:block;box-shadow:0 0 0 1px rgba(245,197,24,.75),0 0 7px rgba(245,197,24,.45);transition:transform .35s ease,filter .35s ease}
+.bt-ppc.used img{transform:rotate(90deg) scale(.86);filter:grayscale(.75) brightness(.5);box-shadow:0 0 0 1px rgba(255,255,255,.18)}
+.bt-ppc.tapping img{animation:bt-pp-tap .55s ease both}
+.bt-ppc.untapping img{animation:bt-pp-untap .55s ease both}
+.bt-ppc.added img{animation:bt-pp-add 1s ease both}
+@keyframes bt-pp-tap{0%{transform:none;filter:none;box-shadow:0 0 0 1px rgba(245,197,24,.75),0 0 12px rgba(245,197,24,.9)}100%{transform:rotate(90deg) scale(.86);filter:grayscale(.75) brightness(.5);box-shadow:0 0 0 1px rgba(255,255,255,.18)}}
+@keyframes bt-pp-untap{0%{transform:rotate(90deg) scale(.86);filter:grayscale(.75) brightness(.5)}100%{transform:none;filter:none}}
+@keyframes bt-pp-add{0%{transform:translateY(-10px) scale(.6);opacity:0}60%{transform:translateY(0) scale(1.15);opacity:1;box-shadow:0 0 0 2px var(--yellow),0 0 16px rgba(245,197,24,.95)}100%{transform:none}}
+.bt-pp-float{position:absolute;left:50%;top:-4px;transform:translateX(-50%);font-family:var(--num);font-weight:800;font-size:13px;white-space:nowrap;pointer-events:none;animation:bt-pp-float 1.5s ease-out both;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.bt-pp-float.down{color:#ffd35a}
+.bt-pp-float.up{color:#8ff0b0}
+@keyframes bt-pp-float{0%{opacity:0;transform:translate(-50%,6px)}15%{opacity:1;transform:translate(-50%,-6px)}75%{opacity:1;transform:translate(-50%,-14px)}100%{opacity:0;transform:translate(-50%,-20px)}}
+@media (prefers-reduced-motion:reduce){ .bt-ppc img,.bt-pp-float{animation:none!important;transition:none} }
 .bt-pp-num{font-family:var(--num);font-weight:700;font-size:15px;color:var(--yellow)}
 
 .bt-row{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);gap:12px;align-items:stretch}
@@ -247,7 +260,8 @@ img{display:block}
   .bt-counter{font-size:10px;padding:2px 6px;gap:3px}
   .bt-counter b{font-size:12px}
   .bt-strip .bt-turntag{display:none}
-  .bt-pp-pip{width:11px;height:11px}
+  .bt-ppc{width:17px}
+  .bt-ppc img{width:12px;height:17px}
   .bt-atk i{display:none}
   .bt-center{padding:0}
   .bt-ev{font-size:10px;padding:2px 8px}
