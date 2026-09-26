@@ -184,6 +184,13 @@
 
   // ---- END_PHASE（spec 8章：①プレイエリア→トラッシュ ②残PP分ドロー ③手札7枚制限）----
   // handDiscardChooserFn(hand, countToDiscard) => instanceId[]  (省略時は末尾から自動選択。PROVISIONAL、spec 8章参照)
+  function clearPendingAttackEffects(player) {
+    player.pendingAttackBoost = 0;
+    player.pendingBoostSources = [];
+    player.pendingAttackTimeBoosts = [];
+    player.pendingAfterAttackEffects = [];
+  }
+
   function runEndPhase(state, handDiscardChooserFn) {
     state.turn.phase = PHASES.END_PHASE;
     Events.logEvent(state, 'END_PHASE_STARTED', { playerId: state.turn.activePlayer });
@@ -196,6 +203,9 @@
     });
     player.playArea = [];
     Events.logEvent(state, 'CARDS_TRASHED', { playerId: state.turn.activePlayer, count: trashedCount });
+    // 使われなかった「次のアタック」への強化・アタック後効果は、元のメモリア等がトラッシュに行くので消える
+    // （PROVISIONAL: ruleConfig.pendingAttackEffectsExpiryPolicy。次のターン・次のラウンドへ持ち越さない）
+    clearPendingAttackEffects(player);
 
     // ② 余っているPP（縦向き＝未使用分）と同じ枚数をドロー
     var remainingPP = player.ppCards.max - player.ppCards.tapped;
