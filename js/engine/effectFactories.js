@@ -291,6 +291,82 @@
     };
   }
 
+  // ---- 未登録だった基本カードの一括登録で追加したCondition/Target ----
+
+  // 「アタッカーが覚醒しているなら」（サイコフォートレス）
+  function makeAttackerAwakenedCondition() {
+    return function (state, ctx) {
+      var attacker = getAttackerLeader(state, ctx);
+      return !!attacker && !!attacker.awakened;
+    };
+  }
+
+  // 「アタッカーがカードを装備しているなら」（勝利の抜刀・バックステージパス）
+  function makeAttackerHasEquipmentCondition() {
+    return function (state, ctx) {
+      var attacker = getAttackerLeader(state, ctx);
+      return !!attacker && (attacker.equipment || []).length > 0;
+    };
+  }
+
+  // 「このラウンドが3ラウンド目なら」
+  function makeRoundNumberCondition(n) {
+    return function (state) { return state.match.roundNumber === n; };
+  }
+
+  // 「自分の手札が2枚以下なら」。spec: { operator, count }（効果を解決する時点の枚数）
+  function makeOwnHandSizeCondition(spec) {
+    return function (state, ctx) {
+      return compareByOperator(state.players[ctx.ownerPlayerId].hand.length, spec.operator, spec.count);
+    };
+  }
+
+  // 「このアタックを受けたリーダーがダウンしているなら」
+  function makeTargetDownedCondition() {
+    return function (state, ctx) {
+      var t = state.players[ctx.targetPlayerId] && state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex];
+      return !!t && t.isDown;
+    };
+  }
+
+  // 「自分のリーダーが3体ダウンしているなら」。spec: { operator, count }
+  function makeOwnDownedLeaderCountCondition(spec) {
+    return function (state, ctx) {
+      var n = state.players[ctx.ownerPlayerId].leaders.filter(function (l) { return l.isDown; }).length;
+      return compareByOperator(n, spec.operator, spec.count);
+    };
+  }
+
+  // 「このターン、あなたが手札を1枚以上捨てているなら」（短気な爆弾魔）。
+  // カード効果による手札破棄（CARD_DISCARDED_BY_EFFECT）がこのターンに記録されているかで判定する
+  // （終了フェイズの手札上限による破棄は、そのターンの終わりなので対象にならない）。
+  function makeDiscardedThisTurnCondition() {
+    return function (state, ctx) {
+      return state.actionLog.some(function (e) {
+        return e.type === 'CARD_DISCARDED_BY_EFFECT' && e.payload && e.payload.playerId === ctx.ownerPlayerId &&
+          e.turnNumber === state.turn.turnNumber && e.roundNumber === state.match.roundNumber;
+      });
+    };
+  }
+
+  // 「プレイエリアに他のカードがないなら」（カウンターブロー）：このカード自身以外にカードがない
+  function makeNoOtherCardsInPlayAreaCondition() {
+    return function (state, ctx) {
+      return state.players[ctx.ownerPlayerId].playArea.every(function (e) { return e.card.instanceId === ctx.sourceInstanceId; });
+    };
+  }
+
+  // 「対戦相手のダメージを受けている他のリーダーすべて」（ソニックチェイサー）
+  function makeAllOtherDamagedOpponentLeadersTarget() {
+    return function (state, ctx) {
+      var results = [];
+      state.players[ctx.targetPlayerId].leaders.forEach(function (l, i) {
+        if (i !== ctx.targetLeaderIndex && !l.isDown && l.damage > 0) results.push({ playerId: ctx.targetPlayerId, leaderIndex: i });
+      });
+      return results;
+    };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -310,5 +386,14 @@
     makeUpToNOpponentLeadersTarget: makeUpToNOpponentLeadersTarget,
     makeAttackerDamagedCondition: makeAttackerDamagedCondition,
     makeAttackerRemainingHpCondition: makeAttackerRemainingHpCondition,
+    makeAttackerAwakenedCondition: makeAttackerAwakenedCondition,
+    makeAttackerHasEquipmentCondition: makeAttackerHasEquipmentCondition,
+    makeRoundNumberCondition: makeRoundNumberCondition,
+    makeOwnHandSizeCondition: makeOwnHandSizeCondition,
+    makeTargetDownedCondition: makeTargetDownedCondition,
+    makeOwnDownedLeaderCountCondition: makeOwnDownedLeaderCountCondition,
+    makeDiscardedThisTurnCondition: makeDiscardedThisTurnCondition,
+    makeNoOtherCardsInPlayAreaCondition: makeNoOtherCardsInPlayAreaCondition,
+    makeAllOtherDamagedOpponentLeadersTarget: makeAllOtherDamagedOpponentLeadersTarget,
   };
 }));

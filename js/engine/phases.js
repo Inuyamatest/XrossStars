@@ -130,14 +130,16 @@
     }, cardIndex);
   }
 
-  // options: { attackBoostAmount? }
+  // options: { attackBoostAmount?, freePlay? }（freePlay: true のときはPPを支払わない）
   function playMemoriaCard(state, playerId, cardInstanceId, options, cardIndex) {
     var player = state.players[playerId];
     var idx = findInHand(player, cardInstanceId);
     var card = GameState.getCardData(cardIndex, player.hand[idx].cardId);
-    var cost = requireKnownCost(card);
-    if (!payPP(player, cost)) {
-      throw new Error('PPが不足しています（必要:' + cost + '）');
+    if (!(options && options.freePlay)) {
+      var cost = requireKnownCost(card);
+      if (!payPP(player, cost)) {
+        throw new Error('PPが不足しています（必要:' + cost + '）');
+      }
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });

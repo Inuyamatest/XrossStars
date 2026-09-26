@@ -33,7 +33,7 @@ function test(name, fn) {
 const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004'];
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && typeof c.cost === 'number' && c.cost <= 1 && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
+const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && typeof c.cost === 'number' && c.cost <= 1 && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
 const TACTICS_CARD = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban)[0].cardNumber;
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(0, 5).map((c) => c.cardNumber);
 const TACTICS_5_B = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(5, 10).map((c) => c.cardNumber);
@@ -192,10 +192,7 @@ test('先の回でダウンした対象が後の回にも指定されていた�
   assert.ok(hitOthers > 0, '2回目以降のアタックは生存リーダーに差し替えられているはず');
 });
 
-test('未登録として見送ったカード（BP03-025 短気な爆弾魔 / BP03-067 気まずい空間）は未登録のまま', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP03-025'), false);
-  assert.strictEqual(CardEffectData.hasEffects('BP03-067'), false);
-});
+// BP03-025 短気な爆弾魔 / BP03-067 気まずい空間 は Phase K で登録した（test/phaseK.test.js参照）
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

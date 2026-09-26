@@ -53,7 +53,9 @@
     CARD_ADDED_TO_HAND_BY_EFFECT: 'CARD_ADDED_TO_HAND_BY_EFFECT', // デッキルックで手札に加えた（DECK_LOOK_ADD_TO_HAND）
     FREE_ATTACK_PLAYED_BY_EFFECT: 'FREE_ATTACK_PLAYED_BY_EFFECT', // カード効果でアタックカードをコストを支払わずにプレイ（頂点捕食者）
     ECHO_TURNED_HORIZONTAL: 'ECHO_TURNED_HORIZONTAL', // エコー：ターン終了時にトラッシュに置く代わりに横向きにした
-    ECHO_REPLAYED: 'ECHO_REPLAYED', // エコー：メインフェイズ開始時に横向きのままプレイし直した
+    CARD_MILLED_BY_EFFECT: 'CARD_MILLED_BY_EFFECT', // デッキの上から公開してトラッシュに置いた（神速フリック・テラーエンゲージ等）
+    CARD_REVEALED_BY_EFFECT: 'CARD_REVEALED_BY_EFFECT', // デッキの上を公開した（運命のルーレット）
+        ECHO_REPLAYED: 'ECHO_REPLAYED', // エコー：メインフェイズ開始時に横向きのままプレイし直した
     DECK_EMPTY: 'DECK_EMPTY',
     DECK_RESHUFFLED_FROM_TRASH: 'DECK_RESHUFFLED_FROM_TRASH',
     TACTICS_CONSUMED: 'TACTICS_CONSUMED',

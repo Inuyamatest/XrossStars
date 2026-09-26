@@ -240,6 +240,32 @@
         status: 'PROVISIONAL',
         source: 'BP05-017/024/038/045/052/059/066 のカード画像のテキストからの解釈。公式ページ・FAQは未確認。',
       },
+      // Phase K（テキスト登録済みで効果未登録だった基本カードの一括登録）で決めた解釈。
+      phaseKPolicy: {
+        // 〖アタックする〗の手札破棄・デッキ公開（大黒柱・CLUTCH!!!・神速フリック・テラーエンゲージ等）は、
+        // アタックカードのコストを支払う前・ダメージを決める前に処理する。PPが足りない場合は何もせずエラーにする。
+        preDamageAttackActionTiming: 'BEFORE_COST_PAYMENT_AND_DAMAGE',
+        // テラーエンゲージの「PPを1回復する」は、このカードのコストを支払った後に適用する
+        preDamagePpRecoverTiming: 'AFTER_COST_PAYMENT',
+        // 公開してトラッシュに置いたカード・捨てたカードはいずれも裏向き（手札からの破棄と同じ扱い）
+        revealedThenTrashedOrientation: 'FACE_DOWN',
+        // 対戦相手のデッキが0枚のとき、神速フリック/天衣無縫は何もしない（トラッシュからの再構築はしない）
+        millOpponentEmptyDeck: 'NO_OP',
+        // 運命のルーレット：宣言の選択が無いときはアタックカードを宣言する
+        declareCardTypeDefault: 'ATTACK',
+        // アタックカード自身の〖プレイ時〗（カウンターブロー）は、アタックのダメージ処理の直後・アタック後の効果より先に解決
+        attackCardOnPlayTiming: 'AFTER_DAMAGE_BEFORE_AFTER_ATTACK',
+        // アタックカード自身の〖アタック強化〗（マウントタックル）は、そのアタックの後の「次のアタック」に積む
+        attackCardOwnBoostAppliesTo: 'NEXT_ATTACK_AFTER_THIS_ONE',
+        // 壁ジャンプ等の「同名が1枚あるならコストを支払わずにプレイしてもよい」は、条件を満たせば常に支払わない（得なので自動）
+        freeIfOneSameNameInPlay: 'AUTO_FREE',
+        // 短気な爆弾魔「このターン、手札を1枚以上捨てているなら」は、このターンのカード効果による破棄の記録で判定する
+        discardedThisTurnBasis: 'CARD_EFFECT_DISCARDS_THIS_TURN',
+        // バックステージパス「アタッカーがカードを装備しているなら、さらに+20」は、次のアタックを宣言した時点で判定する
+        conditionalBoostEvaluation: 'AT_ATTACK_DECLARATION',
+        status: 'PROVISIONAL',
+        source: 'data/source/all-cards.json の各カードテキストからの解釈。公式FAQ等は未確認。',
+      },
     };
   }
 

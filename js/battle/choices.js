@@ -84,6 +84,7 @@
   //              costMin: 1枚以上選ぶならコスト合計がこれ以上 / costMax: コスト合計の上限
   //              secret: 手番でないプレイヤーの手札（表示前にワンクッション置く）
   //   ALLOCATE : candidates に total を step 刻みで割り振る → 答え: amount[]
+  //   OPTIONS  : options（{label}）から1つ選ぶ → 答え: [index]
   // env: { getActivePlayerId(), getResolvingEffect() }
   function makeCallbacks(ask, env) {
     function source() {
@@ -181,6 +182,28 @@
         return { candidateIndex: a[0], toLeaderIndex: dests[b[0]].leaderIndex };
       },
 
+      // 〖アタックする〗で手札を捨てる（大黒柱・CLUTCH!!!等は最大1枚、オーバードライブは最大2枚）
+      chooseAttackDiscard: function (cands, spec) {
+        var title = spec && spec.bonus
+          ? '捨てるカードを選んでください（捨てるとダメージ+' + spec.bonus + '。捨てない場合は「しない」）'
+          : '公開して捨てるカードを選んでください（最大' + spec.max + '枚。0枚でもよい）';
+        var a = ask(q({ type: 'CARDS', title: title, cards: cardList(cands), min: 0, max: spec.max, declineLabel: spec && spec.bonus ? 'しない' : '捨てない' }));
+        return a.map(function (i) { return cands[i].instanceId; });
+      },
+
+      // はい／いいえ（仁義なき抗争「手札を1枚ランダムに捨ててもよい」）
+      chooseConfirm: function (info) {
+        var a = ask(q({ type: 'OPTIONS', title: info.title, options: [{ label: 'はい' }, { label: 'いいえ' }] }));
+        return a[0] === 0;
+      },
+
+      // カードタイプの宣言（運命のルーレット）
+      chooseDeclareCardType: function (types) {
+        var label = { MEMORIA: 'メモリアカード', ATTACK: 'アタックカード' };
+        var a = ask(q({ type: 'OPTIONS', title: '宣言するカードタイプを選んでください', options: types.map(function (t) { return { label: label[t] || t }; }) }));
+        return types[a[0]];
+      },
+
       chooseDiscard: function (hand, count, playerId) {
         if (hand.length <= count) return hand.map(function (c) { return c.instanceId; });
         var a = ask(q({ type: 'CARDS', title: '手札から捨てるカードを' + count + '枚選んでください', cards: cardList(hand), min: count, max: count, chooser: playerId, secret: playerId !== env.getActivePlayerId() }));
@@ -199,6 +222,7 @@
 
   // 画面での選択内容が質問の条件を満たすか。cardIndex はコスト条件の判定に使う。
   function validateSelection(question, selection, cardIndex) {
+    if (question.type === 'OPTIONS') return { ok: selection.length === 1 };
     if (question.type === 'ALLOCATE') {
       var sum = selection.reduce(function (s, x) { return s + (x || 0); }, 0);
       return { ok: sum > 0 && sum <= question.total, sum: sum };

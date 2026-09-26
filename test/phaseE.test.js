@@ -37,8 +37,8 @@ const LEADERS_RAINBOW = ['BP01-001', 'BP01-005', 'BP01-009', 'BP01-013']; // 赤
 const LEADERS_SAME_COLOR = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004']; // 全員red
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
-const FILLER_MEMORIA = allCards.filter((c) => c.cardType === 'MEMORIA' && !c.ban && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
+const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
+const FILLER_MEMORIA = allCards.filter((c) => c.cardType === 'MEMORIA' && !c.ban && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
 const BLUE_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'blue' && !c.ban)[0].cardNumber;
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(0, 5).map((c) => c.cardNumber);
 const TACTICS_5_B = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(5, 10).map((c) => c.cardNumber);
