@@ -54,6 +54,16 @@
   var effectIdCounter = 0;
   function nextEffectId() { effectIdCounter += 1; return 'effect#' + effectIdCounter; }
 
+  // いま解決中の効果の情報（UIの選択画面で「どのカードの効果か」を表示するため）。
+  // PendingEffect.resolve()の実行中だけ値が入る。ルール処理はこの値を参照しない。
+  var resolvingEffect = null;
+  function getResolvingEffect() { return resolvingEffect; }
+  function withResolvingEffect(info, fn) {
+    var prev = resolvingEffect;
+    resolvingEffect = info;
+    try { return fn(); } finally { resolvingEffect = prev; }
+  }
+
   // ---- Action適用（GameState変更の実体）----
   // targets: LeaderRef[]（{playerId, leaderIndex}）。actionによっては使わない（DRAW/RECOVER_PP等）。
   function applyAction(state, action, targets, ctx, cardIndex) {
@@ -155,7 +165,7 @@
           var idx = freePlayer.hand.findIndex(function (c) { return c.instanceId === instanceId; });
           if (idx < 0) return;
           var instance = freePlayer.hand.splice(idx, 1)[0];
-          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, instance, cardIndex, { chooseTarget: ctx.chooseTarget });
+          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, instance, cardIndex, pickChoiceCallbacks(ctx));
         });
         return state;
       }
@@ -180,7 +190,7 @@
           deckLookPlayer.trash.push({ card: c, faceUp: false });
         });
         if (chosenCard) {
-          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, chosenCard, cardIndex, { chooseTarget: ctx.chooseTarget });
+          playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, chosenCard, cardIndex, pickChoiceCallbacks(ctx));
         }
         return state;
       }
@@ -208,7 +218,7 @@
           seenReplayIds[instanceId] = true;
           var cand = replayCandidates.find(function (c) { return c.instanceId === instanceId; });
           if (!cand) return;
-          queueOnPlayEffects(state, ctx.ownerPlayerId, { instanceId: cand.instanceId, cardId: cand.cardId }, cardIndex, { chooseTarget: ctx.chooseTarget });
+          queueOnPlayEffects(state, ctx.ownerPlayerId, { instanceId: cand.instanceId, cardId: cand.cardId }, cardIndex, pickChoiceCallbacks(ctx));
         });
         return state;
       }
@@ -354,43 +364,49 @@
       ownerPlayerId: ctx.ownerPlayerId,
       condition: null,
       resolve: function (state) {
-        var ownerId = ctx.ownerPlayerId;
-        var player = state.players[ownerId];
-        var targetPlayerId = GameState.getOpponentId(ownerId);
-        var attackerIndex = ctx.attackerLeaderIndex;
-        if (attackerIndex == null || !player.leaders[attackerIndex] || player.leaders[attackerIndex].isDown) {
-          attackerIndex = player.leaders.findIndex(function (l) { return !l.isDown; });
-        }
-        var targetCandidates = [];
-        state.players[targetPlayerId].leaders.forEach(function (l, i) { if (!l.isDown) targetCandidates.push({ playerId: targetPlayerId, leaderIndex: i }); });
-        if (attackerIndex < 0 || targetCandidates.length === 0) {
-          player.trash.push({ card: cardInstance, faceUp: false });
-          return state;
-        }
-        var targetPick = ctx.chooseFreeAttackTarget
-          ? ctx.chooseFreeAttackTarget(targetCandidates.slice(), state)
-          : targetCandidates.findIndex(function (c) { return c.leaderIndex === ctx.targetLeaderIndex; });
-        if (targetPick == null || targetPick < 0 || targetPick >= targetCandidates.length) targetPick = 0;
-        var targetIndex = targetCandidates[targetPick].leaderIndex;
-
-        player.hand.push(cardInstance); // playAttackCardWithEffectsは手札のカードを対象にするため一時的に手札を経由する
-        Events.logEvent(state, 'FREE_ATTACK_PLAYED_BY_EFFECT', { playerId: ownerId, cardId: cardInstance.cardId });
-        var freeOptions = {
-          freePlay: true,
-          attackerLeaderIndex: attackerIndex,
-          targetPlayerId: targetPlayerId,
-          targetLeaderIndex: targetIndex,
-          chooseTarget: ctx.chooseTarget,
-        };
-        var count = getMultiAttackCount(cardInstance.cardId);
-        if (count) {
-          freeOptions.attacks = [];
-          for (var i = 0; i < count; i++) freeOptions.attacks.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: targetPlayerId, targetLeaderIndex: targetIndex });
-        }
-        playAttackCardWithEffects(state, ownerId, cardInstance.instanceId, freeOptions, cardIndex);
-        return state;
+        return withResolvingEffect({ sourceInstanceId: cardInstance.instanceId, cardId: cardInstance.cardId, trigger: 'FREE_ATTACK', ownerPlayerId: ctx.ownerPlayerId }, function () {
+          return resolveDeferredFreeAttack(state, cardInstance, ctx, cardIndex);
+        });
       },
     };
+  }
+
+  function resolveDeferredFreeAttack(state, cardInstance, ctx, cardIndex) {
+    var ownerId = ctx.ownerPlayerId;
+    var player = state.players[ownerId];
+    var targetPlayerId = GameState.getOpponentId(ownerId);
+    var attackerIndex = ctx.attackerLeaderIndex;
+    if (attackerIndex == null || !player.leaders[attackerIndex] || player.leaders[attackerIndex].isDown) {
+      attackerIndex = player.leaders.findIndex(function (l) { return !l.isDown; });
+    }
+    var targetCandidates = [];
+    state.players[targetPlayerId].leaders.forEach(function (l, i) { if (!l.isDown) targetCandidates.push({ playerId: targetPlayerId, leaderIndex: i }); });
+    if (attackerIndex < 0 || targetCandidates.length === 0) {
+      player.trash.push({ card: cardInstance, faceUp: false });
+      return state;
+    }
+    var targetPick = ctx.chooseFreeAttackTarget
+      ? ctx.chooseFreeAttackTarget(targetCandidates.slice(), state)
+      : targetCandidates.findIndex(function (c) { return c.leaderIndex === ctx.targetLeaderIndex; });
+    if (targetPick == null || targetPick < 0 || targetPick >= targetCandidates.length) targetPick = 0;
+    var targetIndex = targetCandidates[targetPick].leaderIndex;
+
+    player.hand.push(cardInstance); // playAttackCardWithEffectsは手札のカードを対象にするため一時的に手札を経由する
+    Events.logEvent(state, 'FREE_ATTACK_PLAYED_BY_EFFECT', { playerId: ownerId, cardId: cardInstance.cardId });
+    var freeOptions = {
+      freePlay: true,
+      attackerLeaderIndex: attackerIndex,
+      targetPlayerId: targetPlayerId,
+      targetLeaderIndex: targetIndex,
+    };
+    Object.assign(freeOptions, pickChoiceCallbacks(ctx));
+    var count = getMultiAttackCount(cardInstance.cardId);
+    if (count) {
+      freeOptions.attacks = [];
+      for (var i = 0; i < count; i++) freeOptions.attacks.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: targetPlayerId, targetLeaderIndex: targetIndex });
+    }
+    playAttackCardWithEffects(state, ownerId, cardInstance.instanceId, freeOptions, cardIndex);
+    return state;
   }
 
   // ダメージ処理＋ダウン判定＋（アタックに紐づく場合のみ）アタッカーの覚醒判定。
@@ -676,9 +692,14 @@
         ? function (state) { return CardEffectCore.isConditionMet(state, effectiveCtx, cardEffect); }
         : null,
       resolve: function (state) {
-        var targets = cardEffect.target ? CardEffectCore.resolveTargets(state, effectiveCtx, cardEffect) : [];
-        if (cardEffect.target && targets.length === 0) return state; // 対象なしNo-op（FAQ Q8）
-        return applyAction(state, cardEffect.action, targets, effectiveCtx, cardIndex);
+        return withResolvingEffect({
+          sourceInstanceId: ctx.sourceInstanceId, trigger: cardEffect.trigger, ownerPlayerId: ctx.ownerPlayerId,
+          attackerLeaderIndex: ctx.attackerLeaderIndex,
+        }, function () {
+          var targets = cardEffect.target ? CardEffectCore.resolveTargets(state, effectiveCtx, cardEffect) : [];
+          if (cardEffect.target && targets.length === 0) return state; // 対象なしNo-op（FAQ Q8）
+          return applyAction(state, cardEffect.action, targets, effectiveCtx, cardIndex);
+        });
       },
     };
   }
@@ -691,17 +712,21 @@
   // ---- ON_PLAY：カードをプレイした瞬間の効果をResolutionStackへ積む ----
   // options（playMemoriaCardWithEffects/playTacticsCardWithEffectsの呼び出し元が渡すもの）のうち、
   // 選択コールバック系のフィールドだけをctxへ橋渡し用に抜き出す（Phase D-3で追加）。
-  function extractChoiceOptions(options) {
-    if (!options) return undefined;
+  // 選択コールバック（ctx.chooseXxx）の一覧。カードプレイのoptionsから効果解決のctxへ、また効果から
+  // 連鎖的にプレイされるカード（FREE_PLAY・頂点捕食者・エコー等）のctxへ、すべてまとめて引き継ぐ。
+  var CHOICE_CALLBACK_KEYS = [
+    'chooseTarget', 'chooseHealTarget', 'chooseDistributedHeal', 'chooseMoveEquipment', 'chooseMultiTargets',
+    'chooseSelfDamage', 'chooseDeckLookAddToHand', 'chooseDiscard', 'chooseFreePlayFromHand', 'chooseDeckLookPlay',
+    'chooseReplayFromPlayArea', 'chooseApexDiscard', 'chooseDeckLookAttack', 'chooseFreeAttackTarget',
+  ];
+  function pickChoiceCallbacks(source) {
     var extra = {};
-    if (options.chooseTarget) extra.chooseTarget = options.chooseTarget;
-    if (options.chooseDistributedHeal) extra.chooseDistributedHeal = options.chooseDistributedHeal;
-    if (options.chooseMoveEquipment) extra.chooseMoveEquipment = options.chooseMoveEquipment;
-    if (options.chooseMultiTargets) extra.chooseMultiTargets = options.chooseMultiTargets;
-    if (options.chooseSelfDamage) extra.chooseSelfDamage = options.chooseSelfDamage;
-    if (options.chooseDeckLookAddToHand) extra.chooseDeckLookAddToHand = options.chooseDeckLookAddToHand;
-    if (options.chooseDiscard) extra.chooseDiscard = options.chooseDiscard;
+    if (!source) return extra;
+    CHOICE_CALLBACK_KEYS.forEach(function (k) { if (typeof source[k] === 'function') extra[k] = source[k]; });
     return extra;
+  }
+  function extractChoiceOptions(options) {
+    return options ? pickChoiceCallbacks(options) : undefined;
   }
 
   // extraCtx（省略可）: Phase D-3で追加した選択コールバック（chooseDistributedHeal/chooseMoveEquipment等）
@@ -868,7 +893,7 @@
   // 前例と同じ考え方）。drainPendingAfterAttackがtrueの回だけ、メモリア側が積んでおいた
   // 「次の1回のアタックのみ」のAFTER_ATTACK効果を消費する（1回目の宣言でだけtrueにすることで、
   // pendingAttackBoostと同様に自然と「最初の1回のみ」に限定される）。
-  function declareOneAttackForMultiAttack(state, playerId, cardInstanceId, cardId, attackCardEffects, attackerLeaderIndex, targetPlayerId, targetLeaderIndex, chooseTarget, chooseHealTarget, drainPendingAfterAttack, cardIndex) {
+  function declareOneAttackForMultiAttack(state, playerId, cardInstanceId, cardId, attackCardEffects, attackerLeaderIndex, targetPlayerId, targetLeaderIndex, chooseTarget, chooseHealTarget, drainPendingAfterAttack, cardIndex, choiceOptions) {
     var player = state.players[playerId];
     var ctx = {
       ownerPlayerId: playerId,
@@ -902,6 +927,7 @@
     }, cardIndex);
 
     var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
+    Object.assign(ctx, pickChoiceCallbacks(choiceOptions));
     ctx.chooseTarget = chooseTarget;
     ctx.overkillAmount = overkillAmount;
 
@@ -973,7 +999,7 @@
       lastResult = declareOneAttackForMultiAttack(
         state, playerId, cardInstanceId, cardId, attackCardEffects,
         attackerIndex, atk.targetPlayerId, targetIndex,
-        options.chooseTarget, options.chooseHealTarget, !drained, cardIndex
+        options.chooseTarget, options.chooseHealTarget, !drained, cardIndex, options
       );
       drained = true;
     }
@@ -1043,14 +1069,8 @@
     // Phase G: FREE_PLAY_MEMORIA_FROM_HAND/DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA用の
     // 選択コールバック（一騎当千・リンク・アサルト・三銃士はいずれもこのカード自身のAFTER_ATTACKなので、
     // このctx経由で渡す）。省略時はapplyAction側の安全なデフォルト（辞退）に委ねる。
-    ctx.chooseFreePlayFromHand = options.chooseFreePlayFromHand;
-    ctx.chooseDeckLookPlay = options.chooseDeckLookPlay;
-    ctx.chooseReplayFromPlayArea = options.chooseReplayFromPlayArea;
-    // 第5弾ACE（アブソリュートドミニオン／頂点捕食者）とシンクロトリニティ用
-    ctx.chooseDeckLookAddToHand = options.chooseDeckLookAddToHand;
-    ctx.chooseApexDiscard = options.chooseApexDiscard;
-    ctx.chooseDeckLookAttack = options.chooseDeckLookAttack;
-    ctx.chooseFreeAttackTarget = options.chooseFreeAttackTarget;
+    // 第5弾ACE（アブソリュートドミニオン／頂点捕食者）等の選択コールバックもすべて同じctxへ引き継ぐ。
+    Object.assign(ctx, pickChoiceCallbacks(options));
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
@@ -1125,6 +1145,9 @@
     // 第5弾ACE: エコー
     runEndPhaseWithEffects: runEndPhaseWithEffects,
     runStartPhaseWithEffects: runStartPhaseWithEffects,
+    // UI向け：選択コールバックの一覧と、解決中の効果の情報
+    CHOICE_CALLBACK_KEYS: CHOICE_CALLBACK_KEYS,
+    getResolvingEffect: getResolvingEffect,
     makeUpToNOpponentLeadersTarget: EffectFactories.makeUpToNOpponentLeadersTarget,
   };
 }));

@@ -3,8 +3,8 @@
  * 前提・簡略化していること（PROVISIONAL。js/engine側のルール実装自体は変更しない）:
  *   - 手札・タクティクスエリアの非公開情報は、同一画面を2人で見る対戦台方式のため簡略化する
  *     （タクティクスエリアの中身は両者に見える。手札は「自分の手番のときだけ」中身を表示する）。
- *   - 複数候補から対象を選ぶ必要がある効果（chooseTarget等）は、js/engine側が用意している
- *     安全なデフォルト挙動（先頭候補・辞退）にすべて委ねる。UI側での選択モーダルは実装しない。
+ *   - 対象や「してもよい」を選ぶ必要がある効果（chooseTarget等）は、選択画面で選ぶ
+ *     （仕組みは js/battle/choices.js 参照。行動を盤面のコピーで実行し、選択のたびにやり直す）。
  *   - ResolutionStackに複数の効果が同時に積まれた場合の解決順も、js/engine側のデフォルト（積んだ順）に委ねる。
  *   - data/cards.jsonの全カードのうち、実際にjs/engine/cardEffectData.jsへ効果が登録されているのは
  *     一部のみ。未登録カードは「アタックカードの上乗せダメージ0」「プレイ時効果なし」として扱われる
@@ -31,6 +31,7 @@
     CardLookup: window.XS_ENGINE_CARD_LOOKUP,
   };
   var cardIndex = Eng.CardLookup.buildCardIndex(CARDS);
+  var Choices = window.XS_BATTLE_CHOICES;
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -135,6 +136,7 @@
   var seenActive = null;     // 手番交代画面を最後に確認したプレイヤー（対戦台で相手の手札を見せないため）
   var prevHp = {};           // 直前の描画時点の各リーダー残りHP（ダメージ/回復演出用）
   var notice = null;         // 操作できなかった理由などの一言メッセージ（次の操作で消える）
+  var pendingChoice = null;  // 選択待ちの行動 { base, seed, answers, fn, onDone, question, preview, selection, revealed }
 
   var PLAYER_LABEL = { playerA: 'プレイヤーA', playerB: 'プレイヤーB' };
   function pShort(pid) { return pid === 'playerA' ? 'A' : 'B'; }
@@ -270,7 +272,7 @@
     var state;
     try {
       state = Eng.Match.createMatch(config);
-      startTurn(state);
+      startTurn(state, {});
     } catch (e) {
       alert('対戦を開始できませんでした: ' + e.message);
       return;
@@ -288,6 +290,12 @@
 
   // ================= 対戦画面 =================
   function renderBattle() {
+    if (pendingChoice) {
+      // 選択中は、効果の解決途中の盤面（そこまでのダメージ等が反映されたもの）を操作不可で表示する
+      var choiceHtml = renderBattleBoard(pendingChoice.preview, true, true) + renderChoiceOverlay(pendingChoice);
+      if (detailCardId) choiceHtml += renderDetailOverlay(detailCardId);
+      return choiceHtml;
+    }
     var state = game.state;
     var finished = state.match.status === 'FINISHED';
     var handoffPending = !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
@@ -699,28 +707,75 @@
   // ================= アクション =================
   // スタートフェイズ（PP回復・ドロー）→メインフェイズ開始時の処理（エコーのプレイし直し）。
   // エコーで積まれたプレイ時効果はここで解決しておく（次の操作まで待たせない）。
-  function startTurn(state) {
-    Eng.Resolver.runStartPhaseWithEffects(state, cardIndex);
+  function startTurn(state, callbacks) {
+    Eng.Resolver.runStartPhaseWithEffects(state, cardIndex, callbacks);
     Eng.ResolutionStack.resolveAll(state.resolutionStack, state);
   }
 
-  function afterAction() {
-    if (game.state.match.status === 'FINISHED') { sel = null; render(); return; }
-    var result = Eng.Resolver.processRoundEndWithEffects(game.state);
-    if (result.matchEnded) { sel = null; render(); return; }
-    if (result.roundEnded) {
+  // ---------- 選択が必要になりうる行動の実行（js/battle/choices.js のリプレイ方式） ----------
+  // fn(state, callbacks, ask) を盤面のコピーで実行し、選択が必要になったら選択画面を出す。
+  // 最後まで進んだらそのコピーを新しい盤面として採用し、onDone(fnの戻り値) を呼ぶ。
+  // 途中でエラーになった場合は盤面を一切変更しない。
+  function runAction(fn, onDone) {
+    pendingChoice = { base: game.state, seed: Math.floor(Math.random() * 4294967296), answers: [], fn: fn, onDone: onDone };
+    stepChoice();
+  }
+
+  function stepChoice() {
+    var pc = pendingChoice;
+    var r;
+    try {
+      r = Choices.runWithAnswers(pc.base, pc.seed, pc.answers, function (state, ask) {
+        var callbacks = Choices.makeCallbacks(ask, {
+          getActivePlayerId: function () { return state.turn.activePlayer; },
+          getResolvingEffect: Eng.Resolver.getResolvingEffect,
+        });
+        return pc.fn(state, callbacks, ask);
+      });
+    } catch (e) {
+      pendingChoice = null;
+      alert(e.message);
+      render();
+      return;
+    }
+    if (r.done) {
+      pendingChoice = null;
+      game.state = r.state;
+      pc.onDone(r.value);
+      return;
+    }
+    pc.question = r.question;
+    pc.preview = r.state;
+    pc.selection = r.question.type === 'ALLOCATE' ? r.question.candidates.map(function () { return 0; }) : (r.question.preselect || []).slice();
+    pc.revealed = !r.question.secret;
+    render();
+  }
+
+  function answerChoice(answer) {
+    pendingChoice.answers.push(answer);
+    stepChoice();
+  }
+
+  // 行動の後処理（効果の解決・ラウンド終了判定・次ラウンドの開始）。runActionのfn内で呼ぶ。
+  function finishAction(state, callbacks) {
+    if (state.match.status === 'FINISHED') return { finished: true };
+    var result = Eng.Resolver.processRoundEndWithEffects(state);
+    if (result.roundEnded && !result.matchEnded) startTurn(state, callbacks);
+    return result;
+  }
+
+  function afterActionDone(result) {
+    if (result && result.roundEnded && !result.matchEnded) {
       lastRoundBanner = result.simultaneous
         ? '両者同時敗北。このラウンドの勝者はいません。'
         : (game.state.match.roundWins.playerA + game.state.match.roundWins.playerB > 0
           ? 'ラウンドが終了しました。次のラウンドを開始します。' : 'ラウンドが終了しました。');
-      startTurn(game.state);
     }
     sel = null;
     render();
   }
 
   function doConfirmAttack() {
-    var state = game.state;
     var playerId = sel.ownerId;
     var current = { attackerLeaderIndex: sel.attackerLeaderIndex, targetPlayerId: opponentOf(playerId), targetLeaderIndex: sel.targetLeaderIndex };
     // 複数回アタック（例: ストームラッシュ）は、回数分のアタッカー/対象を順に選んでからまとめて実行する
@@ -732,50 +787,190 @@
       return;
     }
     var options = sel.multi > 1 ? { attacks: sel.attacks.concat([current]) } : current;
-    try {
-      Eng.Resolver.playAttackCardWithEffects(state, playerId, sel.cardInstanceId, options, cardIndex);
-    } catch (e) { alert(e.message); return; }
-    afterAction();
+    var instanceId = sel.cardInstanceId;
+    runAction(function (state, cb) {
+      Eng.Resolver.playAttackCardWithEffects(state, playerId, instanceId, Object.assign({}, options, cb), cardIndex);
+      return finishAction(state, cb);
+    }, afterActionDone);
   }
 
   function doConfirmMemoria() {
-    var state = game.state;
     var playerId = sel.ownerId;
-    try {
-      Eng.Resolver.playMemoriaCardWithEffects(state, playerId, sel.cardInstanceId, {}, cardIndex);
-    } catch (e) { alert(e.message); return; }
-    afterAction();
+    var instanceId = sel.cardInstanceId;
+    runAction(function (state, cb) {
+      Eng.Resolver.playMemoriaCardWithEffects(state, playerId, instanceId, Object.assign({}, cb), cardIndex);
+      return finishAction(state, cb);
+    }, afterActionDone);
   }
 
   function doPlayTacticsConsumable(cardInstanceId) {
-    var state = game.state;
-    var playerId = state.turn.activePlayer;
-    try {
-      Eng.Resolver.playTacticsCardWithEffects(state, playerId, cardInstanceId, { subType: 'CONSUMABLE' }, cardIndex);
-    } catch (e) { alert(e.message); return; }
-    afterAction();
+    var playerId = game.state.turn.activePlayer;
+    runAction(function (state, cb) {
+      Eng.Resolver.playTacticsCardWithEffects(state, playerId, cardInstanceId, Object.assign({ subType: 'CONSUMABLE' }, cb), cardIndex);
+      return finishAction(state, cb);
+    }, afterActionDone);
   }
 
   function doPlayTacticsEquip(cardInstanceId, equipLeaderIndex) {
-    var state = game.state;
-    var playerId = state.turn.activePlayer;
-    try {
-      Eng.Resolver.playTacticsCardWithEffects(state, playerId, cardInstanceId, { subType: 'EQUIPMENT', equipLeaderIndex: equipLeaderIndex }, cardIndex);
-    } catch (e) { alert(e.message); return; }
-    afterAction();
+    var playerId = game.state.turn.activePlayer;
+    runAction(function (state, cb) {
+      Eng.Resolver.playTacticsCardWithEffects(state, playerId, cardInstanceId, Object.assign({ subType: 'EQUIPMENT', equipLeaderIndex: equipLeaderIndex }, cb), cardIndex);
+      return finishAction(state, cb);
+    }, afterActionDone);
   }
 
   function doEndTurn() {
-    var state = game.state;
-    try {
-      Eng.Resolver.runEndPhaseWithEffects(state);
-      if (state.match.status === 'FINISHED') { sel = null; render(); return; }
+    runAction(function (state, cb, ask) {
+      Eng.Resolver.runEndPhaseWithEffects(state, Choices.makeHandLimitChooser(ask, state.turn.activePlayer));
+      if (state.match.status === 'FINISHED') return null;
       Eng.Resolver.endTurnAndSwitchWithEffects(state);
-      startTurn(state);
-      if (state.match.status === 'FINISHED') { sel = null; render(); return; }
-    } catch (e) { alert(e.message); return; }
-    sel = null;
-    render();
+      startTurn(state, cb);
+      return null;
+    }, function () { sel = null; render(); });
+  }
+
+  // ---------- 選択画面 ----------
+  var TRIGGER_JA = { ON_PLAY: 'プレイ時', AFTER_ATTACK: 'アタック後', ON_AWAKEN: '覚醒時', FREE_ATTACK: 'コストを支払わずにプレイ', ON_ATTACK: 'アタックする', ATTACK_BOOST: 'アタック強化' };
+
+  function findCardIdByInstance(state, instanceId) {
+    var found = null;
+    ['playerA', 'playerB'].forEach(function (pid) {
+      if (found) return;
+      var p = state.players[pid];
+      var zones = [p.hand, p.deck,
+        p.playArea.map(function (e) { return e.card; }),
+        p.trash.map(function (t) { return t.card; }),
+        p.tacticsArea.map(function (t) { return t.card; })];
+      p.leaders.forEach(function (l) { zones.push(l.equipment || []); });
+      zones.forEach(function (z) {
+        (z || []).forEach(function (c) { if (!found && c && c.instanceId === instanceId) found = c.cardId; });
+      });
+    });
+    return found;
+  }
+
+  // 質問の「どのカードの効果か」を { cardId, label } で返す
+  function describeChoiceSource(state, src) {
+    if (!src) return null;
+    if (src.trigger === 'ON_AWAKEN' && src.attackerLeaderIndex != null) {
+      var leader = state.players[src.ownerPlayerId].leaders[src.attackerLeaderIndex];
+      return { cardId: leader.cardId, label: '覚醒時' };
+    }
+    var cardId = src.cardId || findCardIdByInstance(state, src.sourceInstanceId);
+    return cardId ? { cardId: cardId, label: TRIGGER_JA[src.trigger] || '' } : null;
+  }
+
+  function renderChoiceLeader(state, ref, i, selected, extra) {
+    var leader = state.players[ref.playerId].leaders[ref.leaderIndex];
+    var card = cardOf(leader.cardId);
+    var hp = Eng.GameState.getLeaderCurrentHp(cardIndex, leader);
+    var max = Eng.GameState.getLeaderMaxHp(cardIndex, leader);
+    return '' +
+      '<div class="bt-choice-item leader' + (selected ? ' selected' : '') + '" data-act="choice-toggle" data-index="' + i + '" role="button" tabindex="0">' +
+        '<div class="bt-choice-img">' + imgTag(card, leader.awakened, 'bt-lnoimg') + '</div>' +
+        '<div class="bt-choice-cap">' + pBadge(ref.playerId) + '<span>' + esc(card.name) + '</span></div>' +
+        '<div class="bt-choice-sub">HP ' + hp + '/' + max + '</div>' +
+        (extra || '') +
+      '</div>';
+  }
+
+  function renderChoiceOverlay(pc) {
+    var qn = pc.question;
+    var state = pc.preview;
+    var src = describeChoiceSource(state, qn.source);
+    var srcCard = src ? cardOf(src.cardId) : null;
+    var chooser = qn.chooser || state.turn.activePlayer;
+    var head = '' +
+      '<div class="bt-choice-head">' +
+        (srcCard ? '<div class="bt-choice-src" data-act="show-detail" data-card="' + esc(src.cardId) + '" title="カードの詳細">' + imgTag(srcCard, false, 'bt-mnoimg') + '</div>' : '') +
+        '<div class="bt-choice-headtext">' +
+          '<div class="bt-choice-who">' + pBadge(chooser) + esc(PLAYER_LABEL[chooser]) + 'が選択' + (srcCard ? ' ・「' + esc(srcCard.name) + '」' + (src.label ? '〖' + esc(src.label) + '〗' : '') : '') + '</div>' +
+          '<div class="bt-choice-title">' + esc(qn.title) + '</div>' +
+          (srcCard && srcCard.text ? '<div class="bt-choice-text">' + esc(srcCard.text) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+
+    var body = '';
+    if (qn.type === 'LEADERS') {
+      body = '<div class="bt-choice-grid">' + qn.candidates.map(function (ref, i) {
+        return renderChoiceLeader(state, ref, i, pc.selection.indexOf(i) >= 0);
+      }).join('') + '</div>';
+    } else if (qn.type === 'ALLOCATE') {
+      var used = pc.selection.reduce(function (s, x) { return s + x; }, 0);
+      body = '<div class="bt-choice-grid">' + qn.candidates.map(function (ref, i) {
+        var ctrl = '<div class="bt-alloc">' +
+          '<button class="bt-btn" data-act="alloc-dec" data-index="' + i + '"' + (pc.selection[i] <= 0 ? ' disabled' : '') + '>−</button>' +
+          '<b>' + pc.selection[i] + '</b>' +
+          '<button class="bt-btn" data-act="alloc-inc" data-index="' + i + '"' + (used + qn.step > qn.total ? ' disabled' : '') + '>＋</button>' +
+        '</div>';
+        return renderChoiceLeader(state, ref, i, pc.selection[i] > 0, ctrl);
+      }).join('') + '</div>';
+    } else if (!pc.revealed) {
+      body = '<div class="bt-choice-secret"><p>' + esc(PLAYER_LABEL[chooser]) + 'の手札から選びます。' + esc(PLAYER_LABEL[chooser]) + 'に端末を渡してください。</p>' +
+        '<button class="bt-btn primary" data-act="choice-reveal">手札を表示する</button></div>';
+    } else {
+      body = '<div class="bt-choice-grid cards">' + qn.cards.map(function (c, i) {
+        var card = cardOf(c.cardId);
+        var order = pc.selection.indexOf(i);
+        var note = c.equippedTo ? '装備先：' + cardOf(state.players[c.equippedTo.playerId].leaders[c.equippedTo.leaderIndex].cardId).name : '';
+        var landscape = card.cardType === 'TACTICS' || card.cardType === 'PP_TICKET';
+        return '' +
+          '<div class="bt-choice-item card' + (order >= 0 ? ' selected' : '') + (landscape ? ' landscape' : '') + '" data-act="choice-toggle" data-index="' + i + '" role="button" tabindex="0">' +
+            (card.cost != null ? '<span class="bt-cost">' + card.cost + '</span>' : '') +
+            (qn.ordered && order >= 0 ? '<span class="bt-choice-order">' + (order + 1) + '</span>' : '') +
+            '<div class="bt-choice-img">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
+            '<div class="bt-choice-cap"><span>' + esc(card.name) + '</span></div>' +
+            (note ? '<div class="bt-choice-sub">' + esc(note) + '</div>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+    }
+
+    var v = Choices.validateSelection(qn, pc.selection, cardIndex);
+    var status = '';
+    if (qn.type === 'ALLOCATE') status = '割り振り ' + v.sum + ' / ' + qn.total;
+    else if (pc.revealed) {
+      status = '選択 ' + pc.selection.length + (qn.min === qn.max ? ' / ' + qn.max + '枚' : '（' + (qn.min > 0 ? qn.min + '〜' : '最大') + qn.max + '）');
+      if (v.cost != null) status += ' ・ コスト合計 ' + v.cost;
+    }
+    var canDecline = qn.min === 0 && qn.type !== 'ALLOCATE' && pc.revealed;
+    var foot = !pc.revealed ? '' :
+      '<div class="bt-choice-foot">' +
+        '<span class="bt-choice-status">' + esc(status) + '</span>' +
+        (canDecline ? '<button class="bt-btn" data-act="choice-decline">' + esc(qn.declineLabel || '選ばない') + '</button>' : '') +
+        '<button class="bt-btn primary" data-act="choice-confirm"' + ((v.ok && !(canDecline && pc.selection.length === 0)) ? '' : ' disabled') + '>決定</button>' +
+      '</div>';
+
+    // 選択を切り替えるたびに再描画されるので、登場アニメーションは質問が出た最初の1回だけにする
+    var animCls = pc.shown === pc.answers.length ? ' no-anim' : '';
+    pc.shown = pc.answers.length;
+    return '<div class="bt-overlay bt-choice' + (chooser === 'playerB' ? ' pB' : '') + animCls + '"><div class="bt-overlay-box">' + head + body + foot + '</div></div>';
+  }
+
+  function handleChoiceAction(act, el) {
+    var pc = pendingChoice;
+    var qn = pc.question;
+    var i = Number(el.getAttribute('data-index'));
+    if (act === 'choice-reveal') { pc.revealed = true; render(); return; }
+    if (act === 'choice-toggle' && qn.type !== 'ALLOCATE') {
+      var at = pc.selection.indexOf(i);
+      if (at >= 0) pc.selection.splice(at, 1);
+      else if (qn.max === 1) pc.selection = [i];
+      else if (pc.selection.length < qn.max) pc.selection.push(i);
+      render();
+      return;
+    }
+    if (act === 'alloc-inc' || act === 'alloc-dec') {
+      var used = pc.selection.reduce(function (s, x) { return s + x; }, 0);
+      if (act === 'alloc-inc' && used + qn.step <= qn.total) pc.selection[i] += qn.step;
+      if (act === 'alloc-dec' && pc.selection[i] >= qn.step) pc.selection[i] -= qn.step;
+      render();
+      return;
+    }
+    if (act === 'choice-decline') { answerChoice([]); return; }
+    if (act === 'choice-confirm') {
+      if (!Choices.validateSelection(qn, pc.selection, cardIndex).ok) return;
+      answerChoice(pc.selection.slice());
+    }
   }
 
   // ================= イベント束縛 =================
@@ -806,6 +1001,12 @@
   function handleAction(act, el) {
     if (act === 'noop') return;
     notice = null;
+    if (pendingChoice) {
+      if (act === 'show-detail') { detailCardId = el.getAttribute('data-card'); render(); return; }
+      if (act === 'close-detail') { detailCardId = null; render(); return; }
+      handleChoiceAction(act, el);
+      return;
+    }
     if (act === 'pick-random') {
       var side = el.getAttribute('data-side');
       setup[side].source = 'RANDOM';
@@ -904,6 +1105,7 @@
   document.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Escape' || screen !== 'battle') return;
     if (detailCardId) { detailCardId = null; render(); }
+    else if (pendingChoice) { return; } // 選択は取り消せない（公開済みの情報を見た後にやり直せないように）
     else if (logOpen) { logOpen = false; render(); }
     else if (sel) { sel = null; render(); }
   });
