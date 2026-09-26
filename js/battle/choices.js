@@ -101,69 +101,69 @@
     function cardList(cands) {
       return cands.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: c.cost }; });
     }
-    function singleLeader(title) {
+    function singleLeader(title, kind) {
       return function (candidates) {
         if (candidates.length <= 1) return 0;
-        var a = ask(q({ type: 'LEADERS', title: title, candidates: candidates, min: 1, max: 1 }));
+        var a = ask(q({ type: 'LEADERS', kind: kind, title: title, candidates: candidates, min: 1, max: 1 }));
         return a[0];
       };
     }
 
     return {
-      chooseTarget: singleLeader('対象のリーダーを1体選んでください'),
-      chooseHealTarget: singleLeader('対象のリーダーを1体選んでください'),
-      chooseFreeAttackTarget: singleLeader('このアタックを受けるリーダーを選んでください'),
+      chooseTarget: singleLeader('対象のリーダーを1体選んでください', 'TARGET'),
+      chooseHealTarget: singleLeader('対象のリーダーを1体選んでください', 'TARGET'),
+      chooseFreeAttackTarget: singleLeader('このアタックを受けるリーダーを選んでください', 'TARGET'),
 
       chooseMultiTargets: function (candidates, n) {
-        return ask(q({ type: 'LEADERS', title: '対象のリーダーを最大' + n + '体選んでください', candidates: candidates, min: 0, max: n, preselect: firstN(n, candidates.length) }));
+        return ask(q({ kind: 'MULTI_TARGET', type: 'LEADERS', title: '対象のリーダーを最大' + n + '体選んでください', candidates: candidates, min: 0, max: n, preselect: firstN(n, candidates.length) }));
       },
 
       chooseSelfDamage: function (candidates) {
-        var a = ask(q({ type: 'LEADERS', title: 'ダメージを与える自分のリーダーを選んでください（与えない場合は「しない」）', candidates: candidates, min: 0, max: 1, declineLabel: 'しない' }));
+        var a = ask(q({ kind: 'SELF_DAMAGE', type: 'LEADERS', title: 'ダメージを与える自分のリーダーを選んでください（与えない場合は「しない」）', candidates: candidates, min: 0, max: 1, declineLabel: 'しない' }));
         return a.length ? a[0] : -1;
       },
 
       chooseDeckLookAddToHand: function (cands, maxPick) {
         if (!cands.length || !(maxPick > 0)) return []; // 手札に加えない効果（気まずい空間）は選ぶものが無い
-        var a = ask(q({ type: 'CARDS', title: '手札に加えるカードを選んでください（最大' + maxPick + '枚）', cards: cardList(cands), min: 0, max: maxPick, preselect: firstN(maxPick, cands.length), declineLabel: '加えない' }));
+        var a = ask(q({ kind: 'ADD_TO_HAND', type: 'CARDS', title: '手札に加えるカードを選んでください（最大' + maxPick + '枚）', cards: cardList(cands), min: 0, max: maxPick, preselect: firstN(maxPick, cands.length), declineLabel: '加えない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 
       chooseApexDiscard: function (cands, minCost) {
         var total = cands.reduce(function (s, c) { return s + c.cost; }, 0);
         if (!cands.length || total < minCost) return [];
-        var a = ask(q({ type: 'CARDS', title: '捨てるカードを選んでください（コスト合計' + minCost + '以上。捨てない場合は「しない」）', cards: cardList(cands), min: 0, max: cands.length, costMin: minCost, declineLabel: 'しない' }));
+        var a = ask(q({ kind: 'APEX_DISCARD', type: 'CARDS', title: '捨てるカードを選んでください（コスト合計' + minCost + '以上。捨てない場合は「しない」）', cards: cardList(cands), min: 0, max: cands.length, costMin: minCost, declineLabel: 'しない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 
       chooseDeckLookAttack: function (cands) {
         if (!cands.length) return null;
-        var a = ask(q({ type: 'CARDS', title: 'コストを支払わずにプレイするアタックカードを選んでください', cards: cardList(cands), min: 0, max: 1, preselect: [0], declineLabel: 'プレイしない' }));
+        var a = ask(q({ kind: 'FREE_PLAY', type: 'CARDS', title: 'コストを支払わずにプレイするアタックカードを選んでください', cards: cardList(cands), min: 0, max: 1, preselect: [0], declineLabel: 'プレイしない' }));
         return a.length ? cands[a[0]].instanceId : null;
       },
 
       chooseFreePlayFromHand: function (cands, costLimit) {
         if (!cands.length) return [];
-        var a = ask(q({ type: 'CARDS', title: 'コストを支払わずにプレイするメモリアを選んでください（コスト合計' + costLimit + '以下・選んだ順にプレイ）', cards: cardList(cands), min: 0, max: cands.length, costMax: costLimit, ordered: true, declineLabel: 'プレイしない' }));
+        var a = ask(q({ kind: 'FREE_PLAY', type: 'CARDS', title: 'コストを支払わずにプレイするメモリアを選んでください（コスト合計' + costLimit + '以下・選んだ順にプレイ）', cards: cardList(cands), min: 0, max: cands.length, costMax: costLimit, ordered: true, declineLabel: 'プレイしない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 
       chooseDeckLookPlay: function (cands) {
         if (!cands.length) return null;
-        var a = ask(q({ type: 'CARDS', title: 'コストを支払わずにプレイするメモリアを選んでください', cards: cardList(cands), min: 0, max: 1, preselect: [0], declineLabel: 'プレイしない' }));
+        var a = ask(q({ kind: 'FREE_PLAY', type: 'CARDS', title: 'コストを支払わずにプレイするメモリアを選んでください', cards: cardList(cands), min: 0, max: 1, preselect: [0], declineLabel: 'プレイしない' }));
         return a.length ? cands[a[0]].instanceId : null;
       },
 
       chooseReplayFromPlayArea: function (cands, maxCount) {
         if (!cands.length) return [];
-        var a = ask(q({ type: 'CARDS', title: 'プレイし直すメモリアを選んでください（最大' + maxCount + '枚）', cards: cardList(cands), min: 0, max: maxCount, preselect: firstN(maxCount, cands.length), declineLabel: 'しない' }));
+        var a = ask(q({ kind: 'FREE_PLAY', type: 'CARDS', title: 'プレイし直すメモリアを選んでください（最大' + maxCount + '枚）', cards: cardList(cands), min: 0, max: maxCount, preselect: firstN(maxCount, cands.length), declineLabel: 'しない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 
       chooseDistributedHeal: function (candidates, total) {
         if (!candidates.length) return [];
         if (candidates.length === 1) return [{ playerId: candidates[0].playerId, leaderIndex: candidates[0].leaderIndex, amount: total }];
-        var amounts = ask(q({ type: 'ALLOCATE', title: '合計' + total + 'の回復を割り振ってください', candidates: candidates, total: total, step: 10 }));
+        var amounts = ask(q({ kind: 'HEAL_ALLOC', type: 'ALLOCATE', title: '合計' + total + 'の回復を割り振ってください', candidates: candidates, total: total, step: 10 }));
         return candidates.map(function (c, i) { return { playerId: c.playerId, leaderIndex: c.leaderIndex, amount: amounts[i] || 0 }; })
           .filter(function (x) { return x.amount > 0; });
       },
@@ -171,14 +171,14 @@
       chooseMoveEquipment: function (cands, leaderIndexes) {
         var pid = owner();
         var a = ask(q({
-          type: 'CARDS', title: '移動する装備を選んでください（移動しない場合は「しない」）', min: 0, max: 1, declineLabel: 'しない',
+          kind: 'MOVE_EQUIP', type: 'CARDS', title: '移動する装備を選んでください（移動しない場合は「しない」）', min: 0, max: 1, declineLabel: 'しない',
           cards: cands.map(function (c) { return { instanceId: c.equip.instanceId, cardId: c.equip.cardId, equippedTo: { playerId: pid, leaderIndex: c.leaderIndex } }; }),
         }));
         if (!a.length) return null;
         var from = cands[a[0]];
         var dests = leaderIndexes.filter(function (i) { return i !== from.leaderIndex; }).map(function (i) { return { playerId: pid, leaderIndex: i }; });
         if (!dests.length) return null;
-        var b = dests.length === 1 ? [0] : ask(q({ type: 'LEADERS', title: '装備の移動先のリーダーを選んでください', candidates: dests, min: 1, max: 1 }));
+        var b = dests.length === 1 ? [0] : ask(q({ kind: 'MOVE_EQUIP_DEST', type: 'LEADERS', title: '装備の移動先のリーダーを選んでください', candidates: dests, min: 1, max: 1 }));
         return { candidateIndex: a[0], toLeaderIndex: dests[b[0]].leaderIndex };
       },
 
@@ -187,26 +187,26 @@
         var title = spec && spec.bonus
           ? '捨てるカードを選んでください（捨てるとダメージ+' + spec.bonus + '。捨てない場合は「しない」）'
           : '公開して捨てるカードを選んでください（最大' + spec.max + '枚。0枚でもよい）';
-        var a = ask(q({ type: 'CARDS', title: title, cards: cardList(cands), min: 0, max: spec.max, declineLabel: spec && spec.bonus ? 'しない' : '捨てない' }));
+        var a = ask(q({ kind: 'ATTACK_DISCARD', type: 'CARDS', title: title, cards: cardList(cands), min: 0, max: spec.max, declineLabel: spec && spec.bonus ? 'しない' : '捨てない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 
       // はい／いいえ（仁義なき抗争「手札を1枚ランダムに捨ててもよい」）
       chooseConfirm: function (info) {
-        var a = ask(q({ type: 'OPTIONS', title: info.title, options: [{ label: 'はい' }, { label: 'いいえ' }] }));
+        var a = ask(q({ kind: 'CONFIRM', type: 'OPTIONS', title: info.title, options: [{ label: 'はい' }, { label: 'いいえ' }] }));
         return a[0] === 0;
       },
 
       // カードタイプの宣言（運命のルーレット）
       chooseDeclareCardType: function (types) {
         var label = { MEMORIA: 'メモリアカード', ATTACK: 'アタックカード' };
-        var a = ask(q({ type: 'OPTIONS', title: '宣言するカードタイプを選んでください', options: types.map(function (t) { return { label: label[t] || t }; }) }));
+        var a = ask(q({ kind: 'DECLARE_TYPE', type: 'OPTIONS', title: '宣言するカードタイプを選んでください', options: types.map(function (t) { return { label: label[t] || t, value: t }; }) }));
         return types[a[0]];
       },
 
       chooseDiscard: function (hand, count, playerId) {
         if (hand.length <= count) return hand.map(function (c) { return c.instanceId; });
-        var a = ask(q({ type: 'CARDS', title: '手札から捨てるカードを' + count + '枚選んでください', cards: cardList(hand), min: count, max: count, chooser: playerId, secret: playerId !== env.getActivePlayerId() }));
+        var a = ask(q({ kind: 'DISCARD', type: 'CARDS', title: '手札から捨てるカードを' + count + '枚選んでください', cards: cardList(hand), min: count, max: count, chooser: playerId, secret: playerId !== env.getActivePlayerId() }));
         return a.map(function (i) { return hand[i].instanceId; });
       },
     };
@@ -215,7 +215,7 @@
   // 終了フェイズの手札上限（7枚）で捨てるカードの選択（Phases.runEndPhaseのhandDiscardChooserFn）
   function makeHandLimitChooser(ask, playerId) {
     return function (hand, overflow) {
-      var a = ask({ type: 'CARDS', chooser: playerId, source: null, preselect: [], title: '手札が上限（7枚）を超えています。捨てるカードを' + overflow + '枚選んでください', cards: hand.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; }), min: overflow, max: overflow });
+      var a = ask({ kind: 'HAND_LIMIT', type: 'CARDS', chooser: playerId, source: null, preselect: [], title: '手札が上限（7枚）を超えています。捨てるカードを' + overflow + '枚選んでください', cards: hand.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; }), min: overflow, max: overflow });
       return a.map(function (i) { return hand[i].instanceId; });
     };
   }

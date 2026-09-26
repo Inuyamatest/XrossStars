@@ -32,6 +32,7 @@
   };
   var cardIndex = Eng.CardLookup.buildCardIndex(CARDS);
   var Choices = window.XS_BATTLE_CHOICES;
+  var Cpu = window.XS_BATTLE_CPU;
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -127,6 +128,7 @@
     playerB: { source: 'NONE', savedIndex: null, generatedDeck: null },
     mode: 'STANDARD',
     firstPlayer: 'playerA',
+    opponent: 'HUMAN', // 'HUMAN'（2人で交互に操作） | 'CPU'（プレイヤーBをCPUが操作）
   };
   var game = null; // { state }
   var sel = null;  // 手番プレイヤーの操作中の選択状態
@@ -139,6 +141,12 @@
   var pendingChoice = null;  // 選択待ちの行動 { base, seed, answers, fn, onDone, question, preview, selection, revealed }
 
   var PLAYER_LABEL = { playerA: 'プレイヤーA', playerB: 'プレイヤーB' };
+
+  // ---------- CPU対戦 ----------
+  // game.cpu: CPUが操作するプレイヤー（'playerB'）。人どうしの対戦ではnull。
+  function isCpu(pid) { return !!(game && game.cpu && game.cpu === pid); }
+  function cpuTurnActive() { return !!(game && game.cpu && game.state.turn.activePlayer === game.cpu && game.state.match.status !== 'FINISHED'); }
+  function humanId() { return game && game.cpu ? (game.cpu === 'playerA' ? 'playerB' : 'playerA') : null; }
   function pShort(pid) { return pid === 'playerA' ? 'A' : 'B'; }
   function pBadge(pid) { return '<span class="bt-pbadge' + (pid === 'playerB' ? ' pB' : '') + '">' + pShort(pid) + '</span>'; }
 
@@ -154,6 +162,7 @@
     bindEvents();
     syncDockHeight();
     if (previewEl) refreshPreview(); // 要素が作り直されたので、マウスの位置にあるカードで表示し直す
+    scheduleCpu();
   }
 
   // 手札ドック（固定表示）の実際の高さに合わせて盤面の下余白を取り、最下段が隠れないようにする
@@ -184,7 +193,7 @@
   function renderSetup() {
     return '' +
       '<div class="bt-setup">' +
-        '<div class="bt-hero"><h2>BATTLE</h2><p>1台の端末で2人が交互に操作するローカル対戦</p></div>' +
+        '<div class="bt-hero"><h2>BATTLE</h2><p>1台の端末で2人が交互に操作するローカル対戦、またはCPUとの対戦</p></div>' +
         '<div class="bt-setup-players">' +
           renderSetupPanel('playerA') +
           '<div class="bt-vs">VS</div>' +
@@ -195,6 +204,10 @@
             '<button data-act="set-mode" data-value="STANDARD" class="' + (setup.mode === 'STANDARD' ? 'on' : '') + '">スタンダード（2本先取）</button>' +
             '<button data-act="set-mode" data-value="QUICK" class="' + (setup.mode === 'QUICK' ? 'on' : '') + '">クイック（1本先取）</button>' +
           '</span></div>' +
+          '<div class="bt-opt">プレイヤーB <span class="bt-seg">' +
+            '<button data-act="set-opponent" data-value="HUMAN" class="' + (setup.opponent === 'HUMAN' ? 'on' : '') + '">人（交互に操作）</button>' +
+            '<button data-act="set-opponent" data-value="CPU" class="' + (setup.opponent === 'CPU' ? 'on' : '') + '">CPU</button>' +
+          '</span></div>' +
           '<div class="bt-opt">先攻 <span class="bt-seg">' +
             '<button data-act="set-first" data-value="playerA" class="' + (setup.firstPlayer === 'playerA' ? 'on' : '') + '">A</button>' +
             '<button data-act="set-first" data-value="playerB" class="' + (setup.firstPlayer === 'playerB' ? 'on' : '') + '">B</button>' +
@@ -203,9 +216,10 @@
         '</div>' +
         '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">対戦開始</button></div>' +
         '<details class="bt-notes"><summary>この対戦画面について</summary>' +
-          '対象を複数から選ぶ効果などは、エンジン側の安全なデフォルト挙動（先頭候補を自動選択、または「してもよい」を辞退）で処理されます。' +
+          '対象や「してもよい」を選ぶ効果は、選択画面で選びます。' +
           'カード効果はエンジンに登録済みのカードのみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。' +
-          '手札は自分の手番のときだけ表示され、手番交代時は確認画面を挟みます。' +
+          '2人で遊ぶときは、手札は自分の手番のときだけ表示され、手番交代時は確認画面を挟みます。' +
+          'プレイヤーBを「CPU」にすると、CPUが自動で手番を進めます（倒せる相手を優先して狙う、シンプルな思考です）。' +
         '</details>' +
       '</div>';
   }
@@ -290,7 +304,9 @@
       return;
     }
 
-    game = { state: state };
+    game = { state: state, cpu: setup.opponent === 'CPU' ? 'playerB' : null };
+    PLAYER_LABEL.playerB = game.cpu ? 'CPU' : 'プレイヤーB';
+    cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
     sel = null;
     lastRoundBanner = null;
     detailCardId = null;
@@ -310,7 +326,8 @@
     }
     var state = game.state;
     var finished = state.match.status === 'FINISHED';
-    var handoffPending = !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
+    // CPU対戦では手番交代の確認画面は不要（人のプレイヤーは常に自分の側を見ている）
+    var handoffPending = !game.cpu && !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
     var html = renderBattleBoard(state, finished, handoffPending);
 
     if (finished) html += renderMatchEndOverlay(state);
@@ -322,7 +339,7 @@
   }
 
   function renderBattleBoard(state, readOnly, hideHand) {
-    var bottom = state.turn.activePlayer; // 手番プレイヤーが常に下側
+    var bottom = game && game.cpu ? humanId() : state.turn.activePlayer; // 手番プレイヤーが常に下側（CPU対戦では人のプレイヤーが常に下側）
     var top = opponentOf(bottom);
     var hpNow = snapshotHp(state);
     var deltas = {};
@@ -367,7 +384,7 @@
     var strip = '' +
       '<div class="bt-strip">' +
         '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
-        (isActive ? '<span class="bt-turntag">YOUR TURN</span>' : '') +
+        (isActive ? '<span class="bt-turntag">' + (isCpu(playerId) ? 'CPU TURN' : 'YOUR TURN') + '</span>' : '') +
         '<span class="bt-pp">' + renderPpPips(player) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
         renderBoostBadge(player) +
         '<span class="bt-counters">' +
@@ -464,6 +481,7 @@
 
   function renderField(state, playerId, isActive, readOnly) {
     var player = state.players[playerId];
+    if (isCpu(playerId)) readOnly = true; // CPUのカードは人が操作できない
     var canPlay = !readOnly && isActive && Eng.Phases.canPlayTactics(state);
     var pp = player.ppCards.max - player.ppCards.tapped;
 
@@ -566,7 +584,7 @@
         var reason = effCost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
         var isSel = sel && sel.cardInstanceId === c.instanceId;
         return '' +
-          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable ? '' : ' unplayable') + '" data-act="select-hand" data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
+          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable && !cpuTurnActive() ? '' : ' unplayable') + '"' + (cpuTurnActive() ? '' : ' data-act="select-hand"') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
             '<span class="bt-cost' + (effCost != null && effCost < card.cost ? ' free' : '') + '">' + (effCost != null ? effCost : '?') + '</span>' +
             '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
             '<div class="bt-hname">' + esc(card.name) + '</div>' +
@@ -586,6 +604,10 @@
   }
 
   function renderPrompt(state) {
+    if (cpuTurnActive()) {
+      return '<div class="bt-prompt-text bt-cpu-thinking"><span class="bt-cpu-dot"></span><b>CPUのターン</b>' +
+        (cpuTurn.last ? '<span class="bt-ctext">' + esc(cpuTurn.last) + '</span>' : '<span class="bt-ctext">考え中…</span>') + '</div>';
+    }
     var endBtn = '<button class="bt-btn danger" data-act="end-turn">ターン終了</button>';
     if (sel && sel.kind === 'ATTACK') {
       var card = cardOf(sel.cardId);
@@ -806,8 +828,8 @@
   // fn(state, callbacks, ask) を盤面のコピーで実行し、選択が必要になったら選択画面を出す。
   // 最後まで進んだらそのコピーを新しい盤面として採用し、onDone(fnの戻り値) を呼ぶ。
   // 途中でエラーになった場合は盤面を一切変更しない。
-  function runAction(fn, onDone) {
-    pendingChoice = { base: game.state, seed: Math.floor(Math.random() * 4294967296), answers: [], fn: fn, onDone: onDone };
+  function runAction(fn, onDone, onError) {
+    pendingChoice = { base: game.state, seed: Math.floor(Math.random() * 4294967296), answers: [], fn: fn, onDone: onDone, onError: onError };
     stepChoice();
   }
 
@@ -824,6 +846,7 @@
       });
     } catch (e) {
       pendingChoice = null;
+      if (pc.onError) { pc.onError(e); return; }
       alert(e.message);
       render();
       return;
@@ -834,10 +857,17 @@
       pc.onDone(r.value);
       return;
     }
+    // CPUが選ぶ質問は、画面を出さずにCPUが答えてやり直す
+    var chooser = r.question.chooser || r.state.turn.activePlayer;
+    if (isCpu(chooser) && pc.answers.length < 200) {
+      pc.answers.push(Cpu.answerQuestion(r.question, r.state, chooser, cardIndex));
+      stepChoice();
+      return;
+    }
     pc.question = r.question;
     pc.preview = r.state;
     pc.selection = r.question.type === 'ALLOCATE' ? r.question.candidates.map(function () { return 0; }) : (r.question.preselect || []).slice();
-    pc.revealed = !r.question.secret;
+    pc.revealed = !r.question.secret || !!game.cpu; // CPU対戦では相手に端末を渡す必要が無い
     render();
   }
 
@@ -917,6 +947,54 @@
       startTurn(state, cb);
       return null;
     }, function () { sel = null; render(); });
+  }
+
+  // ---------- CPUの手番 ----------
+  // 描画のたびに、CPUの手番で待ち状態（ラウンド終了の表示・選択画面・カード詳細）でなければ、少し間をおいて1手進める。
+  var cpuTimer = null;
+  var cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
+  var CPU_DELAY_MS = 900;
+
+  function scheduleCpu() {
+    if (cpuTimer || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || detailCardId) return;
+    cpuTimer = setTimeout(function () { cpuTimer = null; cpuStep(); }, CPU_DELAY_MS);
+  }
+
+  function cpuStep() {
+    if (screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner) return;
+    var state = game.state;
+    var pid = game.cpu;
+    var key = state.match.roundNumber + ':' + state.turn.turnNumber;
+    if (cpuTurn.key !== key) cpuTurn = { key: key, excluded: {}, steps: 0, last: null };
+    cpuTurn.steps += 1;
+    var act = cpuTurn.steps > 30 ? { type: 'END' } : Cpu.decideAction(state, pid, cardIndex, { isEquipment: isEquipmentCard }, cpuTurn.excluded);
+    var failed = function () { cpuTurn.excluded[act.instanceId] = true; render(); };
+    if (act.type === 'END') {
+      cpuTurn.last = 'ターン終了';
+      doEndTurn();
+      return;
+    }
+    var name = cardOf(act.cardId).name;
+    if (act.type === 'ATTACK') {
+      var o = act.options.attacks ? act.options.attacks[0] : act.options;
+      cpuTurn.last = '「' + name + '」で ' + leaderNameOf(pid, o.attackerLeaderIndex) + ' → ' + leaderNameOf(o.targetPlayerId, o.targetLeaderIndex) + ' にアタック';
+      runAction(function (s, cb) {
+        Eng.Resolver.playAttackCardWithEffects(s, pid, act.instanceId, Object.assign({}, act.options, cb), cardIndex);
+        return finishAction(s, cb);
+      }, afterActionDone, failed);
+    } else if (act.type === 'MEMORIA') {
+      cpuTurn.last = 'メモリア「' + name + '」をプレイ';
+      runAction(function (s, cb) {
+        Eng.Resolver.playMemoriaCardWithEffects(s, pid, act.instanceId, Object.assign({}, cb), cardIndex);
+        return finishAction(s, cb);
+      }, afterActionDone, failed);
+    } else {
+      cpuTurn.last = 'タクティクス「' + name + '」を' + (act.subType === 'EQUIPMENT' ? leaderNameOf(pid, act.equipLeaderIndex) + 'に装備' : '使用');
+      runAction(function (s, cb) {
+        Eng.Resolver.playTacticsCardWithEffects(s, pid, act.instanceId, Object.assign({ subType: act.subType, equipLeaderIndex: act.equipLeaderIndex }, cb), cardIndex);
+        return finishAction(s, cb);
+      }, afterActionDone, failed);
+    }
   }
 
   // ---------- 選択画面 ----------
@@ -1113,6 +1191,7 @@
     }
     if (act === 'set-mode') { setup.mode = el.getAttribute('data-value'); render(); return; }
     if (act === 'set-first') { setup.firstPlayer = el.getAttribute('data-value'); render(); return; }
+    if (act === 'set-opponent') { setup.opponent = el.getAttribute('data-value'); PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? 'CPU' : 'プレイヤーB'; render(); return; }
     if (act === 'coinflip') {
       setup.firstPlayer = Math.random() < 0.5 ? 'playerA' : 'playerB';
       render();
@@ -1125,6 +1204,7 @@
     if (act === 'close-detail') { detailCardId = null; render(); return; }
     if (act === 'dismiss-handoff') { seenActive = game.state.turn.activePlayer; render(); return; }
     if (act === 'back-to-setup') {
+      if (cpuTimer) { clearTimeout(cpuTimer); cpuTimer = null; }
       game = null; sel = null; lastRoundBanner = null; detailCardId = null; logOpen = false;
       setup.savedDecks = loadSavedDecks();
       screen = 'setup';
@@ -1132,6 +1212,7 @@
       return;
     }
     if (act === 'dismiss-round-banner') { lastRoundBanner = null; render(); return; }
+    if (cpuTurnActive()) return; // CPUの手番中は操作できない（詳細表示・ログ等は上で処理済み）
     if (act === 'end-turn') { doEndTurn(); return; }
     if (act === 'cancel-select') { sel = null; render(); return; }
 
