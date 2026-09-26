@@ -35,10 +35,17 @@ function test(name, fn) {
 const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004'];
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 LEADERS_A.concat(LEADERS_B).forEach((id) => { delete CardEffectData.REGISTRY[id]; });
-const noEffect = (c) => !c.ban && !c.isParallel && !CardEffectData.hasEffects(c.cardNumber);
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.cost === 1 && noEffect(c))[0].cardNumber;
-const ATTACK_COST2 = allCards.filter((c) => c.cardType === 'ATTACK' && c.cost === 2 && noEffect(c))[0].cardNumber;
-const MEMORIA_COST1 = allCards.filter((c) => c.cardType === 'MEMORIA' && c.cost === 1 && c.ace !== true && noEffect(c))[0].cardNumber;
+const noEffect = (c) => !c.ban && !c.isParallel && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber];
+// 効果の無いカードを優先して選ぶ。該当が無ければ（ほぼ全カードに効果を登録済みのため）条件に合うカードの効果をこのテスト内だけ外して使う
+function plainCard(pred) {
+  const pool = allCards.filter((c) => pred(c) && !c.ban && !c.isParallel && !CardEffectData.KEYWORDS[c.cardNumber]);
+  const c = pool.find((x) => !CardEffectData.hasEffects(x.cardNumber)) || pool[0];
+  delete CardEffectData.REGISTRY[c.cardNumber];
+  return c.cardNumber;
+}
+const FILLER_ATTACK = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 1);
+const ATTACK_COST2 = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 2);
+const MEMORIA_COST1 = plainCard((c) => c.cardType === 'MEMORIA' && c.cost === 1 && c.ace !== true);
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban && !c.isParallel).slice(0, 5).map((c) => c.cardNumber);
 
 function makeState() {

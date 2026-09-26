@@ -44,7 +44,7 @@ const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004']; // 全員red
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008']; // 全員blue
 const LEADERS_YELLOW = ['BP01-009', 'BP01-010', 'BP01-011', 'BP01-012']; // 全員yellow
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
+const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
 const BLUE_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'blue' && !c.ban)[0].cardNumber;
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(0, 5).map((c) => c.cardNumber);
 const TACTICS_5_B = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(5, 10).map((c) => c.cardNumber);
@@ -313,9 +313,9 @@ console.log('=== 新しい仕組みが必要なため未登録のカード（意
 // BP01-017・BP01-044・BP02-024も、後のPhase GでFREE_PLAY_MEMORIA_FROM_HAND/
 // DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA機構を追加した際に登録されたため
 // 除外している（test/phaseG.test.js参照）。
-['BP04-045', 'BP04-052', 'BP04-059', 'BP03-024', 'BP03-031', 'BP03-066',
-  'BP02-045', 'BP01-026',
-  'ST01-005', 'ST01-016', 'ST02-009', 'ST02-012'].forEach((cardId) => {
+// BP04-045・BP04-052・BP03-024・BP03-031・BP01-026・ST01-016・ST02-012 は Phase K で登録した
+// （ST01-016/ST02-012 はアタック強化のみ。test/phaseK.test.js参照）。
+['BP04-059', 'BP03-066', 'BP02-045', 'ST01-005', 'ST02-009'].forEach((cardId) => {
   test(`${cardId}は新機構が必要なため未登録のまま`, () => {
     assert.deepStrictEqual(CardEffectData.getEffectsForCard(cardId), []);
   });

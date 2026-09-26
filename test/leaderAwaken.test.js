@@ -31,7 +31,7 @@ function test(name, fn) {
 }
 
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && !c.ban && c.cost === 1 && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
+const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && !c.ban && c.cost === 1 && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban && !c.isParallel).slice(0, 5).map((c) => c.cardNumber);
 const OPP = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 

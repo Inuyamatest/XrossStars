@@ -153,6 +153,7 @@
     root.innerHTML = screen === 'setup' ? renderSetup() : renderBattle();
     bindEvents();
     syncDockHeight();
+    if (previewEl) refreshPreview(); // 要素が作り直されたので、マウスの位置にあるカードで表示し直す
   }
 
   // 手札ドック（固定表示）の実際の高さに合わせて盤面の下余白を取り、最下段が隠れないようにする
@@ -161,6 +162,17 @@
     document.documentElement.style.setProperty('--dock-h', (dock ? dock.offsetHeight : 0) + 'px');
   }
   window.addEventListener('resize', syncDockHeight);
+
+  // カードテキストを読みやすく：〖プレイ時〗等の見出しを色付きのラベルにし、見出しごとに改行する
+  var KW_CLASS = { 'プレイ時': 'play', 'アタックする': 'atk', 'アタック後': 'after', 'アタック強化': 'boost', '覚醒時': 'awake', 'ラウンド中': 'round' };
+  function formatCardText(text) {
+    if (!text) return '';
+    var html = esc(text).replace(/\s*〖([^〗]+)〗\s*/g, function (m, kw) {
+      return '\n<span class="bt-kw ' + (KW_CLASS[kw] || '') + '">' + kw + '</span>';
+    });
+    html = html.replace(/(エコー)（/g, '\n<span class="bt-kw echo">$1</span>（');
+    return html.replace(/^\n/, '').replace(/\n+/g, '<br>');
+  }
 
   function imgTag(card, awakened, cls) {
     var src = cardImg(card, awakened);
@@ -357,7 +369,7 @@
         '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
         (isActive ? '<span class="bt-turntag">YOUR TURN</span>' : '') +
         '<span class="bt-pp">' + renderPpPips(player) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
-        (player.pendingAttackBoost ? '<span class="bt-boost" title="次のアタックに上乗せされるダメージ">強化 +' + player.pendingAttackBoost + '</span>' : '') +
+        renderBoostBadge(player) +
         '<span class="bt-counters">' +
           '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b></span>' +
           '<span class="bt-counter" title="手札">手札 <b>' + player.hand.length + '</b></span>' +
@@ -435,7 +447,7 @@
 
     return '' +
       '<div class="' + cls + '"' + (p.pickable ? ' data-act="pick-leader" data-player="' + playerId + '" data-index="' + idx + '" role="button" tabindex="0"' : '') + '>' +
-        '<div class="bt-lcard">' +
+        '<div class="bt-lcard" data-preview="' + esc(leader.cardId) + '"' + (leader.awakened ? ' data-preview-awakened="1"' : '') + '>' +
           imgTag(card, leader.awakened, 'bt-lnoimg') +
           '<div class="bt-badge-top">' + tags + '</div>' +
           '<button class="bt-info" data-act="show-detail" data-card="' + esc(leader.cardId) + '" title="カード詳細">i</button>' +
@@ -462,7 +474,7 @@
       var disabled = !canPlay || !affordable;
       return '' +
         '<div class="bt-mini tactics" title="' + esc(card.name) + '（C' + (card.cost != null ? card.cost : '?') + '・' + (equip ? '装備' : '消費') + '）">' +
-          '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '">' + imgTag(card, false, 'bt-mnoimg') + '</div>' +
+          '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '" data-preview="' + esc(t.card.cardId) + '">' + imgTag(card, false, 'bt-mnoimg') + '</div>' +
           (isActive && !readOnly ? '<button class="bt-mplay' + (disabled ? '' : ' ready') + '" data-act="play-tactics" data-instance="' + esc(t.card.instanceId) + '" data-equip="' + (equip ? 1 : 0) + '"' + (disabled ? ' disabled' : '') + '>' + (equip ? '装備' : '使う') + '</button>' : '') +
         '</div>';
     }).join('') : '<span class="bt-zone-empty">なし</span>';
@@ -471,9 +483,9 @@
       var card = cardOf(e.card.cardId);
       // エコーで横向きになっているカードは横向きに表示する（次の自分のメインフェイズ開始時にプレイし直される）
       if (e.echoHorizontal) {
-        return '<div class="bt-mini echo" title="' + esc(card.name) + '（エコー：横向き）" data-act="show-detail" data-card="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div><span class="bt-echo-tag">ECHO</span></div>';
+        return '<div class="bt-mini echo" title="' + esc(card.name) + '（エコー：横向き）" data-act="show-detail" data-card="' + esc(e.card.cardId) + '" data-preview="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div><span class="bt-echo-tag">ECHO</span>' + pendingTag(player, e.card.instanceId) + '</div>';
       }
-      return '<div class="bt-mini" title="' + esc(card.name) + '" data-act="show-detail" data-card="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div></div>';
+      return '<div class="bt-mini" title="' + esc(card.name) + '" data-act="show-detail" data-card="' + esc(e.card.cardId) + '" data-preview="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div>' + pendingTag(player, e.card.instanceId) + '</div>';
     }).join('') : '<span class="bt-zone-empty">なし</span>';
 
     return '' +
@@ -549,12 +561,13 @@
     } else {
       handHtml = '<div class="bt-hand">' + player.hand.map(function (c) {
         var card = cardOf(c.cardId);
-        var affordable = card.cost != null && card.cost <= pp;
-        var reason = card.cost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
+        var effCost = Eng.Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
+        var affordable = effCost != null && effCost <= pp;
+        var reason = effCost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
         var isSel = sel && sel.cardInstanceId === c.instanceId;
         return '' +
-          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable ? '' : ' unplayable') + '" data-act="select-hand" data-instance="' + esc(c.instanceId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
-            '<span class="bt-cost">' + (card.cost != null ? card.cost : '?') + '</span>' +
+          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable ? '' : ' unplayable') + '" data-act="select-hand" data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
+            '<span class="bt-cost' + (effCost != null && effCost < card.cost ? ' free' : '') + '">' + (effCost != null ? effCost : '?') + '</span>' +
             '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
             '<div class="bt-hname">' + esc(card.name) + '</div>' +
           '</div>';
@@ -591,7 +604,8 @@
       }
       var lastOfMulti = sel.multi <= 1 || sel.attacks.length === sel.multi - 1;
       return '' +
-        '<div class="bt-prompt-text">' + multiInfo + '<b>' + esc(card.name) + '</b>　' + msg + '<span class="bt-ctext">' + esc(card.text || '') + '</span></div>' +
+        '<div class="bt-prompt-text">' + multiInfo + '<b>' + esc(card.name) + '</b>　' + msg + '<span class="bt-ctext">' + formatCardText(card.text || '') + '</span></div>' +
+        renderDamagePreview(state) +
         '<div class="bt-steps">' + stepChip('① アタッカー', 0, step) + stepChip('② 対象', 1, step) + stepChip('③ 確定', 2, step) + '</div>' +
         '<div class="bt-prompt-actions">' +
           '<button class="bt-btn ghost" data-act="show-detail" data-card="' + esc(sel.cardId) + '">詳細</button>' +
@@ -602,7 +616,8 @@
     if (sel && sel.kind === 'MEMORIA') {
       var mcard = cardOf(sel.cardId);
       return '' +
-        '<div class="bt-prompt-text"><b>' + esc(mcard.name) + '</b>（メモリア）をプレイしますか？<span class="bt-ctext">' + esc(mcard.text || '') + '</span></div>' +
+        renderNextAttackPanel(state.players[state.turn.activePlayer]) +
+        '<div class="bt-prompt-text"><b>' + esc(mcard.name) + '</b>（メモリア）をプレイしますか？<span class="bt-ctext">' + formatCardText(mcard.text || '') + '</span></div>' +
         '<div class="bt-prompt-actions">' +
           '<button class="bt-btn ghost" data-act="show-detail" data-card="' + esc(sel.cardId) + '">詳細</button>' +
           '<button class="bt-btn ghost" data-act="cancel-select">キャンセル</button>' +
@@ -613,8 +628,82 @@
       return '<div class="bt-prompt-text">装備させる自分のリーダーを選んでください</div>' +
         '<div class="bt-prompt-actions"><button class="bt-btn ghost" data-act="cancel-select">キャンセル</button></div>';
     }
-    return '<div class="bt-prompt-text">' + (notice ? '<b style="color:#ffb3c7">' + esc(notice) + '</b>' : '手札のカードを選ぶか、タクティクスを使ってください') + '</div>' +
+    return renderNextAttackPanel(state.players[state.turn.activePlayer]) +
+      '<div class="bt-prompt-text">' + (notice ? '<b style="color:#ffb3c7">' + esc(notice) + '</b>' : '手札のカードを選ぶか、タクティクスを使ってください') + '</div>' +
       '<div class="bt-prompt-actions">' + endBtn + '</div>';
+  }
+
+  // ---------- 次のアタックへの強化（メモリア等）の表示 ----------
+  function pendingTotal(player) {
+    return (player.pendingAttackBoost || 0) + (player.pendingAttackTimeBoosts || []).reduce(function (s, b) { return s + b.amount; }, 0);
+  }
+
+  function renderBoostBadge(player) {
+    var total = player.pendingAttackBoost || 0;
+    var cond = (player.pendingAttackTimeBoosts || []).length > 0;
+    var after = (player.pendingAfterAttackEffects || []).length > 0;
+    if (!total && !cond && !after) return '';
+    var tip = (player.pendingBoostSources || []).map(function (b) { return cardOf(b.cardId).name + ' +' + b.amount + (b.conditional ? '（条件付き）' : ''); }).join(' / ');
+    return '<span class="bt-boost" title="' + esc('次のアタックに上乗せ：' + (tip || '+' + total)) + '"><span class="bt-boost-lbl">次のアタック </span><b>+' + total + '</b>' + (cond ? '<i>+α</i>' : '') + (after ? '<i>＋アタック後</i>' : '') + '</span>';
+  }
+
+  // 手番プレイヤーの「次のアタック」に乗る強化と、アタック後に発動する効果を、出どころのカードごとに一覧する
+  function renderNextAttackPanel(player) {
+    var sources = player.pendingBoostSources || [];
+    var afters = player.pendingAfterAttackEffects || [];
+    if (!(player.pendingAttackBoost || 0) && !sources.length && !afters.length) return '';
+    var chips = sources.map(function (b) {
+      return '<span class="bt-nx-chip" data-preview="' + esc(b.cardId) + '">' + esc(cardOf(b.cardId).name) + ' <b>+' + b.amount + '</b>' + (b.conditional ? '<small>条件付き</small>' : '') + '</span>';
+    });
+    var seenAfter = {};
+    afters.forEach(function (a) {
+      var id = a.cardId || findCardIdByInstance(game.state, a.sourceInstanceId);
+      if (!id || seenAfter[a.sourceInstanceId]) return;
+      seenAfter[a.sourceInstanceId] = true;
+      chips.push('<span class="bt-nx-chip after" data-preview="' + esc(id) + '">' + esc(cardOf(id).name) + ' <b>アタック後</b></span>');
+    });
+    return '<div class="bt-nextattack"><span class="bt-nx-label">次のアタック</span><span class="bt-nx-total">+' + (player.pendingAttackBoost || 0) + '</span>' + chips.join('') + '</div>';
+  }
+
+  // プレイエリアのカードが、次のアタックへの強化／アタック後効果を保留中なら印を付ける
+  function pendingTag(player, instanceId) {
+    var amount = (player.pendingBoostSources || []).filter(function (b) { return b.instanceId === instanceId; })
+      .reduce(function (s, b) { return s + b.amount; }, 0);
+    var after = (player.pendingAfterAttackEffects || []).some(function (a) { return a.sourceInstanceId === instanceId; });
+    if (!amount && !after) return '';
+    return '<span class="bt-pend-tag">' + (amount ? '+' + amount : '') + (after ? (amount ? '・' : '') + '後' : '') + '</span>';
+  }
+
+  // アタックの予想ダメージ（攻撃力＋カードの上乗せ＋次のアタックへの強化）
+  function renderDamagePreview(state) {
+    if (sel.attackerLeaderIndex == null) return '';
+    var pid = sel.ownerId;
+    var player = state.players[pid];
+    var attacker = player.leaders[sel.attackerLeaderIndex];
+    var targetPid = opponentOf(pid);
+    var ctx = {
+      ownerPlayerId: pid, attackerPlayerId: pid, attackerLeaderIndex: sel.attackerLeaderIndex,
+      targetPlayerId: targetPid, targetLeaderIndex: sel.targetLeaderIndex, cardIndex: cardIndex,
+    };
+    var atk = Eng.GameState.getLeaderCurrentAtk(cardIndex, attacker);
+    var cardBonus = Eng.Resolver.computeAttackCardBaseDamage(sel.cardId, state, ctx);
+    var firstOfMulti = !sel.attacks || sel.attacks.length === 0;
+    var boost = firstOfMulti ? (player.pendingAttackBoost || 0) + Eng.Resolver.computeAttackTimeBoost(state, pid, ctx) : 0;
+    var total = Math.max(0, atk + cardBonus + boost);
+    var hasChoiceBonus = Eng.CardEffectData.getEffectsForCard(sel.cardId).some(function (e) {
+      return e.trigger === 'ON_ATTACK' && e.action && ['ATTACK_DAMAGE_BONUS', 'MULTI_ATTACK'].indexOf(e.action.type) < 0;
+    });
+    var parts = ['<span>攻撃力 <b>' + atk + '</b></span>'];
+    if (cardBonus) parts.push('<span>カード <b>' + (cardBonus > 0 ? '+' : '') + cardBonus + '</b></span>');
+    if (boost) parts.push('<span class="boost">強化 <b>+' + boost + '</b></span>');
+    var verdict = '';
+    if (sel.targetLeaderIndex != null) {
+      var target = state.players[targetPid].leaders[sel.targetLeaderIndex];
+      var hp = Eng.GameState.getLeaderCurrentHp(cardIndex, target);
+      verdict = total >= hp ? '<span class="bt-dp-down">ダウン！（残り' + hp + '）</span>' : '<span class="bt-dp-left">残り ' + (hp - total) + '</span>';
+    }
+    return '<div class="bt-dmgpreview">' + parts.join('<i>＋</i>') + '<i>＝</i><span class="bt-dp-total">' + total + '<small>ダメージ</small></span>' +
+      (hasChoiceBonus ? '<span class="bt-dp-note">＋効果で増える場合あり</span>' : '') + verdict + '</div>';
   }
 
   // ---------- ログ・オーバーレイ ----------
@@ -697,7 +786,7 @@
             '<h2>' + esc(c.name) + '</h2>' +
             '<div class="bt-deck-summary">' + chips.map(function (x) { return '<span class="bt-chip">' + esc(x) + '</span>'; }).join('') + '</div>' +
             (c.buildRule ? '<div class="bt-chip warn" style="align-self:flex-start">ビルドルール：' + esc(c.buildRule) + '</div>' : '') +
-            (text ? '<div class="bt-dtext">' + (c.cardType === 'LEADER' ? '覚醒時：' : '') + esc(text) + '</div>' : '') +
+            (text ? '<div class="bt-dtext">' + (c.cardType === 'LEADER' ? '<span class="bt-kw awake">覚醒時</span>' : '') + formatCardText(text) + '</div>' : '') +
             '<button class="bt-btn" data-act="close-detail" style="align-self:flex-start">閉じる</button>' +
           '</div>' +
         '</div>' +
@@ -866,7 +955,8 @@
     var hp = Eng.GameState.getLeaderCurrentHp(cardIndex, leader);
     var max = Eng.GameState.getLeaderMaxHp(cardIndex, leader);
     return '' +
-      '<div class="bt-choice-item leader' + (selected ? ' selected' : '') + '" data-act="choice-toggle" data-index="' + i + '" role="button" tabindex="0">' +
+      '<div class="bt-choice-item leader' + (selected ? ' selected' : '') + '" data-act="choice-toggle" data-index="' + i + '" data-preview="' + esc(leader.cardId) + '"' + (leader.awakened ? ' data-preview-awakened="1"' : '') + ' role="button" tabindex="0">' +
+        '<button class="bt-choice-zoom" data-act="show-detail" data-card="' + esc(leader.cardId) + '" title="拡大">＋</button>' +
         '<div class="bt-choice-img">' + imgTag(card, leader.awakened, 'bt-lnoimg') + '</div>' +
         '<div class="bt-choice-cap">' + pBadge(ref.playerId) + '<span>' + esc(card.name) + '</span></div>' +
         '<div class="bt-choice-sub">HP ' + hp + '/' + max + '</div>' +
@@ -882,16 +972,20 @@
     var chooser = qn.chooser || state.turn.activePlayer;
     var head = '' +
       '<div class="bt-choice-head">' +
-        (srcCard ? '<div class="bt-choice-src" data-act="show-detail" data-card="' + esc(src.cardId) + '" title="カードの詳細">' + imgTag(srcCard, false, 'bt-mnoimg') + '</div>' : '') +
+        (srcCard ? '<div class="bt-choice-src" data-act="show-detail" data-card="' + esc(src.cardId) + '" data-preview="' + esc(src.cardId) + '" title="カードの詳細">' + imgTag(srcCard, false, 'bt-mnoimg') + '</div>' : '') +
         '<div class="bt-choice-headtext">' +
           '<div class="bt-choice-who">' + pBadge(chooser) + esc(PLAYER_LABEL[chooser]) + 'が選択' + (srcCard ? ' ・「' + esc(srcCard.name) + '」' + (src.label ? '〖' + esc(src.label) + '〗' : '') : '') + '</div>' +
           '<div class="bt-choice-title">' + esc(qn.title) + '</div>' +
-          (srcCard && srcCard.text ? '<div class="bt-choice-text">' + esc(srcCard.text) + '</div>' : '') +
+          (srcCard && srcCard.text ? '<div class="bt-choice-text">' + formatCardText(srcCard.text) + '</div>' : '') +
         '</div>' +
       '</div>';
 
     var body = '';
-    if (qn.type === 'LEADERS') {
+    if (qn.type === 'OPTIONS') {
+      body = '<div class="bt-choice-options">' + qn.options.map(function (o, i) {
+        return '<button class="bt-btn' + (i === 0 ? ' primary' : '') + ' big" data-act="choice-option" data-index="' + i + '">' + esc(o.label) + '</button>';
+      }).join('') + '</div>';
+    } else if (qn.type === 'LEADERS') {
       body = '<div class="bt-choice-grid">' + qn.candidates.map(function (ref, i) {
         return renderChoiceLeader(state, ref, i, pc.selection.indexOf(i) >= 0);
       }).join('') + '</div>';
@@ -915,7 +1009,8 @@
         var note = c.equippedTo ? '装備先：' + cardOf(state.players[c.equippedTo.playerId].leaders[c.equippedTo.leaderIndex].cardId).name : '';
         var landscape = card.cardType === 'TACTICS' || card.cardType === 'PP_TICKET';
         return '' +
-          '<div class="bt-choice-item card' + (order >= 0 ? ' selected' : '') + (landscape ? ' landscape' : '') + '" data-act="choice-toggle" data-index="' + i + '" role="button" tabindex="0">' +
+          '<div class="bt-choice-item card' + (order >= 0 ? ' selected' : '') + (landscape ? ' landscape' : '') + '" data-act="choice-toggle" data-index="' + i + '" data-preview="' + esc(c.cardId) + '" role="button" tabindex="0">' +
+            '<button class="bt-choice-zoom" data-act="show-detail" data-card="' + esc(c.cardId) + '" title="拡大">＋</button>' +
             (card.cost != null ? '<span class="bt-cost">' + card.cost + '</span>' : '') +
             (qn.ordered && order >= 0 ? '<span class="bt-choice-order">' + (order + 1) + '</span>' : '') +
             '<div class="bt-choice-img">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
@@ -933,7 +1028,7 @@
       if (v.cost != null) status += ' ・ コスト合計 ' + v.cost;
     }
     var canDecline = qn.min === 0 && qn.type !== 'ALLOCATE' && pc.revealed;
-    var foot = !pc.revealed ? '' :
+    var foot = (!pc.revealed || qn.type === 'OPTIONS') ? '' :
       '<div class="bt-choice-foot">' +
         '<span class="bt-choice-status">' + esc(status) + '</span>' +
         (canDecline ? '<button class="bt-btn" data-act="choice-decline">' + esc(qn.declineLabel || '選ばない') + '</button>' : '') +
@@ -951,6 +1046,7 @@
     var qn = pc.question;
     var i = Number(el.getAttribute('data-index'));
     if (act === 'choice-reveal') { pc.revealed = true; render(); return; }
+    if (act === 'choice-option') { answerChoice([i]); return; }
     if (act === 'choice-toggle' && qn.type !== 'ALLOCATE') {
       var at = pc.selection.indexOf(i);
       if (at >= 0) pc.selection.splice(at, 1);
@@ -1047,8 +1143,9 @@
       if (!handCard) return;
       var card = cardOf(handCard.cardId);
       var ppLeft = state.players[playerId].ppCards.max - state.players[playerId].ppCards.tapped;
-      if (card.cost == null) { sel = null; notice = '「' + card.name + '」はコストが未確定のためプレイできません'; render(); return; }
-      if (card.cost > ppLeft) { sel = null; notice = '「' + card.name + '」はPPが足りません（必要 ' + card.cost + ' / 残り ' + ppLeft + '）'; render(); return; }
+      var effectiveCost = Eng.Resolver.getEffectivePlayCost(state, playerId, handCard.cardId, cardIndex);
+      if (effectiveCost == null) { sel = null; notice = '「' + card.name + '」はコストが未確定のためプレイできません'; render(); return; }
+      if (effectiveCost > ppLeft) { sel = null; notice = '「' + card.name + '」はPPが足りません（必要 ' + effectiveCost + ' / 残り ' + ppLeft + '）'; render(); return; }
       if (card.cardType === 'ATTACK') {
         sel = { kind: 'ATTACK', ownerId: playerId, cardInstanceId: instanceId, cardId: handCard.cardId, mode: 'PICK_ATTACKER', attackerLeaderIndex: null, targetLeaderIndex: null,
           multi: Eng.Resolver.getMultiAttackCount(handCard.cardId) || 1, attacks: [] };
@@ -1109,6 +1206,82 @@
     else if (logOpen) { logOpen = false; render(); }
     else if (sel) { sel = null; render(); }
   });
+
+  // ================= カードのプレビュー（マウスを合わせたカードを大きく表示） =================
+  // data-preview="カード番号" を持つ要素にマウスを合わせると、画面の反対側に大きな画像とテキストを表示する。
+  // 描画のたびにroot.innerHTMLを作り直すため、パネルはroot外（body直下）に1つだけ置いて使い回す。
+  // タッチ端末（hoverできない）では表示しない（各カードの詳細ボタン／＋ボタンで拡大表示する）。
+  var previewEl = document.createElement('div');
+  previewEl.className = 'bt-preview';
+  previewEl.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(previewEl);
+  var previewKey = null;
+  var canHover = window.matchMedia ? window.matchMedia('(hover: hover) and (pointer: fine)').matches : true;
+
+  function renderPreview(cardId, awakened) {
+    var c = cardOf(cardId);
+    var chips = [];
+    if (c.cardType) chips.push(TYPE_JA[c.cardType] || c.cardType);
+    if (c.color) chips.push(COLOR_JA[c.color] || c.color);
+    if (c.cost != null) chips.push('コスト ' + c.cost);
+    if (c.rarity) chips.push(c.rarity);
+    if (c.ace) chips.push('ACE');
+    var stats = '';
+    if (c.cardType === 'LEADER') {
+      stats = '<div class="bt-pv-stats"><span' + (awakened ? '' : ' class="on"') + '>HP ' + c.hp + ' / ATK ' + c.atk + '</span>' +
+        (c.awakenHp != null ? '<span' + (awakened ? ' class="on"' : '') + '>覚醒 HP ' + c.awakenHp + ' / ATK ' + c.awakenAtk + '</span>' : '') + '</div>';
+    }
+    var landscape = c.cardType === 'TACTICS' || c.cardType === 'PP_TICKET' || c.cardType === 'PP';
+    var text = c.cardType === 'LEADER'
+      ? (c.text ? '<span class="bt-kw awake">覚醒時</span>' + formatCardText(c.text) : '')
+      : formatCardText(c.text || '');
+    return '' +
+      '<div class="bt-pv-img' + (landscape ? ' landscape' : '') + '">' + imgTag(c, awakened, 'bt-lnoimg') + '</div>' +
+      '<div class="bt-pv-body">' +
+        '<div class="bt-pv-num">' + esc(c.cardNumber || '') + '</div>' +
+        '<div class="bt-pv-name">' + esc(c.name) + '</div>' +
+        '<div class="bt-pv-chips">' + chips.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
+        stats +
+        (c.buildRule ? '<div class="bt-pv-rule">ビルドルール：' + esc(c.buildRule) + '</div>' : '') +
+        (text ? '<div class="bt-pv-text">' + text + '</div>' : '') +
+      '</div>';
+  }
+
+  function hidePreview() {
+    previewKey = null;
+    previewEl.classList.remove('show');
+  }
+
+  var lastPointer = null;
+  document.addEventListener('mousemove', function (ev) { lastPointer = { x: ev.clientX, y: ev.clientY }; }, { passive: true });
+  function refreshPreview() {
+    if (!canHover || !lastPointer) { hidePreview(); return; }
+    showPreviewFor(document.elementFromPoint(lastPointer.x, lastPointer.y));
+  }
+
+  document.addEventListener('mouseover', function (ev) {
+    if (!canHover) return;
+    showPreviewFor(ev.target);
+  });
+
+  function showPreviewFor(target) {
+    var el = target && target.closest && target.closest('[data-preview]');
+    if (!el) { hidePreview(); return; }
+    var cardId = el.getAttribute('data-preview');
+    var awakened = el.getAttribute('data-preview-awakened') === '1';
+    var key = cardId + (awakened ? ':aw' : '');
+    // 画面の右半分にあるカードなら左側に、左半分なら右側に出す（カード自体を隠さないように）
+    var rect = el.getBoundingClientRect();
+    var atLeft = (rect.left + rect.width / 2) > window.innerWidth / 2;
+    if (key !== previewKey) {
+      previewKey = key;
+      previewEl.innerHTML = renderPreview(cardId, awakened);
+    }
+    previewEl.classList.toggle('at-left', atLeft);
+    previewEl.classList.add('show');
+  }
+  document.addEventListener('mouseleave', hidePreview);
+  window.addEventListener('scroll', hidePreview, { passive: true });
 
   render();
 })();

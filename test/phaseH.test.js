@@ -41,8 +41,8 @@ function test(name, fn) {
 const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004'];
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
-const FILLER_MEMORIA = allCards.filter((c) => c.cardType === 'MEMORIA' && !c.ban && !CardEffectData.hasEffects(c.cardNumber))[0].cardNumber;
+const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
+const FILLER_MEMORIA = allCards.filter((c) => c.cardType === 'MEMORIA' && !c.ban && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
 const BLUE_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'blue' && !c.ban)[0].cardNumber;
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(0, 5).map((c) => c.cardNumber);
 const TACTICS_5_B = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(5, 10).map((c) => c.cardNumber);
@@ -505,18 +505,7 @@ test('BP02-049：ATTACK_BOOSTを持たないメモリアでも、プレイすれ
 // ============================================================
 console.log('=== 未実装として見送ったカードが未登録であることの確認 ===');
 // ============================================================
-test('BP01-040 Lastman Standing：未登録（任意の手札破棄+条件付きボーナスは新機構が必要）', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP01-040'), false);
-});
-test('BP01-022 壁ジャンプ：未登録（同名カードによるコスト免除は新機構が必要）', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP01-022'), false);
-});
-test('BP01-061 逃走成功：未登録（全プレイヤードローはDRAWにwhoパラメータが必要）', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP01-061'), false);
-});
-test('BP04-023 天衣無縫：未登録（相手デッキ公開結果に応じた分岐が必要）', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP04-023'), false);
-});
+// BP01-040 / BP01-022 / BP01-061 / BP04-023 は Phase K で登録した（test/phaseK.test.js参照）
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

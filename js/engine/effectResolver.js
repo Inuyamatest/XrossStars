@@ -71,7 +71,12 @@
 
     switch (action.type) {
       case 'DRAW':
-        Deck.drawCards(state, ctx.ownerPlayerId, action.amount);
+        // action.who: 'ALL'（「すべてのプレイヤーはカードを1枚引く」）。省略時は自分。
+        if (action.who === 'ALL') {
+          [ctx.ownerPlayerId, GameState.getOpponentId(ctx.ownerPlayerId)].forEach(function (pid) { Deck.drawCards(state, pid, action.amount); });
+        } else {
+          Deck.drawCards(state, ctx.ownerPlayerId, action.amount);
+        }
         return state;
 
       case 'RECOVER_PP': {
@@ -332,6 +337,45 @@
         });
         if (chosenAttack) {
           ResolutionStack.push(state.resolutionStack, buildDeferredFreeAttack(chosenAttack, ctx, cardIndex));
+        }
+        return state;
+      }
+
+      case 'DRAW_PER_PLAY_AREA_MEMORIA_COST': {
+        // 頂きの景色「プレイエリアにあるメモリアカードのコストの合計と同じ数のカードを引く。」
+        var costSum = state.players[ctx.ownerPlayerId].playArea.reduce(function (sum, e) {
+          var cd = ctx.cardIndex[e.card.cardId];
+          return (cd && cd.cardType === 'MEMORIA' && typeof cd.cost === 'number') ? sum + cd.cost : sum;
+        }, 0);
+        if (costSum > 0) Deck.drawCards(state, ctx.ownerPlayerId, costSum);
+        return state;
+      }
+
+      case 'RECYCLE_FACE_DOWN_TRASH': {
+        // アイテムショップ「自分のトラッシュの裏向きのカードすべてを自分のデッキに加え、自分のデッキをシャッフルする。」
+        var recyclePlayer = state.players[ctx.ownerPlayerId];
+        var faceDown = recyclePlayer.trash.filter(function (t) { return !t.faceUp; });
+        recyclePlayer.trash = recyclePlayer.trash.filter(function (t) { return t.faceUp; });
+        recyclePlayer.deck = Deck.shuffle(recyclePlayer.deck.concat(faceDown.map(function (t) { return t.card; })));
+        Events.logEvent(state, 'DECK_RESHUFFLED_FROM_TRASH', { playerId: ctx.ownerPlayerId, count: faceDown.length });
+        return state;
+      }
+
+      case 'DECLARE_TYPE_REVEAL_DRAW': {
+        // 運命のルーレット「メモリアカードかアタックカードのどちらかを宣言し、自分のデッキの上から1枚を公開する。
+        // そのカードが宣言したカードタイプならカードを{draw}枚引く。それ以外なら公開したカードをトラッシュに置く。」
+        // 宣言はctx.chooseDeclareCardType(['MEMORIA','ATTACK'], state)。省略時はアタックカードを宣言（PROVISIONAL）。
+        var declared = ctx.chooseDeclareCardType ? ctx.chooseDeclareCardType(['MEMORIA', 'ATTACK'], state) : 'ATTACK';
+        var rPlayer = state.players[ctx.ownerPlayerId];
+        if (rPlayer.deck.length === 0) return state;
+        var revealedTop = rPlayer.deck[0];
+        var revealedCard = ctx.cardIndex[revealedTop.cardId];
+        Events.logEvent(state, 'CARD_REVEALED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: revealedTop.cardId, declared: declared });
+        if (revealedCard && revealedCard.cardType === declared) {
+          Deck.drawCards(state, ctx.ownerPlayerId, action.draw); // 公開したカードは上にあるので、そのまま引く1枚目になる
+        } else {
+          rPlayer.deck.shift();
+          rPlayer.trash.push({ card: revealedTop, faceUp: false });
         }
         return state;
       }
@@ -718,6 +762,7 @@
     'chooseTarget', 'chooseHealTarget', 'chooseDistributedHeal', 'chooseMoveEquipment', 'chooseMultiTargets',
     'chooseSelfDamage', 'chooseDeckLookAddToHand', 'chooseDiscard', 'chooseFreePlayFromHand', 'chooseDeckLookPlay',
     'chooseReplayFromPlayArea', 'chooseApexDiscard', 'chooseDeckLookAttack', 'chooseFreeAttackTarget',
+    'chooseAttackDiscard', 'chooseConfirm', 'chooseDeclareCardType',
   ];
   function pickChoiceCallbacks(source) {
     var extra = {};
@@ -754,24 +799,57 @@
     return queueMemoriaPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
   }
 
+  // 〖アタック強化〗を次のアタックに積み、同じカードの〖アタック後〗を次のアタックに紐付ける
+  // （メモリア・消費タクティクス・エコーのプレイし直しで共通。includeAfterAttack=falseはアタックカード自身の
+  //  〖アタック強化〗〔マウントタックル〕用で、そのカードの〖アタック後〗は自分のアタックで処理済みのため紐付けない）。
+  // modifier.type:
+  //   DAMAGE_BONUS            : 条件（あれば）をプレイした時点で判定して、次のアタックのダメージに加える
+  //   DAMAGE_BONUS_AT_ATTACK  : 条件を「次のアタックを宣言した時点」で判定する（例：バックステージパス
+  //                             「アタッカーがカードを装備しているなら、さらに+20」。アタッカーはプレイ時点では未定のため）
+  // 画面表示用に、どのカードがいくつ強化しているかを player.pendingBoostSources に記録する（アタックで消費されたら空にする）。
+  function linkBoostAndAfterAttack(state, playerId, cardInstance, cardIndex, includeAfterAttack) {
+    var player = state.players[playerId];
+    player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
+    player.pendingBoostSources = player.pendingBoostSources || [];
+    player.pendingAttackTimeBoosts = player.pendingAttackTimeBoosts || [];
+    var boostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId, cardIndex: cardIndex };
+    CardEffectData.getEffectsForCard(cardInstance.cardId).forEach(function (e) {
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
+        if (e.condition && !e.condition(state, boostCtx)) return;
+        Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstance.instanceId);
+        player.pendingBoostSources.push({ instanceId: cardInstance.instanceId, cardId: cardInstance.cardId, amount: e.modifier.amount });
+      } else if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS_AT_ATTACK') {
+        player.pendingAttackTimeBoosts.push({ amount: e.modifier.amount, condition: e.modifier.condition, instanceId: cardInstance.instanceId, cardId: cardInstance.cardId });
+        player.pendingBoostSources.push({ instanceId: cardInstance.instanceId, cardId: cardInstance.cardId, amount: e.modifier.amount, conditional: true });
+      } else if (e.trigger === 'AFTER_ATTACK' && includeAfterAttack) {
+        // このAFTER_ATTACK効果は「次のアタック」に付随する。ctxは次のplayAttackCardWithEffects呼び出し時に完成させる。
+        // sourceInstanceIdはこのカード自身のインスタンスIDを保持しておく（アタックカードのIDと混同しない）。
+        player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstance.instanceId, cardId: cardInstance.cardId });
+      }
+    });
+    return state;
+  }
+
+  // 次のアタックの宣言時に、DAMAGE_BONUS_AT_ATTACK の条件を判定して上乗せ量を返す（消費はconsumePendingBoostsで行う）
+  function computeAttackTimeBoost(state, playerId, ctx) {
+    return (state.players[playerId].pendingAttackTimeBoosts || []).reduce(function (sum, b) {
+      return (typeof b.condition !== 'function' || b.condition(state, ctx)) ? sum + b.amount : sum;
+    }, 0);
+  }
+
+  // アタック強化が消費された（アタックを宣言した）ので、表示用の記録と宣言時判定の強化を空にする
+  function consumePendingBoosts(state, playerId) {
+    var player = state.players[playerId];
+    player.pendingBoostSources = [];
+    player.pendingAttackTimeBoosts = [];
+  }
+
   // メモリアを「プレイした」ときの効果処理（ON_PLAYをResolutionStackへ・ATTACK_BOOSTを次のアタックへ・
   // AFTER_ATTACKを次のアタックに紐付け）。カード自体の移動は呼び出し側が行う
   // （エコーの「プレイし直す」はプレイエリアに置いたまま、この処理だけを行う）。
   function queueMemoriaPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx) {
-    var player = state.players[playerId];
     queueOnPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
-
-    player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
-    var attackBoostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId, cardIndex: cardIndex };
-    CardEffectData.getEffectsForCard(cardInstance.cardId).forEach(function (e) {
-      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
-        if (e.condition && !e.condition(state, attackBoostCtx)) return;
-        Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstance.instanceId);
-      } else if (e.trigger === 'AFTER_ATTACK') {
-        player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstance.instanceId });
-      }
-    });
-    return state;
+    return linkBoostAndAfterAttack(state, playerId, cardInstance, cardIndex, true);
   }
 
   // ---- メモリアカードのプレイ：既存のPhases.playMemoriaCardを土台に、
@@ -785,26 +863,18 @@
     if (!handEntry) throw new Error('指定されたカードは手札にありません: ' + cardInstanceId);
     var cardId = handEntry.cardId;
 
-    var result = Phases.playMemoriaCard(state, playerId, cardInstanceId, options, cardIndex);
+    // 同名カードがプレイエリアに1枚あるならコストを支払わない（引っ張り合い等）
+    var memoriaOptions = Object.assign({}, options || {});
+    if (isFreeBySameNameRule(state, playerId, cardId, cardIndex)) memoriaOptions.freePlay = true;
+    var result = Phases.playMemoriaCard(state, playerId, cardInstanceId, memoriaOptions, cardIndex);
 
     queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, extractChoiceOptions(options));
 
-    player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
     // Phase E: ATTACK_BOOSTにconditionが付いている場合、このメモリアをプレイした「今」の時点
     // （このカード自身は既にPhases.playMemoriaCardでプレイエリアへ積まれた後）で判定する。
     // We are...!の「メモリアカードの数は【アタック強化】を実行するときに数える」という printedルーリングに
     // 基づく（ctx.ownerPlayerId/cardIndexがあればPLAY_AREA_TYPE_COUNT等の既存Conditionがそのまま使える）。
-    var attackBoostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstanceId, cardIndex: cardIndex };
-    CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
-      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
-        if (e.condition && !e.condition(state, attackBoostCtx)) return;
-        Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstanceId);
-      } else if (e.trigger === 'AFTER_ATTACK') {
-        // このAFTER_ATTACK効果は「次のアタック」に付随する。ctxは次のplayAttackCardWithEffects呼び出し時に完成させる。
-        // sourceInstanceIdはこのメモリア自身のインスタンスIDを保持しておく（アタックカードのIDと混同しない）。
-        player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstanceId });
-      }
-    });
+    linkBoostAndAfterAttack(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, true);
     return result;
   }
 
@@ -840,19 +910,127 @@
       // メモリアと同じく「次のアタック」に上乗せする。装備タクティクスの〖アタック後〗は装備の付与能力
       // （EQUIP_GRANT_ABILITY）として別経路で扱うため、ここでは消費型のみ対象にする。
       if (!options || options.subType !== 'EQUIPMENT') {
-        player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
-        var boostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstanceId, cardIndex: cardIndex };
-        CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
-          if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
-            if (e.condition && !e.condition(state, boostCtx)) return;
-            Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstanceId);
-          } else if (e.trigger === 'AFTER_ATTACK') {
-            player.pendingAfterAttackEffects.push({ effect: e, sourceInstanceId: cardInstanceId });
-          }
-        });
+        linkBoostAndAfterAttack(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, true);
       }
     }
     return result;
+  }
+
+  // ---- 「プレイエリアに別の『（同名）』が1枚あるなら、コストを支払わずにこのカードをプレイしてもよい。
+  //      （2枚以上あるときはコストを支払う。）」（壁ジャンプ・引っ張り合い・ロケットシャワー）----
+  // 払わずに済むなら常に得なので、条件を満たせば自動的にコストなしでプレイする。
+  function isFreeBySameNameRule(state, playerId, cardId, cardIndex) {
+    if (!CardEffectData.hasKeyword(cardId, 'FREE_IF_ONE_SAME_NAME_IN_PLAY')) return false;
+    var card = cardIndex[cardId];
+    if (!card) return false;
+    var same = state.players[playerId].playArea.filter(function (e) {
+      var c = cardIndex[e.card.cardId];
+      return c && c.name === card.name;
+    }).length;
+    return same === 1;
+  }
+
+  // 画面の「プレイできるか」判定用：そのカードを今プレイするときに実際に支払うコスト（未確定ならnull）
+  function getEffectivePlayCost(state, playerId, cardId, cardIndex) {
+    var card = cardIndex[cardId];
+    if (!card || typeof card.cost !== 'number') return null;
+    return isFreeBySameNameRule(state, playerId, cardId, cardIndex) ? 0 : card.cost;
+  }
+
+  // ---- 〖アタックする〗のうち、ダメージを決める前に盤面を動かす処理（選択・公開・破棄を伴うもの）----
+  // 戻り値はこのアタックのダメージへの上乗せ量。アタックカードはまだ手札にある（Phases.playAttackCardの前）ため、
+  // 手札から選ぶ候補からはそのカード自身を除く。
+  function handCandidates(state, playerId, excludeInstanceId, cardIndex, filter) {
+    return state.players[playerId].hand.filter(function (c) {
+      if (c.instanceId === excludeInstanceId) return false;
+      var cd = cardIndex[c.cardId];
+      return !!cd && (!filter || filter(cd));
+    }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: cardIndex[c.cardId].cost }; });
+  }
+
+  function discardByInstanceIds(state, playerId, ids) {
+    var player = state.players[playerId];
+    var discarded = [];
+    ids.forEach(function (id) {
+      var i = player.hand.findIndex(function (c) { return c.instanceId === id; });
+      if (i < 0) return;
+      var card = player.hand.splice(i, 1)[0];
+      player.trash.push({ card: card, faceUp: false });
+      Events.logEvent(state, 'CARD_DISCARDED_BY_EFFECT', { playerId: playerId, cardId: card.cardId });
+      discarded.push(card);
+    });
+    return discarded;
+  }
+
+  function runPreDamageAttackActions(state, playerId, cardInstanceId, cardId, ctx, cardIndex) {
+    var bonus = 0;
+    CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
+      if (e.trigger !== 'ON_ATTACK' || !e.action) return;
+      var a = e.action;
+      withResolvingEffect({ sourceInstanceId: cardInstanceId, cardId: cardId, trigger: 'ON_ATTACK', ownerPlayerId: playerId }, function () {
+        if (a.type === 'OPTIONAL_HAND_DISCARD_FOR_BONUS') {
+          // 大黒柱/Lastman Standing「手札を1枚捨ててもよい。そうしたならダメージ+20。」
+          // CLUTCH!!!/セルフ実況「自分の手札のコスト0のカード1枚を公開し、捨ててもよい。そうしたならカードを1枚引き、ダメージ+N。」
+          // 仁義なき抗争「手札を1枚ランダムに捨ててもよい。そうしたならダメージ+30。」
+          var cands = handCandidates(state, playerId, cardInstanceId, cardIndex, a.filterCost != null ? function (cd) { return cd.cost === a.filterCost; } : null);
+          if (cands.length === 0) return;
+          var ids = [];
+          if (a.random) {
+            if (!(ctx.chooseConfirm && ctx.chooseConfirm({ kind: 'RANDOM_DISCARD', title: '手札を1枚ランダムに捨てますか？（捨てるとダメージ+' + a.bonus + '）' }, state))) return;
+            ids = [cands[Math.floor(Math.random() * cands.length)].instanceId];
+          } else {
+            ids = ctx.chooseAttackDiscard ? (ctx.chooseAttackDiscard(cands.slice(), { max: 1, bonus: a.bonus }, state) || []) : [];
+            ids = ids.filter(function (id) { return cands.some(function (c) { return c.instanceId === id; }); }).slice(0, 1);
+          }
+          if (ids.length === 0) return;
+          discardByInstanceIds(state, playerId, ids);
+          if (a.draw) Deck.drawCards(state, playerId, a.draw);
+          bonus += a.bonus;
+        } else if (a.type === 'DISCARD_UP_TO_FOR_BONUS') {
+          // オーバードライブ「自分の手札のカードを最大2枚公開する。それらのカードを捨てる。捨てたアタックカード1枚につき、
+          // ダメージ+30。捨てたメモリアカード1枚につき、カードを2枚引く。」（0枚でもよい）
+          var cands2 = handCandidates(state, playerId, cardInstanceId, cardIndex, null);
+          if (cands2.length === 0 || !ctx.chooseAttackDiscard) return;
+          var ids2 = (ctx.chooseAttackDiscard(cands2.slice(), { max: a.max }, state) || [])
+            .filter(function (id) { return cands2.some(function (c) { return c.instanceId === id; }); }).slice(0, a.max);
+          var discarded = discardByInstanceIds(state, playerId, ids2);
+          var draws = 0;
+          discarded.forEach(function (c) {
+            var cd = cardIndex[c.cardId];
+            if (cd.cardType === 'ATTACK') bonus += a.perAttackBonus;
+            if (cd.cardType === 'MEMORIA') draws += a.perMemoriaDraw;
+          });
+          if (draws) Deck.drawCards(state, playerId, draws);
+        } else if (a.type === 'MILL_OPPONENT_TOP_FOR_BONUS') {
+          // 神速フリック/天衣無縫「対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードが〇〇カードなら、ダメージ+20。」
+          // 対戦相手のデッキが0枚なら何もしない（トラッシュからの再構築はしない。PROVISIONAL）。
+          var opp = state.players[GameState.getOpponentId(playerId)];
+          if (opp.deck.length === 0) return;
+          var top = opp.deck.shift();
+          opp.trash.push({ card: top, faceUp: false });
+          Events.logEvent(state, 'CARD_MILLED_BY_EFFECT', { playerId: GameState.getOpponentId(playerId), cardId: top.cardId });
+          var topCard = cardIndex[top.cardId];
+          if (topCard && topCard.cardType === a.cardType) bonus += a.bonus;
+        } else if (a.type === 'REVEAL_OWN_TOP_COST_VARIETY_BONUS') {
+          // テラーエンゲージ「自分のデッキの上から4枚を公開する。公開したカードのコスト1種類につきダメージ+30。
+          // 公開したカードのコストがすべて異なるなら、PPを1回復する。公開したカードすべてをトラッシュに置く。」
+          var self = state.players[playerId];
+          var revealed = self.deck.splice(0, Math.min(a.count, self.deck.length));
+          var kinds = {};
+          revealed.forEach(function (c) {
+            var cd = cardIndex[c.cardId];
+            if (cd && typeof cd.cost === 'number') kinds[cd.cost] = true;
+            self.trash.push({ card: c, faceUp: false });
+            Events.logEvent(state, 'CARD_MILLED_BY_EFFECT', { playerId: playerId, cardId: c.cardId });
+          });
+          var kindCount = Object.keys(kinds).length;
+          bonus += kindCount * a.perKindBonus;
+          // PPの回復は、このカードのコストを支払った後に行う（支払い前に回復すると、使用済みのPPが無いため無駄になる）
+          if (revealed.length > 0 && kindCount === revealed.length) ctx.ppRecoverAfterPay = (ctx.ppRecoverAfterPay || 0) + 1;
+        }
+      });
+    });
+    return bonus;
   }
 
   // ---- ON_ATTACK：アタックカード自身の固有ダメージをattackCardBaseDamageとして算出 ----
@@ -904,7 +1082,7 @@
       targetLeaderIndex: targetLeaderIndex,
       cardIndex: cardIndex,
     };
-    var baseDamage = computeAttackCardBaseDamage(cardId, state, ctx);
+    var baseDamage = computeAttackCardBaseDamage(cardId, state, ctx) + (drainPendingAfterAttack ? computeAttackTimeBoost(state, playerId, ctx) : 0);
 
     var targetLeaderBeforeAttack = state.players[targetPlayerId].leaders[targetLeaderIndex];
     var targetHpBeforeAttack = GameState.getLeaderCurrentHp(cardIndex, targetLeaderBeforeAttack);
@@ -925,6 +1103,7 @@
       targetLeaderIndex: targetLeaderIndex,
       attackCardBaseDamage: baseDamage,
     }, cardIndex);
+    if (drainPendingAfterAttack) consumePendingBoosts(state, playerId);
 
     var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
     Object.assign(ctx, pickChoiceCallbacks(choiceOptions));
@@ -1037,7 +1216,18 @@
       targetLeaderIndex: options.targetLeaderIndex,
       cardIndex: cardIndex,
     };
-    var baseDamage = computeAttackCardBaseDamage(cardId, state, ctx);
+    // 選択コールバックは〖アタックする〗の選択（手札を捨てる等）でも使うので、先にctxへ引き継ぐ
+    Object.assign(ctx, pickChoiceCallbacks(options));
+    // 同名カードがプレイエリアに1枚あるならコストを支払わない（壁ジャンプ・ロケットシャワー）
+    var freePlay = !!options.freePlay || isFreeBySameNameRule(state, playerId, cardId, cardIndex);
+    if (!freePlay) {
+      // 〖アタックする〗の選択・破棄より前に、PPが足りるかだけは確認しておく（足りないのに手札を捨てさせない）
+      var costCheck = Phases.requireKnownCost(GameState.getCardData(cardIndex, cardId));
+      if (player.ppCards.max - player.ppCards.tapped < costCheck) throw new Error('PPが不足しています（必要:' + costCheck + '）');
+    }
+    var baseDamage = runPreDamageAttackActions(state, playerId, cardInstanceId, cardId, ctx, cardIndex)
+      + computeAttackCardBaseDamage(cardId, state, ctx)
+      + computeAttackTimeBoost(state, playerId, ctx);
 
     // Phase D-2-D: OVERKILL_AMOUNT用に、combat.js内で計算される合計ダメージと同じ式を
     // ここで独立して事前計算しておく（combat.js自体は無改修。既存のdealDamageAndCheckDownが
@@ -1057,8 +1247,10 @@
       targetPlayerId: options.targetPlayerId,
       targetLeaderIndex: options.targetLeaderIndex,
       attackCardBaseDamage: baseDamage,
-      freePlay: !!options.freePlay,
+      freePlay: freePlay,
     }, cardIndex);
+    consumePendingBoosts(state, playerId);
+    if (ctx.ppRecoverAfterPay) player.ppCards.tapped = Math.max(0, player.ppCards.tapped - ctx.ppRecoverAfterPay);
 
     // ダウンした場合のみOverkillの概念が成立する（PROVISIONAL、ruleConfig.js参照）
     var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;
@@ -1069,8 +1261,10 @@
     // Phase G: FREE_PLAY_MEMORIA_FROM_HAND/DECK_LOOK_FREE_PLAY_MEMORIA/REPLAY_SELECTED_FROM_PLAY_AREA用の
     // 選択コールバック（一騎当千・リンク・アサルト・三銃士はいずれもこのカード自身のAFTER_ATTACKなので、
     // このctx経由で渡す）。省略時はapplyAction側の安全なデフォルト（辞退）に委ねる。
-    // 第5弾ACE（アブソリュートドミニオン／頂点捕食者）等の選択コールバックもすべて同じctxへ引き継ぐ。
-    Object.assign(ctx, pickChoiceCallbacks(options));
+
+    // アタックカード自身の〖プレイ時〗（カウンターブロー「プレイエリアに他のカードがないなら、PPを1回復する」）。
+    // ResolutionStackは積んだ順に解決するので、アタック後の効果より先に解決される。
+    queueOnPlayEffects(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, pickChoiceCallbacks(options));
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
@@ -1087,6 +1281,9 @@
       var itemCtx = Object.assign({}, ctx, { sourceInstanceId: item.sourceInstanceId });
       ResolutionStack.push(state.resolutionStack, buildPendingEffect(item.effect, itemCtx, cardIndex));
     });
+
+    // アタックカード自身の〖アタック強化〗（マウントタックル）は、このアタックの後の「次のアタック」に積む
+    linkBoostAndAfterAttack(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, false);
 
     // ON_AWAKEN：このアタックで新たに覚醒した場合のみ、そのリーダーの覚醒時効果を解決する
     // （既に覚醒済みだった場合は再発火させない。Phase Fで修正）
@@ -1147,6 +1344,8 @@
     runStartPhaseWithEffects: runStartPhaseWithEffects,
     // UI向け：選択コールバックの一覧と、解決中の効果の情報
     CHOICE_CALLBACK_KEYS: CHOICE_CALLBACK_KEYS,
+    getEffectivePlayCost: getEffectivePlayCost,
+    computeAttackTimeBoost: computeAttackTimeBoost,
     getResolvingEffect: getResolvingEffect,
     makeUpToNOpponentLeadersTarget: EffectFactories.makeUpToNOpponentLeadersTarget,
   };

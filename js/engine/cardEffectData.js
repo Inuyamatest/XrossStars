@@ -893,49 +893,8 @@
       E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 10 } }),
     ],
 
-    // ---- 以下、Phase Hで画像確認したが今回は未登録のカード（新しい仕組みが必要なため） ----
-
-    // BP01-040 Lastman Standing（アタック, 黄, cost1, buildRule: リーダー：Cpt）
-    // カードテキスト: "〖アタックする〗手札を1枚捨ててもよい。そうしたならダメージ+20。"
-    // 「手札を1枚捨てるかどうかを選び、捨てた場合のみ固定ボーナスが付く」という条件付き任意コストは
-    // 既存のATTACK_DAMAGE_BONUS（固定値のみ）やDISCARD_HAND（無条件・枚数指定のみ）では表現できない。
-    // 選択コールバック＋捨てたかどうかで分岐するAction設計が必要なため、推測で実装せず見送る。
-
-    // BP01-022 壁ジャンプ（アタック, 赤, cost1, buildRule: リーダー：Selly）
-    // カードテキスト: "プレイエリアに別の「壁ジャンプ」が1枚あるなら、コストを支払わずにこのカードを
-    //  プレイしてもよい（2枚以上あるときはコストを支払う）。〖アタックする〗"
-    // 「同名カードが場にあるかどうかでコスト免除が変わる」プレイ条件は、既存のFREE_PLAY系
-    // （手札/デッキ/プレイエリアから選んでプレイする）とは全く別の「通常のプレイそのものの
-    // コスト計算に介入する」機構であり、現行のカード効果レイヤーには対応する仕組みがない。
-    // 推測で実装せず見送る。
-
-    // BP01-061 逃走成功（メモリア, 赤, cost1, buildRule: リーダー：Mondo）
-    // BP01-088 モラルからのハミダシ（メモリア, 緑, cost1, buildRule: リーダー：nqrse）
-    // カードテキスト（共通の型）: "〖プレイ時〗すべてのプレイヤーはカードを1枚引く。〖アタック強化〗次の
-    //  アタックのダメージ+50。"
-    // 既存のDRAW Actionはctx.ownerPlayerId固定で1人分しか引けない（DISCARD_HANDのwho:'SELF'|'OPPONENT'|'ALL'
-    // に相当する仕組みが無い）。DISCARD_HANDと全く同じ形でDRAWにwhoパラメータを追加すれば表現できる、
-    // 小さく明確なスコープの拡張だが、既存Actionの挙動を変える変更なので今回は実装せず、
-    // 次回「システム追加」で対応候補として提示する。
-
-    // BP03-027 仁義なき抗争（アタック, 青, cost1, buildRule: リーダー：ズズ）
-    // カードテキスト: "〖アタックする〗手札を1枚ランダムに捨ててもよい。そうしたならダメージ+30。"
-    // BP01-040と同型の「捨てるかどうかを選び、捨てた場合のみボーナス」に加え「ランダムに1枚」という
-    // 追加の乱数選択も必要。同じ理由で見送る。
-
-    // BP04-023 天衣無縫（アタック, 赤, cost1, buildRule: リーダー：らいじん）
-    // カードテキスト: "〖アタックする〗対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードが
-    //  メモリアカードなら、ダメージ+20。"
-    // 「相手のデッキの上から公開して、公開したカードの種類によって自分のダメージが変わる」は、
-    // 既存のMILL/DECK_LOOK系（自分のデッキ対象のみ）ともOVERKILL_AMOUNT型の事後条件とも異なる、
-    // 新規の「公開結果に応じた分岐」を持つActionが必要なため見送る。
-
-    // BP01-068 運命のルーレット（メモリア, 青, cost1, buildRule: リーダー：渋谷ハル）
-    // カードテキスト: "〖プレイ時〗メモリアカードかアタックカードのどちらかを宣言し、自分のデッキの上から
-    //  1枚を公開する。そのカードが宣言したカードタイプならカードを4枚引く。それ以外なら公開したカードを
-    //  トラッシュに置く。"
-    // 「事前に種類を宣言し、公開結果と一致するかどうかで結果が分岐する」機構は現行のDECK_LOOK系にも
-    // OVERKILL_AMOUNT型の条件にも存在しない、新規のAction設計が必要なため見送る。
+    // ---- Phase Hで見送っていた Lastman Standing・壁ジャンプ・逃走成功・仁義なき抗争・天衣無縫・運命のルーレット は、
+    //      下の「Phase K」でまとめて登録した（必要な仕組みを追加したため） ----
 
     // BP04-028 シンクロトリニティ（アタック, 青, cost1, buildRule: リーダー：白波らむね）
     // カードテキスト: "〖アタックする〗〖アタック後〗自分のデッキの上から3枚を見る。その中からエース以外の
@@ -1101,13 +1060,584 @@
     //   （片方だけ登録すると使い切りになり本来の挙動と変わるため、全体を見送る）。
     // BP03-077 パワーフィールド: 「このラウンド」持続する攻撃力修正と、ターン終了時にトラッシュへ置かない処理が未実装。
     // BP03-079 ターゲットフラッグ: アタック対象を制限する装備（対象選択への制約）が未実装。
-    // BP04-076 アイテムショップ: トラッシュの裏向きカードをデッキに戻してシャッフルする処理が未実装。
     // BP01-094/BP02-075 復活ポータル、BP02-077 オートタレット: 以前から未登録（プレイ条件/付与能力の条件が未対応）。
     // BP04-079 討伐クエスト（タクティクス, 無色, cost0）
     // カードテキスト: "〖プレイ時〗自分のデッキの上から7枚を見る。その中からカード1枚を手札に加える。残りのカードをトラッシュに置く。"
     // 「手札に加える」は義務なので minPick: 1（見た中に1枚でもあれば必ず1枚加える）。
     'BP04-079': [
       E({ trigger: 'ON_PLAY', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 7, maxPick: 1, minPick: 1 } }),
+    ],
+
+    // ============================================================
+    // Phase K: テキストは登録済みなのに効果が未登録だった基本カードの一括登録
+    // （例：クリティカルショットの「ダメージ+70」が乗らなかった不具合の修正）。
+    // テキストは data/source/all-cards.json（カード画像で確認済み）のもの。
+    // 未実装のまま残すもの（新しい仕組みがさらに必要）:
+    //   ST01-005 クロスファイア / ST02-009 魔王降臨: 「自分のリーダーすべてが『VSPO!』/『CR』を持つなら」
+    //     → リーダーデータに所属（VSPO!/CR等）の情報が無い。
+    //   BP02-045 巡り合う二人 / BP03-066 ジェイルブレイク / BP04-059 グレイトフルファーマー: 上の個別コメント参照。
+    //   タクティクスの未登録分は Phase J のコメント参照。
+    // ============================================================
+    // BP01-023 だまし討ち（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗ダメージ+10。"
+    'BP01-023': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })
+    ],
+
+    // ST01-011 冷静沈着（アタック, 緑, cost1）
+    // カードテキスト: "〖アタックする〗ダメージ+10。"
+    'ST01-011': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })
+    ],
+
+    // BP03-036 潜入開始（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗ダメージ+10。"
+    'BP03-036': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })
+    ],
+
+    // ST02-007 インパクトショット（アタック, 赤, cost2）
+    // カードテキスト: "〖アタックする〗ダメージ+40。"
+    'ST02-007': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // BP03-040 デッドサイレンス（アタック, 緑, cost2）
+    // カードテキスト: "〖アタックする〗ダメージ+40。"
+    'BP03-040': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // BP01-046 クリティカルショット（アタック, 緑, cost3）
+    // カードテキスト: "〖アタックする〗ダメージ+70。"
+    'BP01-046': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 70 } })
+    ],
+
+    // ST01-010 クリティカルショット（アタック, 緑, cost3）
+    // カードテキスト: "〖アタックする〗ダメージ+70。"
+    'ST01-010': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 70 } })
+    ],
+
+    // BP02-018 サイコフォートレス（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗アタッカーが覚醒しているなら、ダメージ+10。"
+    'BP02-018': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeAttackerAwakenedCondition(), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })
+    ],
+
+    // BP03-033 勝利の抜刀（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗アタッカーがカードを装備しているなら、ダメージ+10。"
+    'BP03-033': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeAttackerHasEquipmentCondition(), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })
+    ],
+
+    // BP02-032 アンストッパブル（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗このラウンドが3ラウンド目なら、ダメージ+20。"
+    'BP02-032': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeRoundNumberCondition(3), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 20 } })
+    ],
+
+    // BP03-025 短気な爆弾魔（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗このターン、あなたが手札を1枚以上捨てているなら、ダメージ+10。"
+    'BP03-025': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeDiscardedThisTurnCondition(), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })
+    ],
+
+    // BP02-029 カウンターブロー（アタック, 青, cost1）
+    // カードテキスト: "〖プレイ時〗プレイエリアに他のカードがないなら、PPを1回復する。 〖アタックする〗ダメージ-10。"
+    // アタックカードの〖プレイ時〗は、アタックのダメージ処理の直後・アタック後の効果より先に解決する（PPの回復なので結果は同じ）。
+    'BP02-029': [
+      E({ trigger: 'ON_PLAY', condition: F.makeNoOtherCardsInPlayAreaCondition(), action: { type: 'RECOVER_PP', amount: 1 } }),
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: -10 } })
+    ],
+
+    // BP02-043 マウントタックル（アタック, 緑, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック強化〗次のアタックのダメージ+20。"
+    // アタックカード自身の〖アタック強化〗は、このアタックの後の「次のアタック」に積む。
+    'BP02-043': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } })
+    ],
+
+    // BP01-020 大黒柱（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗手札を1枚捨ててもよい。そうしたならダメージ+20。"
+    'BP01-020': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 20 } })
+    ],
+
+    // BP01-040 Lastman Standing（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗手札を1枚捨ててもよい。そうしたならダメージ+20。"
+    'BP01-040': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 20 } })
+    ],
+
+    // BP03-027 仁義なき抗争（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗手札を1枚ランダムに捨ててもよい。そうしたならダメージ+30。"
+    'BP03-027': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 30, random: true } })
+    ],
+
+    // BP01-026 CLUTCH!!!（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗自分の手札のコスト0のカード1枚を公開し、捨ててもよい。そうしたならカードを1枚引き、ダメージ+40。"
+    'BP01-026': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 40, filterCost: 0, draw: 1 } })
+    ],
+
+    // BP03-030 セルフ実況（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗自分の手札のコスト0のカード1枚を公開し、捨ててもよい。そうしたならカードを1枚引き、ダメージ+20。"
+    'BP03-030': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 20, filterCost: 0, draw: 1 } })
+    ],
+
+    // BP04-024 オーバードライブ（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗自分の手札のカードを最大2枚公開する。それらのカードを捨てる。捨てたアタックカード1枚につき、ダメージ+30。捨てたメモリアカード1枚につき、カードを2枚引く。"
+    'BP04-024': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'DISCARD_UP_TO_FOR_BONUS', max: 2, perAttackBonus: 30, perMemoriaDraw: 2 } })
+    ],
+
+    // BP01-030 神速フリック（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードがアタックカードなら、ダメージ+20。"
+    'BP01-030': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'MILL_OPPONENT_TOP_FOR_BONUS', cardType: 'ATTACK', bonus: 20 } })
+    ],
+
+    // BP04-023 天衣無縫（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードがメモリアカードなら、ダメージ+20。"
+    'BP04-023': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'MILL_OPPONENT_TOP_FOR_BONUS', cardType: 'MEMORIA', bonus: 20 } })
+    ],
+
+    // BP04-031 テラーエンゲージ（アタック, 黄, cost2）
+    // カードテキスト: "〖アタックする〗自分のデッキの上から4枚を公開する。公開したカードのコスト1種類につきダメージ+30。公開したカードのコストがすべて異なるなら、PPを1回復する。公開したカードすべてをトラッシュに置く。"
+    'BP04-031': [
+      E({ trigger: 'ON_ATTACK', action: { type: 'REVEAL_OWN_TOP_COST_VARIETY_BONUS', count: 4, perKindBonus: 30 } })
+    ],
+
+    // BP01-022 壁ジャンプ（アタック, 赤, cost1）
+    // カードテキスト: "プレイエリアに別の「壁ジャンプ」が1枚あるなら、コストを支払わずにこのカードをプレイしてもよい。（2枚以上あるときはコストを支払う。） 〖アタックする〗"
+    // コスト免除はKEYWORDSのFREE_IF_ONE_SAME_NAME_IN_PLAYで処理する（効果Triggerは無い）。
+
+    // BP03-044 ロケットシャワー（アタック, 緑, cost1）
+    // カードテキスト: "プレイエリアに別の「ロケットシャワー」が1枚あるなら、コストを支払わずにこのカードをプレイしてもよい。〖アタックする〗"
+    // コスト免除はKEYWORDSのFREE_IF_ONE_SAME_NAME_IN_PLAYで処理する（効果Triggerは無い）。
+
+    // BP01-027 フラッシュバン（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダー1体に20ダメージ。"
+    'BP01-027': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // ST01-007 バウンティーハンター（アタック, 青, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダー1体に40ダメージ。"
+    'ST01-007': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 40 } })
+    ],
+
+    // BP03-019 コードブレイカー（アタック, 赤, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダー1体に40ダメージ。"
+    'BP03-019': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 40 } })
+    ],
+
+    // ST01-009 強さの証明（アタック, 緑, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダー1体に10ダメージ。"
+    'ST01-009': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // ST02-005 異次元キック（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダー1体に10ダメージ。"
+    'ST02-005': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // BP03-032 鬼の猛追（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダー1体に10ダメージ。"
+    'BP03-032': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // BP01-037 ヴェノムスモーク（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダーすべてに10ダメージ。"
+    'BP01-037': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // BP01-045 クレイジーバースト（アタック, 緑, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダーすべてに10ダメージ。"
+    'BP01-045': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // BP02-019 エトワール・タチカワ（アタック, 赤, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダーすべてに20ダメージ。"
+    'BP02-019': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // ST02-011 マルチグレネード（アタック, 黄, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダーすべてに20ダメージ。"
+    'ST02-011': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP03-026 キャスターズフューリー（アタック, 青, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダーすべてに20ダメージ。"
+    'BP03-026': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP04-040 眩い頂点（アタック, 緑, cost2）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手の他のリーダーすべてに20ダメージ。"
+    'BP04-040': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP03-031 ソニックチェイサー（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗対戦相手のダメージを受けている他のリーダーすべてに20ダメージ。"
+    'BP03-031': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherDamagedOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP01-036 カウンタースナイプ（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗自分の手札が2枚以下なら、対戦相手の他のリーダー1体に20ダメージ。"
+    'BP01-036': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeOwnHandSizeCondition({ operator: 'LTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // ST02-010 カウンタースナイプ（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗自分の手札が2枚以下なら、対戦相手の他のリーダー1体に20ダメージ。"
+    'ST02-010': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeOwnHandSizeCondition({ operator: 'LTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // ST02-008 キリングスプリー（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このアタックを受けたリーダーがダウンしているなら、対戦相手の他のリーダー1体に20ダメージ。"
+    'ST02-008': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeTargetDownedCondition(), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP03-018 ノーエスケープ（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このラウンドが3ラウンド目なら、対戦相手の他のリーダー1体に20ダメージ。"
+    'BP03-018': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeRoundNumberCondition(3), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP01-051 コンビネーションアタック（アタック, 緑, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このアタックを受けたリーダーがダウンしているなら、カードを1枚引く。"
+    'BP01-051': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeTargetDownedCondition(), action: { type: 'DRAW', amount: 1 } })
+    ],
+
+    // ST01-008 勝利の一撃（アタック, 青, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このアタックを受けたリーダーがダウンしているなら、カードを1枚引く。"
+    'ST01-008': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeTargetDownedCondition(), action: { type: 'DRAW', amount: 1 } })
+    ],
+
+    // BP03-035 船上の乱戦（アタック, 黄, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このアタックを受けたリーダーがダウンしているなら、カードを1枚引く。"
+    'BP03-035': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeTargetDownedCondition(), action: { type: 'DRAW', amount: 1 } })
+    ],
+
+    // BP03-024 頂きの景色（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗〖アタック後〗プレイエリアにあるメモリアカードのコストの合計と同じ数のカードを引く。"
+    'BP03-024': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DRAW_PER_PLAY_AREA_MEMORIA_COST' } })
+    ],
+
+    // BP01-054 胴だよ胴！（メモリア, 赤, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'BP01-054': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP01-081 喧嘩上等（メモリア, 緑, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'BP01-081': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP02-053 天賦の竹槍（メモリア, 青, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'BP02-053': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP02-061 ワザでんがや（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'BP02-061': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP02-067 伝道者（メモリア, 緑, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'BP02-067': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // ST01-013 駆け引き上手（メモリア, 青, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'ST01-013': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // ST02-015 ツアーガイド（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'ST02-015': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP03-046 足元にご注意（メモリア, 赤, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。"
+    'BP03-046': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP02-064 デルボーモッパイ（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
+    'BP02-064': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })
+    ],
+
+    // BP02-070 1先の悪魔（メモリア, 緑, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
+    'BP02-070': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })
+    ],
+
+    // ST01-015 汚部屋の住人（メモリア, 青, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
+    'ST01-015': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })
+    ],
+
+    // ST02-017 優勝請負人（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
+    'ST02-017': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })
+    ],
+
+    // BP03-048 栄光の旗手（メモリア, 赤, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
+    'BP03-048': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })
+    ],
+
+    // BP01-055 偉大な栄冠（メモリア, 赤, cost2）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。"
+    'BP01-055': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })
+    ],
+
+    // ST02-013 偉大な栄冠（メモリア, 赤, cost2）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。"
+    'ST02-013': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })
+    ],
+
+    // BP01-064 ゾーン状態（メモリア, 青, cost2）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。"
+    'BP01-064': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })
+    ],
+
+    // ST01-014 ゾーン状態（メモリア, 青, cost2）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。"
+    'ST01-014': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })
+    ],
+
+    // BP04-068 レッツゴー！（メモリア, 緑, cost2）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+80。"
+    'BP04-068': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 80 } })
+    ],
+
+    // BP01-066 博聞強記（メモリア, 青, cost1）
+    // カードテキスト: "〖プレイ時〗カードを1枚引く。 〖アタック強化〗次のアタックのダメージ+30。"
+    'BP01-066': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+    ],
+
+    // BP02-060 メンタルブレイク（メモリア, 黄, cost2）
+    // カードテキスト: "〖プレイ時〗カードを1枚引く。〖アタック強化〗次のアタックのダメージ+60。"
+    'BP02-060': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })
+    ],
+
+    // BP02-057 愛弟子の栄冠（メモリア, 青, cost1）
+    // カードテキスト: "〖プレイ時〗カードを2枚引く。"
+    'BP02-057': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })
+    ],
+
+    // BP02-071 無敵の師弟（メモリア, 緑, cost1）
+    // カードテキスト: "〖プレイ時〗カードを2枚引く。"
+    'BP02-071': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })
+    ],
+
+    // ST02-014 危機一髪（メモリア, 赤, cost1）
+    // カードテキスト: "〖プレイ時〗カードを2枚引く。"
+    'ST02-014': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 2 } })
+    ],
+
+    // BP02-065 パッションコール（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。 〖アタック後〗対戦相手の他のリーダー1体に10ダメージ。"
+    'BP02-065': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // ST02-018 小さなビデオレター（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。 〖アタック後〗対戦相手の他のリーダー1体に10ダメージ。"
+    'ST02-018': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })
+    ],
+
+    // BP02-058 メンターの教え（メモリア, 青, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。 〖アタック後〗プレイエリアにメモリアカードが3枚以上あるなら、対戦相手の他のリーダー1体に20ダメージ。"
+    'BP02-058': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+      E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP01-056 何も知らない（メモリア, 赤, cost0）
+    // カードテキスト: "〖アタック強化〗プレイエリアにメモリアカードが3枚以上あるなら、次のアタックのダメージ+30。（メモリアカードの数は〖アタック強化〗を実行するときに数える。）"
+    'BP01-056': [
+      E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+    ],
+
+    // BP01-075 開店セレモニー（メモリア, 黄, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+20。プレイエリアにメモリアカードが3枚以上あるなら、さらにダメージ+50。（メモリアカードの数は〖アタック強化〗を実行するときに数える。）"
+    'BP01-075': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } }),
+      E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP01-073 福男（メモリア, 黄, cost1）
+    // カードテキスト: "〖プレイ時〗自分のリーダーが3体ダウンしているなら、カードを1枚引く。 〖アタック強化〗次のアタックのダメージ+40。"
+    'BP01-073': [
+      E({ trigger: 'ON_PLAY', condition: F.makeOwnDownedLeaderCountCondition({ operator: 'GTE', count: 3 }), action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // ST02-016 福男（メモリア, 黄, cost1）
+    // カードテキスト: "〖プレイ時〗自分のリーダーが3体ダウンしているなら、カードを1枚引く。 〖アタック強化〗次のアタックのダメージ+40。"
+    'ST02-016': [
+      E({ trigger: 'ON_PLAY', condition: F.makeOwnDownedLeaderCountCondition({ operator: 'GTE', count: 3 }), action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // BP01-082 登頂成功（メモリア, 緑, cost1）
+    // カードテキスト: "〖プレイ時〗自分のリーダーが3体ダウンしているなら、カードを1枚引く。 〖アタック強化〗次のアタックのダメージ+40。"
+    'BP01-082': [
+      E({ trigger: 'ON_PLAY', condition: F.makeOwnDownedLeaderCountCondition({ operator: 'GTE', count: 3 }), action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // ST01-017 登頂成功（メモリア, 緑, cost1）
+    // カードテキスト: "〖プレイ時〗自分のリーダーが3体ダウンしているなら、カードを1枚引く。 〖アタック強化〗次のアタックのダメージ+40。"
+    'ST01-017': [
+      E({ trigger: 'ON_PLAY', condition: F.makeOwnDownedLeaderCountCondition({ operator: 'GTE', count: 3 }), action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // BP02-068 Just Eat Chicken!（メモリア, 緑, cost1）
+    // カードテキスト: "〖プレイ時〗このラウンドが3ラウンド目なら、カードを1枚引く。 〖アタック強化〗次のアタックのダメージ+40。"
+    'BP02-068': [
+      E({ trigger: 'ON_PLAY', condition: F.makeRoundNumberCondition(3), action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // BP01-061 逃走成功（メモリア, 赤, cost1）
+    // カードテキスト: "〖プレイ時〗すべてのプレイヤーはカードを1枚引く。 〖アタック強化〗次のアタックのダメージ+50。"
+    'BP01-061': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', who: 'ALL', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP01-088 モラルからのハミダシ（メモリア, 緑, cost1）
+    // カードテキスト: "〖プレイ時〗すべてのプレイヤーはカードを1枚引く。 〖アタック強化〗次のアタックのダメージ+50。"
+    'BP01-088': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', who: 'ALL', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // BP01-087 丸太椅子最（メモリア, 緑, cost0）
+    // カードテキスト: "〖プレイ時〗対戦相手のリーダー1体に20ダメージ。"
+    'BP01-087': [
+      E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP01-084 引っ張り合い（メモリア, 緑, cost1）
+    // カードテキスト: "プレイエリアに別の「引っ張り合い」が1枚あるなら、コストを支払わずにこのカードをプレイしてもよい。（2枚以上あるときはコストを支払う。） 〖アタック強化〗次のアタックのダメージ+40。"
+    // コスト免除はKEYWORDSのFREE_IF_ONE_SAME_NAME_IN_PLAYで処理する。
+    'BP01-084': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })
+    ],
+
+    // BP03-067 気まずい空間（メモリア, 緑, cost0）
+    // カードテキスト: "〖プレイ時〗自分のデッキの上から3枚を見る。それらのカードをトラッシュに置く。"
+    // 手札に加える枚数0のデッキルックとして表す（見た3枚はすべて裏向きでトラッシュ）。
+    'BP03-067': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 3, maxPick: 0 } })
+    ],
+
+    // BP01-068 運命のルーレット（メモリア, 青, cost1）
+    // カードテキスト: "〖プレイ時〗メモリアカードかアタックカードのどちらかを宣言し、自分のデッキの上から1枚を公開する。そのカードが宣言したカードタイプならカードを4枚引く。それ以外なら公開したカードをトラッシュに置く。"
+    'BP01-068': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DECLARE_TYPE_REVEAL_DRAW', draw: 4 } })
+    ],
+
+    // BP03-047 バックステージパス（メモリア, 赤, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+40。アタッカーがカードを装備しているなら、さらにダメージ+20。"
+    // 「アタッカーが装備しているか」は次のアタックを宣言した時点で判定する（DAMAGE_BONUS_AT_ATTACK）。
+    // カード画像（PR-058）の注記「（装備は〖アタック強化〗を実行するときに確認する。）」に基づく（台帳のテキストには注記が無い）。
+    'BP03-047': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS_AT_ATTACK', amount: 20, condition: F.makeAttackerHasEquipmentCondition() } })
+    ],
+
+    // BP04-045 エリートコマンダー（メモリア, 赤, cost1）
+    // カードテキスト: "〖プレイ時〗カードを1枚引く。〖アタック強化〗次のアタックのダメージ+20。エコー（自分のターン終了時、このカードが縦向きならトラッシュに置く代わりに、横向きにする。自分のメインフェイズ開始時、このカードが横向きならコストを支払わずに、…"
+    // エコーはKEYWORDSで表す。
+    'BP04-045': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } })
+    ],
+
+    // BP04-052 ダイナミックデュオ（メモリア, 青, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。エコー（自分のターン終了時、このカードが縦向きならトラッシュに置く代わりに、横向きにする。自分のメインフェイズ開始時、このカードが横向きならコストを支払わずに、横向きのままプレイし直す。）"
+    // エコーはKEYWORDSで表す。
+    'BP04-052': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })
+    ],
+
+    // ST01-016 初の栄冠（メモリア, 緑, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+30。 〖アタック後〗対戦相手の他のリーダー1体に、自分の「VSPO!」を持つリーダー1体につき10ダメージ。"
+    // 未実装：〖アタック後〗は「VSPO!」を持つリーダーの数が必要だが、リーダーデータに所属（VSPO!/CR等）の情報が無いため登録していない（アタック強化のみ）。
+    'ST01-016': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+    ],
+
+    // ST02-012 変わらない関係（メモリア, 赤, cost1）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+30。 〖アタック後〗対戦相手の他のリーダー1体に、自分の「CR」を持つリーダー1体につき10ダメージ。"
+    // 未実装：〖アタック後〗は「CR」を持つリーダーの数が必要だが、リーダーデータに所属の情報が無いため登録していない（アタック強化のみ）。
+    'ST02-012': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+    ],
+
+    // BP04-076 アイテムショップ（タクティクス, 無色, cost0）
+    // カードテキスト: "〖プレイ時〗自分のトラッシュの裏向きのカードすべてを自分のデッキに加え、自分のデッキをシャッフルする。カードを2枚引く。"
+    'BP04-076': [
+      E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'RECYCLE_FACE_DOWN_TRASH' }, { type: 'DRAW', amount: 2 }] } })
     ],
 
     // ============================================================
@@ -1282,9 +1812,16 @@
 
   // キーワード能力（効果Triggerではなく、ルール処理側が参照する常在の能力）。
   // ECHO: エコー（処理はeffectResolver.js runEndPhaseWithEffects/runStartPhaseWithEffects）
+  // FREE_IF_ONE_SAME_NAME_IN_PLAY: 「プレイエリアに別の『（同名）』が1枚あるなら、コストを支払わずにプレイしてもよい」
+  //   （effectResolver.js isFreeBySameNameRule）
   var KEYWORDS = {
     'BP05-059': ['ECHO'], // 魔王再臨
     'BP05-066': ['ECHO'], // ハセシンの刑執行
+    'BP04-045': ['ECHO'], // エリートコマンダー
+    'BP04-052': ['ECHO'], // ダイナミックデュオ
+    'BP01-022': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // 壁ジャンプ
+    'BP01-084': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // 引っ張り合い
+    'BP03-044': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // ロケットシャワー
   };
 
   // パラレル/プロモ（例: BP01-137 超新星 SRP）は通常版と同一効果なので、通常版の登録を引く。
