@@ -19,6 +19,9 @@
     return cardId + '#' + instanceCounter;
   }
 
+  // オンライン対戦では2台が同じ手順で盤面を作るため、試合の開始時にインスタンスIDの採番を揃える
+  function resetInstanceIds() { instanceCounter = 0; }
+
   function createCardInstance(cardId) {
     return { instanceId: nextInstanceId(cardId), cardId: cardId };
   }
@@ -154,6 +157,7 @@
     getEquipmentHpModifierSum: getEquipmentHpModifierSum,
     getEquipmentAtkModifierSum: getEquipmentAtkModifierSum,
     getTempAtkModifierSum: getTempAtkModifierSum,
+    resetInstanceIds: resetInstanceIds,
     getLeaderMaxHp: getLeaderMaxHp,
     getLeaderCurrentHp: getLeaderCurrentHp,
     getLeaderCurrentAtk: getLeaderCurrentAtk,

@@ -34,6 +34,9 @@
   var Choices = window.XS_BATTLE_CHOICES;
   var Cpu = window.XS_BATTLE_CPU;
   var Fx = window.XS_BATTLE_FX;
+  var Online = window.XS_BATTLE_ONLINE;
+  // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
+  var APP_VERSION = '20260926d';
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -147,7 +150,15 @@
   // game.cpu: CPUが操作するプレイヤー（'playerB'）。人どうしの対戦ではnull。
   function isCpu(pid) { return !!(game && game.cpu && game.cpu === pid); }
   function cpuTurnActive() { return !!(game && game.cpu && game.state.turn.activePlayer === game.cpu && game.state.match.status !== 'FINISHED'); }
-  function humanId() { return game && game.cpu ? (game.cpu === 'playerA' ? 'playerB' : 'playerA') : null; }
+  // この端末で操作するプレイヤー（CPU対戦では人の側、オンライン対戦では自分の側。人どうしの対戦ではnull）
+  function humanId() {
+    if (game && game.cpu) return game.cpu === 'playerA' ? 'playerB' : 'playerA';
+    if (game && game.online) return game.online.local;
+    return null;
+  }
+  // この端末からは操作しない側（CPU、またはオンライン対戦の相手）
+  function isRemoteSide(pid) { return !!(game && ((game.cpu && game.cpu === pid) || (game.online && game.online.local !== pid))); }
+  function opponentTurnActive() { return !!(game && game.state.match.status !== 'FINISHED' && isRemoteSide(game.state.turn.activePlayer)); }
   function pShort(pid) { return pid === 'playerA' ? 'A' : 'B'; }
   function pBadge(pid) { return '<span class="bt-pbadge' + (pid === 'playerB' ? ' pB' : '') + '">' + pShort(pid) + '</span>'; }
 
@@ -193,6 +204,7 @@
 
   // ================= セットアップ画面 =================
   function renderSetup() {
+    if (net) return renderOnlineSetup();
     return '' +
       '<div class="bt-setup">' +
         '<div class="bt-hero"><h2>BATTLE</h2><p>1台の端末で2人が交互に操作するローカル対戦、またはCPUとの対戦</p></div>' +
@@ -216,7 +228,8 @@
           '</span></div>' +
           '<button class="bt-btn ghost" data-act="coinflip">ランダムで決める</button>' +
         '</div>' +
-        '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">対戦開始</button></div>' +
+        '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">対戦開始</button>' +
+          '<button class="bt-btn big" data-act="online-host">オンライン対戦（URLを送って対戦）</button></div>' +
         '<details class="bt-notes"><summary>この対戦画面について</summary>' +
           '対象や「してもよい」を選ぶ効果は、選択画面で選びます。' +
           'カード効果はエンジンに登録済みのカードのみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。' +
@@ -272,15 +285,8 @@
       '</div>';
   }
 
-  function startMatch() {
-    var deckA = deckFor('playerA');
-    var deckB = deckFor('playerB');
-    if (!deckA || !deckB) { alert('両プレイヤーのデッキを選択してください（保存済みデッキ、またはランダムデッキ）'); return; }
-    if ((deckA.leaders || []).length !== 4 || (deckB.leaders || []).length !== 4) {
-      alert('両プレイヤーとも、リーダーを4体選択したデッキが必要です'); return;
-    }
-
-    var config = {
+  function buildMatchConfig(deckA, deckB) {
+    return {
       matchId: 'local-' + Date.now(),
       mode: setup.mode,
       firstPlayer: setup.firstPlayer,
@@ -296,6 +302,17 @@
       },
       ppTicketCardId: PP_TICKET_CARD_ID,
     };
+  }
+
+  function startMatch() {
+    var deckA = deckFor('playerA');
+    var deckB = deckFor('playerB');
+    if (!deckA || !deckB) { alert('両プレイヤーのデッキを選択してください（保存済みデッキ、またはランダムデッキ）'); return; }
+    if ((deckA.leaders || []).length !== 4 || (deckB.leaders || []).length !== 4) {
+      alert('両プレイヤーとも、リーダーを4体選択したデッキが必要です'); return;
+    }
+
+    var config = buildMatchConfig(deckA, deckB);
 
     var state;
     try {
@@ -307,6 +324,7 @@
     }
 
     game = { state: state, cpu: setup.opponent === 'CPU' ? 'playerB' : null, fxSeen: state.actionLog.length };
+    PLAYER_LABEL.playerA = 'プレイヤーA';
     PLAYER_LABEL.playerB = game.cpu ? 'CPU' : 'プレイヤーB';
     cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
     sel = null;
@@ -322,14 +340,15 @@
   function renderBattle() {
     if (pendingChoice) {
       // 選択中は、効果の解決途中の盤面（そこまでのダメージ等が反映されたもの）を操作不可で表示する
-      var choiceHtml = renderBattleBoard(pendingChoice.preview, true, true) + renderChoiceOverlay(pendingChoice);
+      var choiceHtml = renderBattleBoard(pendingChoice.preview, true, true) +
+        (pendingChoice.waitingRemote ? renderWaitingRemoteOverlay() : renderChoiceOverlay(pendingChoice)) + renderNetBanner();
       if (detailCardId) choiceHtml += renderDetailOverlay(detailCardId);
       return choiceHtml;
     }
     var state = game.state;
     var finished = state.match.status === 'FINISHED';
     // CPU対戦では手番交代の確認画面は不要（人のプレイヤーは常に自分の側を見ている）
-    var handoffPending = !game.cpu && !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
+    var handoffPending = !game.cpu && !game.online && !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
     var html = renderBattleBoard(state, finished, handoffPending);
 
     if (finished) html += renderMatchEndOverlay(state);
@@ -337,11 +356,35 @@
     else if (handoffPending) html += renderHandoffOverlay(state);
     if (detailCardId) html += renderDetailOverlay(detailCardId);
     if (logOpen) html += renderLogDrawer(state);
+    html += renderNetBanner();
     return html;
   }
 
+  // ---------- オンライン対戦の表示 ----------
+  function renderWaitingRemoteOverlay() {
+    return '<div class="bt-overlay bt-net-wait"><div class="bt-overlay-box"><div class="bt-cpu-thinking" style="justify-content:center"><span class="bt-cpu-dot"></span><b>相手が選択しています…</b></div>' +
+      '<p>相手のカードの効果で、相手が選ぶ場面です。</p></div></div>';
+  }
+
+  // 接続が切れた・盤面がずれた等の知らせ（画面上部）
+  function renderNetBanner() {
+    if (!game || !game.online || !net) return '';
+    if (net.status === 'disconnected' || net.status === 'error' || net.status === 'no-room') {
+      return '<div class="bt-net-banner bad"><b>相手との接続が切れました。</b>' +
+        (net.role === 'guest' ? '<button class="bt-btn primary" data-act="net-reconnect">再接続</button>' : '相手の再接続を待っています…') + '</div>';
+    }
+    if (net.role === 'host' && net.status === 'waiting') {
+      return '<div class="bt-net-banner bad"><b>相手との接続が切れました。</b>相手が同じURLを開き直すと、続きから再開できます。</div>';
+    }
+    if (game.online.desync) {
+      return '<div class="bt-net-banner bad"><b>相手と盤面がずれました。</b>' +
+        (net.role === 'guest' ? '<button class="bt-btn primary" data-act="net-resync">ホストの盤面に合わせる</button>' : '相手に「ホストの盤面に合わせる」を押してもらってください。') + '</div>';
+    }
+    return '';
+  }
+
   function renderBattleBoard(state, readOnly, hideHand) {
-    var bottom = game && game.cpu ? humanId() : state.turn.activePlayer; // 手番プレイヤーが常に下側（CPU対戦では人のプレイヤーが常に下側）
+    var bottom = humanId() || state.turn.activePlayer; // 手番プレイヤーが常に下側（CPU・オンライン対戦では自分の側が常に下側）
     var top = opponentOf(bottom);
     var hpNow = snapshotHp(state);
     var deltas = {};
@@ -388,7 +431,7 @@
     var strip = '' +
       '<div class="bt-strip">' +
         '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
-        (isActive ? '<span class="bt-turntag">' + (isCpu(playerId) ? 'CPU TURN' : 'YOUR TURN') + '</span>' : '') +
+        (isActive ? '<span class="bt-turntag">' + (isCpu(playerId) ? 'CPU TURN' : (game.online && isRemoteSide(playerId) ? 'OPPONENT TURN' : 'YOUR TURN')) + '</span>' : '') +
         '<span class="bt-pp">' + renderPpPips(player) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
         renderBoostBadge(player) +
         '<span class="bt-counters">' +
@@ -488,7 +531,7 @@
 
   function renderField(state, playerId, isActive, readOnly) {
     var player = state.players[playerId];
-    if (isCpu(playerId)) readOnly = true; // CPUのカードは人が操作できない
+    if (isRemoteSide(playerId)) readOnly = true; // CPU・オンラインの相手のカードは操作できない
     var canPlay = !readOnly && isActive && Eng.Phases.canPlayTactics(state);
     var pp = player.ppCards.max - player.ppCards.tapped;
 
@@ -593,7 +636,7 @@
         var reason = effCost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
         var isSel = sel && sel.cardInstanceId === c.instanceId;
         return '' +
-          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable && !cpuTurnActive() ? '' : ' unplayable') + '"' + (cpuTurnActive() ? '' : ' data-act="select-hand"') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
+          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable && !opponentTurnActive() ? '' : ' unplayable') + '"' + (opponentTurnActive() ? '' : ' data-act="select-hand"') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
             '<span class="bt-cost' + (effCost != null && effCost < card.cost ? ' free' : '') + '">' + (effCost != null ? effCost : '?') + '</span>' +
             '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
             '<div class="bt-hname">' + esc(card.name) + '</div>' +
@@ -613,6 +656,9 @@
   }
 
   function renderPrompt(state) {
+    if (game.online && opponentTurnActive()) {
+      return '<div class="bt-prompt-text bt-cpu-thinking"><span class="bt-cpu-dot"></span><b>相手のターン</b><span class="bt-ctext">相手の操作を待っています…</span></div>';
+    }
     if (cpuTurnActive()) {
       return '<div class="bt-prompt-text bt-cpu-thinking"><span class="bt-cpu-dot"></span><b>CPUのターン</b>' +
         (cpuTurn.last ? '<span class="bt-ctext">' + esc(cpuTurn.last) + '</span>' : '<span class="bt-ctext">考え中…</span>') + '</div>';
@@ -834,11 +880,55 @@
   }
 
   // ---------- 選択が必要になりうる行動の実行（js/battle/choices.js のリプレイ方式） ----------
+  // 行動は「記述」（desc）で表す。オンライン対戦ではこの記述と乱数のシード、選択の答えだけを相手に送り、
+  // 相手の端末でも同じ手順を再生して同じ盤面にする。
+  //   { t: 'ATTACK', pid, id, opt } / { t: 'MEMORIA', pid, id } / { t: 'TACTICS', pid, id, sub, eq } / { t: 'END' }
+  function actionFn(desc) {
+    switch (desc.t) {
+      case 'ATTACK':
+        return function (state, cb) {
+          Eng.Resolver.playAttackCardWithEffects(state, desc.pid, desc.id, Object.assign({}, desc.opt, cb), cardIndex);
+          return finishAction(state, cb);
+        };
+      case 'MEMORIA':
+        return function (state, cb) {
+          Eng.Resolver.playMemoriaCardWithEffects(state, desc.pid, desc.id, Object.assign({}, cb), cardIndex);
+          return finishAction(state, cb);
+        };
+      case 'TACTICS':
+        return function (state, cb) {
+          Eng.Resolver.playTacticsCardWithEffects(state, desc.pid, desc.id, Object.assign({ subType: desc.sub, equipLeaderIndex: desc.eq }, cb), cardIndex);
+          return finishAction(state, cb);
+        };
+      case 'END':
+        return function (state, cb, ask) {
+          Eng.Resolver.runEndPhaseWithEffects(state, Choices.makeHandLimitChooser(ask, state.turn.activePlayer));
+          if (state.match.status === 'FINISHED') return { ended: true };
+          Eng.Resolver.endTurnAndSwitchWithEffects(state);
+          startTurn(state, cb);
+          return { ended: true };
+        };
+      default:
+        throw new Error('未知の行動です: ' + desc.t);
+    }
+  }
+
   // fn(state, callbacks, ask) を盤面のコピーで実行し、選択が必要になったら選択画面を出す。
   // 最後まで進んだらそのコピーを新しい盤面として採用し、onDone(fnの戻り値) を呼ぶ。
   // 途中でエラーになった場合は盤面を一切変更しない。
-  function runAction(fn, onDone, onError) {
-    pendingChoice = { base: game.state, seed: Math.floor(Math.random() * 4294967296), answers: [], fn: fn, onDone: onDone, onError: onError };
+  // opts: { seed?（相手から受け取った行動の再生時）, remote?（相手の行動）, onError? }
+  function performAction(desc, opts) {
+    opts = opts || {};
+    pendingChoice = {
+      base: game.state,
+      seed: opts.seed != null ? opts.seed : Math.floor(Math.random() * 4294967296),
+      answers: [],
+      desc: desc,
+      fn: actionFn(desc),
+      onDone: desc.t === 'END' ? function () { sel = null; render(); } : afterActionDone,
+      onError: opts.onError || (opts.remote ? function () { render(); } : null),
+    };
+    if (game.online && !opts.remote) netSend({ type: 'ACT', seq: game.online.seq, desc: desc, seed: pendingChoice.seed });
     stepChoice();
   }
 
@@ -863,6 +953,7 @@
     if (r.done) {
       pendingChoice = null;
       game.state = r.state;
+      if (game.online) onlineCommitted(pc);
       pc.onDone(r.value);
       return;
     }
@@ -875,18 +966,22 @@
     }
     pc.question = r.question;
     pc.preview = r.state;
+    // オンライン対戦で相手が選ぶ質問は、相手の答えが届くまで待つ
+    pc.waitingRemote = !!(game.online && chooser !== game.online.local);
     pc.selection = r.question.type === 'ALLOCATE' ? r.question.candidates.map(function () { return 0; }) : (r.question.preselect || []).slice();
-    pc.revealed = !r.question.secret || !!game.cpu; // CPU対戦では相手に端末を渡す必要が無い
-    Fx.sound('choice');
+    pc.revealed = !r.question.secret || !!game.cpu || !!game.online; // CPU・オンライン対戦では端末を渡す必要が無い
+    if (!pc.waitingRemote) Fx.sound('choice');
     render();
   }
 
   function answerChoice(answer) {
-    pendingChoice.answers.push(answer);
+    var pc = pendingChoice;
+    pc.answers.push(answer);
+    if (game.online) netSend({ type: 'ANSWER', seq: game.online.seq, n: pc.answers.length - 1, answer: answer });
     stepChoice();
   }
 
-  // 行動の後処理（効果の解決・ラウンド終了判定・次ラウンドの開始）。runActionのfn内で呼ぶ。
+  // 行動の後処理（効果の解決・ラウンド終了判定・次ラウンドの開始）。行動のfn内で呼ぶ。
   function finishAction(state, callbacks) {
     if (state.match.status === 'FINISHED') return { finished: true };
     var result = Eng.Resolver.processRoundEndWithEffects(state);
@@ -917,46 +1012,301 @@
       return;
     }
     var options = sel.multi > 1 ? { attacks: sel.attacks.concat([current]) } : current;
-    var instanceId = sel.cardInstanceId;
-    runAction(function (state, cb) {
-      Eng.Resolver.playAttackCardWithEffects(state, playerId, instanceId, Object.assign({}, options, cb), cardIndex);
-      return finishAction(state, cb);
-    }, afterActionDone);
+    performAction({ t: 'ATTACK', pid: playerId, id: sel.cardInstanceId, opt: options });
   }
 
   function doConfirmMemoria() {
-    var playerId = sel.ownerId;
-    var instanceId = sel.cardInstanceId;
-    runAction(function (state, cb) {
-      Eng.Resolver.playMemoriaCardWithEffects(state, playerId, instanceId, Object.assign({}, cb), cardIndex);
-      return finishAction(state, cb);
-    }, afterActionDone);
+    performAction({ t: 'MEMORIA', pid: sel.ownerId, id: sel.cardInstanceId });
   }
 
   function doPlayTacticsConsumable(cardInstanceId) {
-    var playerId = game.state.turn.activePlayer;
-    runAction(function (state, cb) {
-      Eng.Resolver.playTacticsCardWithEffects(state, playerId, cardInstanceId, Object.assign({ subType: 'CONSUMABLE' }, cb), cardIndex);
-      return finishAction(state, cb);
-    }, afterActionDone);
+    performAction({ t: 'TACTICS', pid: game.state.turn.activePlayer, id: cardInstanceId, sub: 'CONSUMABLE', eq: null });
   }
 
   function doPlayTacticsEquip(cardInstanceId, equipLeaderIndex) {
-    var playerId = game.state.turn.activePlayer;
-    runAction(function (state, cb) {
-      Eng.Resolver.playTacticsCardWithEffects(state, playerId, cardInstanceId, Object.assign({ subType: 'EQUIPMENT', equipLeaderIndex: equipLeaderIndex }, cb), cardIndex);
-      return finishAction(state, cb);
-    }, afterActionDone);
+    performAction({ t: 'TACTICS', pid: game.state.turn.activePlayer, id: cardInstanceId, sub: 'EQUIPMENT', eq: equipLeaderIndex });
   }
 
   function doEndTurn() {
-    runAction(function (state, cb, ask) {
-      Eng.Resolver.runEndPhaseWithEffects(state, Choices.makeHandLimitChooser(ask, state.turn.activePlayer));
-      if (state.match.status === 'FINISHED') return null;
-      Eng.Resolver.endTurnAndSwitchWithEffects(state);
-      startTurn(state, cb);
-      return null;
-    }, function () { sel = null; render(); });
+    performAction({ t: 'END' });
+  }
+
+  // ================= オンライン対戦 =================
+  // 部屋を作った側（ホスト）がプレイヤーA、URLで参加した側（ゲスト）がプレイヤーB。
+  // ホストが試合の設定（両方のデッキ・モード・先攻）と乱数のシードを決めて送り、2台で同じ手順を再生する。
+  // ホストは試合開始からの全行動（history）を持ち、ゲストが再接続したら全部送り直して同じ盤面に戻す。
+  var net = null; // { role, code, mode, conn, status, peerDeck, peerDeckName, joined, error }
+
+  function withSeed(seed, fn) {
+    var orig = Math.random;
+    Math.random = Choices.seededRandom(seed);
+    try { return fn(); } finally { Math.random = orig; }
+  }
+
+  function roomUrl() {
+    var u = location.origin + location.pathname + '?room=' + encodeURIComponent(net.code);
+    if (net.mode === 'local') u += '&net=local';
+    return u;
+  }
+
+  function openOnlineRoom(role, code) {
+    closeOnline();
+    var params = new URLSearchParams(location.search);
+    net = { role: role, code: code || Online.randomCode(), mode: params.get('net') === 'local' ? 'local' : 'peer', status: 'connecting', peerDeck: null, joined: false };
+    connectNet();
+    render();
+  }
+
+  function connectNet() {
+    var conn = Online.createConnection({ role: net.role, code: net.code, mode: net.mode });
+    net.conn = conn;
+    conn.onStatus(function (st) {
+      if (!net || net.conn !== conn) return;
+      if (st === 'code-taken') { conn.close(); net.code = Online.randomCode(); connectNet(); return; }
+      net.status = st;
+      if (st === 'connected' && net.role === 'host' && game && game.online) sendSync();
+      if (st === 'connected' && net.role === 'guest' && net.joined && !(game && game.online)) sendHello();
+      render();
+    });
+    conn.onMessage(function (msg) { if (net && net.conn === conn) onNetMessage(msg); });
+  }
+
+  function closeOnline() {
+    if (net && net.conn) net.conn.close();
+    net = null;
+    PLAYER_LABEL.playerA = 'プレイヤーA';
+    PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? 'CPU' : 'プレイヤーB';
+  }
+
+  // 試合中に相手がつながり直したら、試合の設定と全行動を送り直して同じ盤面に戻す（ホスト）
+  function sendSync() {
+    netSend({
+      type: 'SYNC', v: APP_VERSION, config: game.online.config, seed: game.online.seed, history: game.online.history,
+      pending: pendingChoice && pendingChoice.desc ? { desc: pendingChoice.desc, seed: pendingChoice.seed, answers: pendingChoice.answers } : null,
+    });
+    game.online.desync = false;
+  }
+
+  function netSend(msg) { if (net && net.conn) net.conn.send(msg); }
+
+  function copyRoomUrl() {
+    var url = roomUrl();
+    var done = function () { notice = 'URLをコピーしました'; render(); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, function () { prompt('このURLを相手に送ってください', url); });
+    else prompt('このURLを相手に送ってください', url);
+  }
+  function shareRoomUrl() {
+    if (navigator.share) navigator.share({ title: 'Xross Stars 対戦', text: 'Xross Starsで対戦しよう！', url: roomUrl() }).catch(function () {});
+    else copyRoomUrl();
+  }
+
+  // ゲスト：自分のデッキを送って参加を伝える（デッキを変えたら送り直す）
+  function sendHello(resync) {
+    var deck = deckFor('playerB');
+    if (resync && (!deck || (deck.leaders || []).length !== 4)) deck = { name: '', leaders: [], cards: [], tactics: [] }; // 再同期ならデッキは不要
+    if (!deck || (deck.leaders || []).length !== 4 && !resync) { alert('参加する前に、リーダーを4体選んだデッキを選んでください'); return; }
+    net.joined = true;
+    netSend({ type: 'HELLO', v: APP_VERSION, deck: { name: deck.name, leaders: deck.leaders, cards: deck.cards, tactics: deck.tactics }, resync: !!resync });
+    render();
+  }
+
+  function reconnectGuest() {
+    if (!net) return;
+    if (net.conn) net.conn.close();
+    net.status = 'connecting';
+    connectNet();
+    render();
+  }
+
+  function requestResync() { if (net) sendHello(true); }
+
+  // ホスト：対戦開始（設定とシードを送り、自分も同じ設定で開始する）
+  function startOnlineMatch() {
+    var deckA = deckFor('playerA');
+    if (!deckA || (deckA.leaders || []).length !== 4) { alert('リーダーを4体選んだデッキを選んでください'); return; }
+    if (!net || net.status !== 'connected' || !net.peerDeck) { alert('相手の参加を待っています'); return; }
+    var config = buildMatchConfig(deckA, net.peerDeck);
+    config.matchId = 'online-' + net.code + '-' + Date.now();
+    var seed = Math.floor(Math.random() * 4294967296);
+    netSend({ type: 'START', v: APP_VERSION, config: config, seed: seed });
+    beginOnlineMatch(config, seed, []);
+  }
+
+  // 2台で同じ盤面を作る：インスタンスIDの採番と乱数を揃えてから試合を作り、履歴があれば再生する
+  function beginOnlineMatch(config, seed, history) {
+    if (cpuTimer) { clearTimeout(cpuTimer); cpuTimer = null; }
+    var state;
+    try {
+      Eng.GameState.resetInstanceIds();
+      state = withSeed(seed, function () {
+        var s0 = Eng.Match.createMatch(config);
+        startTurn(s0, {});
+        return s0;
+      });
+    } catch (e) {
+      alert('対戦を開始できませんでした: ' + e.message);
+      return;
+    }
+    var local = net.role === 'host' ? 'playerA' : 'playerB';
+    game = { state: state, cpu: null, online: { local: local, seq: 0, history: [], hashes: {}, config: config, seed: seed, desync: false }, fxSeen: 0 };
+    PLAYER_LABEL[local] = 'あなた';
+    PLAYER_LABEL[local === 'playerA' ? 'playerB' : 'playerA'] = '相手';
+    // 再接続時：これまでの行動をすべて再生して同じ盤面に戻す（演出は出さない）
+    (history || []).forEach(function (h) {
+      var r = Choices.runWithAnswers(game.state, h.seed, h.answers, function (st, ask) {
+        var cb = Choices.makeCallbacks(ask, { getActivePlayerId: function () { return st.turn.activePlayer; }, getResolvingEffect: Eng.Resolver.getResolvingEffect });
+        return actionFn(h.desc)(st, cb, ask);
+      });
+      if (r.done) game.state = r.state;
+      game.online.history.push(h);
+      game.online.seq += 1;
+    });
+    game.fxSeen = game.state.actionLog.length;
+    pendingChoice = null;
+    sel = null;
+    lastRoundBanner = null;
+    detailCardId = null;
+    seenActive = null;
+    prevHp = {};
+    screen = 'battle';
+    render();
+  }
+
+  // 行動が確定したとき：履歴に残し、盤面のハッシュを相手と照合する
+  function onlineCommitted(pc) {
+    var o = game.online;
+    o.history.push({ desc: pc.desc, seed: pc.seed, answers: pc.answers.slice() });
+    o.seq += 1;
+    var h = Online.stateHash(game.state);
+    o.hashes[o.seq] = h;
+    netSend({ type: 'HASH', seq: o.seq, h: h });
+    if (o.remoteHashes && o.remoteHashes[o.seq] && o.remoteHashes[o.seq] !== h) o.desync = true;
+  }
+
+  // 相手からの行動が、相手の手番の、相手のカードの行動かを確かめる（不正な行動は受け付けない）
+  function isValidRemoteAct(desc) {
+    if (!desc || !game || !game.online) return false;
+    var remote = game.online.local === 'playerA' ? 'playerB' : 'playerA';
+    if (game.state.turn.activePlayer !== remote) return false;
+    if (desc.t === 'END') return true;
+    return ['ATTACK', 'MEMORIA', 'TACTICS'].indexOf(desc.t) >= 0 && desc.pid === remote && typeof desc.id === 'string';
+  }
+
+  function onNetMessage(msg) {
+    if (!msg || typeof msg !== 'object') return;
+    switch (msg.type) {
+      case 'HELLO':
+        if (net.role !== 'host') return;
+        if (msg.v !== APP_VERSION) { netSend({ type: 'VERSION_MISMATCH', v: APP_VERSION }); net.error = '相手のページが古い（または新しい）ため対戦できません。両方ともページを再読み込みしてください。'; render(); return; }
+        if (!msg.resync) net.peerDeck = msg.deck;
+        if (game && game.online) sendSync(); // 試合中の再同期：試合の設定と全行動を送り直す（途中の行動があればそれも）
+        render();
+        return;
+      case 'VERSION_MISMATCH':
+        net.error = '相手のページが古い（または新しい）ため対戦できません。両方ともページを再読み込みしてください。';
+        render();
+        return;
+      case 'START':
+        if (net.role !== 'guest') return;
+        if (msg.v !== APP_VERSION) { net.error = 'ホストのページとバージョンが違います。両方ともページを再読み込みしてください。'; render(); return; }
+        beginOnlineMatch(msg.config, msg.seed, []);
+        return;
+      case 'SYNC':
+        if (net.role !== 'guest') return;
+        if (msg.v !== APP_VERSION) { net.error = 'ホストのページとバージョンが違います。両方ともページを再読み込みしてください。'; render(); return; }
+        beginOnlineMatch(msg.config, msg.seed, msg.history || []);
+        if (msg.pending) {
+          performAction(msg.pending.desc, { seed: msg.pending.seed, remote: true });
+          if (pendingChoice) { pendingChoice.answers = (msg.pending.answers || []).slice(); stepChoice(); }
+        }
+        return;
+      case 'ACT':
+        if (!game || !game.online || pendingChoice || msg.seq !== game.online.seq || !isValidRemoteAct(msg.desc)) {
+          if (game && game.online && msg.seq !== game.online.seq) { game.online.desync = true; render(); }
+          return;
+        }
+        performAction(msg.desc, { seed: msg.seed, remote: true });
+        return;
+      case 'ANSWER':
+        if (!game || !game.online || !pendingChoice || msg.seq !== game.online.seq || msg.n !== pendingChoice.answers.length) return;
+        pendingChoice.answers.push(msg.answer);
+        stepChoice();
+        return;
+      case 'HASH':
+        if (!game || !game.online) return;
+        game.online.remoteHashes = game.online.remoteHashes || {};
+        game.online.remoteHashes[msg.seq] = msg.h;
+        if (game.online.hashes[msg.seq] && game.online.hashes[msg.seq] !== msg.h) { game.online.desync = true; render(); }
+        return;
+      case 'LEFT_MATCH':
+        if (game && game.online) { notice = '相手がセットアップ画面に戻りました'; render(); }
+        return;
+      default:
+        return;
+    }
+  }
+
+  function renderOnlineSetup() {
+    var isHost = net.role === 'host';
+    var side = isHost ? 'playerA' : 'playerB';
+    var statusText = {
+      connecting: isHost ? '部屋を準備しています…' : '部屋に接続しています…',
+      waiting: '相手の参加を待っています…',
+      connected: isHost ? (net.peerDeck ? '相手が参加しました（デッキ：' + (net.peerDeck.name || '名称なし') + '）' : '相手が接続しました。相手がデッキを選ぶのを待っています…')
+        : (net.joined ? '参加しました。ホストが対戦を始めるのを待っています…' : '接続しました。デッキを選んで「このデッキで参加」を押してください'),
+      disconnected: '接続が切れました',
+      'no-room': '部屋が見つかりません（URLが正しいか、ホストが部屋を開いているか確認してください）',
+      error: '接続できませんでした（ネットワークの状態を確認してください）',
+    }[net.status] || net.status;
+    var peerLeaders = isHost && net.peerDeck ? net.peerDeck.leaders.map(function (n) {
+      var c = CARD_INDEX[n];
+      return c ? '<div class="bt-thumb" title="' + esc(c.name) + '">' + imgTag(c, false, 'bt-lnoimg') + '</div>' : '';
+    }).join('') : '';
+    var share = isHost ? '' +
+      '<div class="bt-net-share">' +
+        '<div class="bt-net-share-label">このURLを相手に送ってください</div>' +
+        '<div class="bt-net-url"><input readonly value="' + esc(roomUrl()) + '" onclick="this.select()">' +
+          '<button class="bt-btn" data-act="online-copy">コピー</button>' +
+          '<button class="bt-btn" data-act="online-share">共有</button></div>' +
+      '</div>' : '';
+    var canStart = isHost && net.status === 'connected' && net.peerDeck && deckFor('playerA');
+    return '' +
+      '<div class="bt-setup">' +
+        '<div class="bt-hero"><h2>ONLINE</h2><p>' + (isHost ? 'あなたはプレイヤーA（部屋を作った側）です' : 'あなたはプレイヤーB（招待された側）です') + '</p></div>' +
+        (net.error ? '<div class="bt-net-banner bad" style="position:static">' + esc(net.error) + '</div>' : '') +
+        '<div class="bt-net-status ' + (net.status === 'connected' ? 'ok' : (/error|no-room|disconnected/.test(net.status) ? 'bad' : '')) + '">' +
+          '<span class="bt-cpu-dot"></span>' + esc(statusText) + (notice ? '<b style="margin-left:8px">' + esc(notice) + '</b>' : '') + '</div>' +
+        share +
+        '<div class="bt-setup-players">' +
+          renderSetupPanel(side) +
+          '<div class="bt-vs">VS</div>' +
+          '<div class="bt-setup-panel" data-side="' + (isHost ? 'playerB' : 'playerA') + '"><h3>' + pBadge(isHost ? 'playerB' : 'playerA') + '相手</h3>' +
+            (peerLeaders ? '<div class="bt-deck-leaders">' + peerLeaders + '</div>' : '<p style="color:var(--sub);font-size:13px">' + (isHost ? '相手のデッキは参加後に表示されます' : 'ホストのデッキは対戦開始時に分かります') + '</p>') +
+          '</div>' +
+        '</div>' +
+        (isHost ? '<div class="bt-setup-options">' +
+          '<div class="bt-opt">モード <span class="bt-seg">' +
+            '<button data-act="set-mode" data-value="STANDARD" class="' + (setup.mode === 'STANDARD' ? 'on' : '') + '">スタンダード（2本先取）</button>' +
+            '<button data-act="set-mode" data-value="QUICK" class="' + (setup.mode === 'QUICK' ? 'on' : '') + '">クイック（1本先取）</button>' +
+          '</span></div>' +
+          '<div class="bt-opt">先攻 <span class="bt-seg">' +
+            '<button data-act="set-first" data-value="playerA" class="' + (setup.firstPlayer === 'playerA' ? 'on' : '') + '">あなた</button>' +
+            '<button data-act="set-first" data-value="playerB" class="' + (setup.firstPlayer === 'playerB' ? 'on' : '') + '">相手</button>' +
+          '</span></div>' +
+          '<button class="bt-btn ghost" data-act="coinflip">ランダムで決める</button>' +
+        '</div>' : '') +
+        '<div class="bt-start-row">' +
+          (isHost ? '<button class="bt-btn primary big" data-act="online-start"' + (canStart ? '' : ' disabled') + '>対戦開始</button>'
+            : '<button class="bt-btn primary big" data-act="online-join"' + (net.status === 'connected' ? '' : ' disabled') + '>' + (net.joined ? 'デッキを送り直す' : 'このデッキで参加') + '</button>') +
+          '<button class="bt-btn big" data-act="online-leave">オンライン対戦をやめる</button>' +
+        '</div>' +
+        '<details class="bt-notes"><summary>オンライン対戦について</summary>' +
+          '2台のブラウザを直接つないで対戦します（つなぐまでの仲介に、無料の公開サーバー PeerJS を使います）。' +
+          '会社や学校のネットワーク、一部の携帯回線では、つながらないことがあります。' +
+          '接続が切れたときは、招待された側が同じURLを開き直すか「再接続」を押すと、続きから再開できます（部屋を作った側がページを閉じると試合は終わります）。' +
+          '手札などの非公開情報は画面には表示しませんが、通信の仕組み上ブラウザの中には相手の情報もあります（友だちどうしで楽しむための機能です）。' +
+        '</details>' +
+      '</div>';
   }
 
   // ---------- 効果音・演出 ----------
@@ -1018,22 +1368,13 @@
     if (act.type === 'ATTACK') {
       var o = act.options.attacks ? act.options.attacks[0] : act.options;
       cpuTurn.last = '「' + name + '」で ' + leaderNameOf(pid, o.attackerLeaderIndex) + ' → ' + leaderNameOf(o.targetPlayerId, o.targetLeaderIndex) + ' にアタック';
-      runAction(function (s, cb) {
-        Eng.Resolver.playAttackCardWithEffects(s, pid, act.instanceId, Object.assign({}, act.options, cb), cardIndex);
-        return finishAction(s, cb);
-      }, afterActionDone, failed);
+      performAction({ t: 'ATTACK', pid: pid, id: act.instanceId, opt: act.options }, { onError: failed });
     } else if (act.type === 'MEMORIA') {
       cpuTurn.last = 'メモリア「' + name + '」をプレイ';
-      runAction(function (s, cb) {
-        Eng.Resolver.playMemoriaCardWithEffects(s, pid, act.instanceId, Object.assign({}, cb), cardIndex);
-        return finishAction(s, cb);
-      }, afterActionDone, failed);
+      performAction({ t: 'MEMORIA', pid: pid, id: act.instanceId }, { onError: failed });
     } else {
       cpuTurn.last = 'タクティクス「' + name + '」を' + (act.subType === 'EQUIPMENT' ? leaderNameOf(pid, act.equipLeaderIndex) + 'に装備' : '使用');
-      runAction(function (s, cb) {
-        Eng.Resolver.playTacticsCardWithEffects(s, pid, act.instanceId, Object.assign({ subType: act.subType, equipLeaderIndex: act.equipLeaderIndex }, cb), cardIndex);
-        return finishAction(s, cb);
-      }, afterActionDone, failed);
+      performAction({ t: 'TACTICS', pid: pid, id: act.instanceId, sub: act.subType, eq: act.equipLeaderIndex }, { onError: failed });
     }
   }
 
@@ -1238,6 +1579,14 @@
       return;
     }
     if (act === 'start') { startMatch(); return; }
+    if (act === 'online-host') { openOnlineRoom('host'); return; }
+    if (act === 'online-leave') { closeOnline(); render(); return; }
+    if (act === 'online-copy') { copyRoomUrl(); return; }
+    if (act === 'online-share') { shareRoomUrl(); return; }
+    if (act === 'online-join') { sendHello(); return; }
+    if (act === 'online-start') { startOnlineMatch(); return; }
+    if (act === 'net-reconnect') { reconnectGuest(); return; }
+    if (act === 'net-resync') { requestResync(); return; }
 
     if (act === 'toggle-log') { logOpen = !logOpen; render(); return; }
     if (act === 'toggle-sound') { Fx.setSoundOn(!Fx.isSoundOn()); render(); return; }
@@ -1246,6 +1595,7 @@
     if (act === 'dismiss-handoff') { seenActive = game.state.turn.activePlayer; render(); return; }
     if (act === 'back-to-setup') {
       if (cpuTimer) { clearTimeout(cpuTimer); cpuTimer = null; }
+      if (game && game.online && net) netSend({ type: 'LEFT_MATCH' });
       game = null; sel = null; lastRoundBanner = null; detailCardId = null; logOpen = false;
       setup.savedDecks = loadSavedDecks();
       screen = 'setup';
@@ -1253,7 +1603,7 @@
       return;
     }
     if (act === 'dismiss-round-banner') { lastRoundBanner = null; render(); return; }
-    if (cpuTurnActive()) return; // CPUの手番中は操作できない（詳細表示・ログ等は上で処理済み）
+    if (opponentTurnActive()) return; // CPU・オンラインの相手の手番中は操作できない（詳細表示・ログ等は上で処理済み）
     if (act === 'end-turn') { doEndTurn(); return; }
     if (act === 'cancel-select') { sel = null; render(); return; }
 
@@ -1406,6 +1756,12 @@
   }
   document.addEventListener('mouseleave', hidePreview);
   window.addEventListener('scroll', hidePreview, { passive: true });
+
+  // URLに部屋コードが付いていれば、招待された側として部屋に参加する
+  (function () {
+    var room = new URLSearchParams(location.search).get('room');
+    if (room && /^[a-z0-9]{4,16}$/.test(room)) openOnlineRoom('guest', room);
+  })();
 
   render();
 })();
