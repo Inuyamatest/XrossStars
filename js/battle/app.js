@@ -33,10 +33,11 @@
   var cardIndex = Eng.CardLookup.buildCardIndex(CARDS);
   var Choices = window.XS_BATTLE_CHOICES;
   var Cpu = window.XS_BATTLE_CPU;
+  var Fx = window.XS_BATTLE_FX;
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
-  var EQUIP_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY'];
+  var EQUIP_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY', 'EQUIP_BASE_HP_OVERRIDE', 'EQUIP_TARGET_FLAG'];
   var PP_TICKET_CARD_ID = 'ST01-024';
   var LS_KEY = 'xs-deckbuilder-decks';
 
@@ -162,6 +163,7 @@
     bindEvents();
     syncDockHeight();
     if (previewEl) refreshPreview(); // 要素が作り直されたので、マウスの位置にあるカードで表示し直す
+    playNewEffects();
     scheduleCpu();
   }
 
@@ -304,7 +306,7 @@
       return;
     }
 
-    game = { state: state, cpu: setup.opponent === 'CPU' ? 'playerB' : null };
+    game = { state: state, cpu: setup.opponent === 'CPU' ? 'playerB' : null, fxSeen: state.actionLog.length };
     PLAYER_LABEL.playerB = game.cpu ? 'CPU' : 'プレイヤーB';
     cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
     sel = null;
@@ -344,6 +346,7 @@
     var hpNow = snapshotHp(state);
     var deltas = {};
     Object.keys(hpNow).forEach(function (k) { if (prevHp[k] != null && prevHp[k] !== hpNow[k]) deltas[k] = hpNow[k] - prevHp[k]; });
+    if (Object.keys(deltas).some(function (k) { return deltas[k] > 0 && hpNow[k] > 0; })) healSoundPending = true;
     prevHp = hpNow;
 
     return '' +
@@ -373,6 +376,7 @@
         '<span class="bt-sc">' + pBadge('playerA') + '<b>' + w.playerA + '</b></span>' +
         '<span class="bt-round">ROUND ' + state.match.roundNumber + '<span class="bt-mode"> ・ ' + (state.match.mode === 'QUICK' ? 'クイック' : 'スタンダード') + '</span></span>' +
         '<span class="bt-sc"><b>' + w.playerB + '</b>' + pBadge('playerB') + '</span>' +
+        '<button class="bt-btn ghost bt-soundbtn" data-act="toggle-sound" title="効果音">' + (Fx.isSoundOn() ? '音 ON' : '音 OFF') + '</button>' +
         '<button class="bt-btn ghost bt-logbtn" data-act="toggle-log">ログ</button>' +
       '</div>';
   }
@@ -425,7 +429,9 @@
         r.attacker = sel.attackerLeaderIndex === idx;
       } else {
         r.enemy = true;
-        r.pickable = sel.mode === 'PICK_TARGET' || sel.mode === 'READY';
+        // ターゲットフラッグを装備したリーダーがいれば、そのリーダーにしかアタックできない
+        r.pickable = (sel.mode === 'PICK_TARGET' || sel.mode === 'READY') &&
+          Eng.Resolver.getAllowedAttackTargets(game.state, sel.ownerId).indexOf(idx) >= 0;
         r.target = sel.targetLeaderIndex === idx;
       }
     } else if (sel.mode === 'PICK_EQUIP_LEADER' && playerId === sel.ownerId) {
@@ -456,6 +462,7 @@
     var tags = '';
     if (leader.awakened) tags += '<span class="bt-tag awake">覚醒</span>';
     if (equipNames.length) tags += '<span class="bt-tag equip" title="' + esc(equipNames.join('、')) + '">装備' + equipNames.length + '</span>';
+    if (leader.equipment.some(function (eq) { return eq.targetFlag; })) tags += '<span class="bt-tag flag" title="対戦相手はこのリーダーにしかアタックできない">フラッグ</span>';
     if (p.attacker) tags += '<span class="bt-tag">アタッカー</span>';
     if (p.target) tags += '<span class="bt-tag" style="background:var(--red)">対象</span>';
 
@@ -463,7 +470,7 @@
     if (delta) floater = '<span class="bt-float' + (delta > 0 ? ' heal' : '') + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
 
     return '' +
-      '<div class="' + cls + '"' + (p.pickable ? ' data-act="pick-leader" data-player="' + playerId + '" data-index="' + idx + '" role="button" tabindex="0"' : '') + '>' +
+      '<div class="' + cls + '" data-leader="' + playerId + ':' + idx + '"' + (p.pickable ? ' data-act="pick-leader" data-player="' + playerId + '" data-index="' + idx + '" role="button" tabindex="0"' : '') + '>' +
         '<div class="bt-lcard" data-preview="' + esc(leader.cardId) + '"' + (leader.awakened ? ' data-preview-awakened="1"' : '') + '>' +
           imgTag(card, leader.awakened, 'bt-lnoimg') +
           '<div class="bt-badge-top">' + tags + '</div>' +
@@ -489,7 +496,7 @@
       var card = cardOf(t.card.cardId);
       var equip = isEquipmentCard(t.card.cardId);
       var affordable = card.cost != null && card.cost <= pp;
-      var disabled = !canPlay || !affordable;
+      var disabled = !canPlay || !affordable || !Eng.Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex);
       return '' +
         '<div class="bt-mini tactics" title="' + esc(card.name) + '（C' + (card.cost != null ? card.cost : '?') + '・' + (equip ? '装備' : '消費') + '）">' +
           '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '" data-preview="' + esc(t.card.cardId) + '">' + imgTag(card, false, 'bt-mnoimg') + '</div>' +
@@ -541,6 +548,8 @@
       case 'FREE_ATTACK_PLAYED_BY_EFFECT': return { cls: 'play', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」をコストを支払わずにプレイ' };
       case 'ECHO_TURNED_HORIZONTAL': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」はエコーで横向きに' };
       case 'ECHO_REPLAYED': return { cls: 'play', text: pShort(p.playerId) + '：エコー「' + cardOf(p.cardId).name + '」をプレイし直した' };
+      case 'LEADER_REVIVED': return { cls: 'awake', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」が復活！' };
+      case 'TACTICS_RETURNED_TO_AREA': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」をタクティクスエリアに戻した' };
       case 'CARD_DISCARDED_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」を捨てた' };
       case 'END_PHASE_DRAW': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：残りPPで' + p.count + '枚ドロー' } : null;
       case 'HAND_DISCARDED_OVER_LIMIT': return { cls: '', text: pShort(p.playerId) + '：手札上限で' + p.count + '枚捨てた' };
@@ -868,6 +877,7 @@
     pc.preview = r.state;
     pc.selection = r.question.type === 'ALLOCATE' ? r.question.candidates.map(function () { return 0; }) : (r.question.preselect || []).slice();
     pc.revealed = !r.question.secret || !!game.cpu; // CPU対戦では相手に端末を渡す必要が無い
+    Fx.sound('choice');
     render();
   }
 
@@ -949,6 +959,36 @@
     }, function () { sel = null; render(); });
   }
 
+  // ---------- 効果音・演出 ----------
+  // 確定した盤面のactionLogのうち、まだ演出していないイベントを再生する（選択画面の途中＝未確定の盤面では再生しない）。
+  var healSoundPending = false;
+  function playNewEffects() {
+    if (screen !== 'battle' || !game || pendingChoice) return;
+    var log = game.state.actionLog;
+    if (game.fxSeen == null || game.fxSeen > log.length) game.fxSeen = log.length;
+    if (log.length > game.fxSeen) {
+      var events = log.slice(game.fxSeen);
+      game.fxSeen = log.length;
+      var timing = Fx.play(events, {
+        leaderEl: function (pid, idx) { return root.querySelector('[data-leader="' + pid + ':' + idx + '"] .bt-lcard'); },
+        cardImg: function (cardId) { return cardImg(cardOf(cardId), false); },
+        cardName: function (cardId) { return cardOf(cardId).name; },
+      });
+      // 盤面のダメージ数字・揺れを、演出でそのリーダーにダメージが入る時刻まで遅らせる
+      Object.keys(timing.hitAt).forEach(function (key) {
+        var el = root.querySelector('[data-leader="' + key + '"]');
+        if (!el) return;
+        el.classList.add('fx-delayed'); // 盤面側の赤いフラッシュは演出レイヤーの閃光に任せる
+        [el.querySelector('.bt-float'), el.classList.contains('hit') ? el.querySelector('.bt-lcard') : null].forEach(function (a) {
+          if (!a) return;
+          a.style.animationDelay = timing.hitAt[key] + 'ms';
+          a.style.animationFillMode = 'both';
+        });
+      });
+    }
+    if (healSoundPending) { healSoundPending = false; Fx.sound('heal'); }
+  }
+
   // ---------- CPUの手番 ----------
   // 描画のたびに、CPUの手番で待ち状態（ラウンド終了の表示・選択画面・カード詳細）でなければ、少し間をおいて1手進める。
   var cpuTimer = null;
@@ -957,7 +997,7 @@
 
   function scheduleCpu() {
     if (cpuTimer || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || detailCardId) return;
-    cpuTimer = setTimeout(function () { cpuTimer = null; cpuStep(); }, CPU_DELAY_MS);
+    cpuTimer = setTimeout(function () { cpuTimer = null; cpuStep(); }, Math.max(CPU_DELAY_MS, Fx.remainingMs() + 300)); // 演出が終わってから次の1手
   }
 
   function cpuStep() {
@@ -1200,6 +1240,7 @@
     if (act === 'start') { startMatch(); return; }
 
     if (act === 'toggle-log') { logOpen = !logOpen; render(); return; }
+    if (act === 'toggle-sound') { Fx.setSoundOn(!Fx.isSoundOn()); render(); return; }
     if (act === 'show-detail') { detailCardId = el.getAttribute('data-card'); render(); return; }
     if (act === 'close-detail') { detailCardId = null; render(); return; }
     if (act === 'dismiss-handoff') { seenActive = game.state.turn.activePlayer; render(); return; }

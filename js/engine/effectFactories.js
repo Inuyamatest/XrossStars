@@ -386,6 +386,34 @@
     };
   }
 
+  // ---- Phase M ----
+
+  // 「ダウンしている自分のリーダー1体」（復活ポータル）。選択はctx.chooseTarget、省略時は先頭
+  function makeOwnDownedLeaderTarget() {
+    return function (state, ctx) {
+      var candidates = [];
+      state.players[ctx.ownerPlayerId].leaders.forEach(function (l, i) { if (l.isDown) candidates.push({ playerId: ctx.ownerPlayerId, leaderIndex: i }); });
+      if (!candidates.length) return [];
+      var pick = ctx.chooseTarget ? ctx.chooseTarget(candidates, state) : 0;
+      if (pick == null || pick < 0 || pick >= candidates.length) pick = 0;
+      return [candidates[pick]];
+    };
+  }
+
+  // 「対戦相手よりダウンしているリーダーが多いなら」（復活ポータルのプレイ条件）
+  function makeMoreDownedThanOpponentCondition() {
+    return function (state, ctx) {
+      var downed = function (pid) { return state.players[pid].leaders.filter(function (l) { return l.isDown; }).length; };
+      return downed(ctx.ownerPlayerId) > downed(GameState.getOpponentId(ctx.ownerPlayerId));
+    };
+  }
+
+  // 「このアタックの〖アタック後〗効果でダメージを与えているなら」（オートタレット）。
+  // ctx.attackTrace.afterAttackDamage は effectResolver.js dealDamageAndCheckDown が記録する。
+  function makeAfterAttackDamageDealtCondition() {
+    return function (state, ctx) { return !!(ctx.attackTrace && ctx.attackTrace.afterAttackDamage); };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -416,5 +444,8 @@
     makeAllOtherDamagedOpponentLeadersTarget: makeAllOtherDamagedOpponentLeadersTarget,
     countOwnLeadersWithAffiliation: countOwnLeadersWithAffiliation,
     makeAllOwnLeadersHaveAffiliationCondition: makeAllOwnLeadersHaveAffiliationCondition,
+    makeOwnDownedLeaderTarget: makeOwnDownedLeaderTarget,
+    makeMoreDownedThanOpponentCondition: makeMoreDownedThanOpponentCondition,
+    makeAfterAttackDamageDealtCondition: makeAfterAttackDamageDealtCondition,
   };
 }));

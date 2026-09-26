@@ -113,6 +113,36 @@
       chooseTarget: singleLeader('対象のリーダーを1体選んでください', 'TARGET'),
       chooseHealTarget: singleLeader('対象のリーダーを1体選んでください', 'TARGET'),
       chooseFreeAttackTarget: singleLeader('このアタックを受けるリーダーを選んでください', 'TARGET'),
+      chooseFreeAttackAttacker: singleLeader('アタックする自分のリーダーを選んでください', 'ATTACKER'),
+
+      // ジェイルブレイク：合計ダメージを対戦相手のリーダーに割り振る
+      chooseDistributedDamage: function (candidates, total) {
+        if (!candidates.length) return [];
+        if (candidates.length === 1) return [{ playerId: candidates[0].playerId, leaderIndex: candidates[0].leaderIndex, amount: total }];
+        var amounts = ask(q({ kind: 'DAMAGE_ALLOC', type: 'ALLOCATE', title: '合計' + total + 'のダメージを割り振ってください', candidates: candidates, total: total, step: 10 }));
+        return candidates.map(function (c, i) { return { playerId: c.playerId, leaderIndex: c.leaderIndex, amount: amounts[i] || 0 }; })
+          .filter(function (x) { return x.amount > 0; });
+      },
+
+      // 巡り合う二人：メモリア最大1枚・アタック最大1枚と、プレイする順番
+      chooseMeetTwo: function (memCands, atkCands) {
+        var mem = null;
+        var atk = null;
+        if (memCands.length) {
+          var a = ask(q({ kind: 'MEET_MEMORIA', type: 'CARDS', title: 'コストを支払わずにプレイするメモリアを選んでください（最大1枚）', cards: cardList(memCands), min: 0, max: 1, preselect: [0], declineLabel: 'プレイしない' }));
+          if (a.length) mem = memCands[a[0]].instanceId;
+        }
+        if (atkCands.length) {
+          var b = ask(q({ kind: 'MEET_ATTACK', type: 'CARDS', title: 'コストを支払わずにプレイするアタックカードを選んでください（最大1枚）', cards: cardList(atkCands), min: 0, max: 1, preselect: [0], declineLabel: 'プレイしない' }));
+          if (b.length) atk = atkCands[b[0]].instanceId;
+        }
+        var attackFirst = false;
+        if (mem && atk) {
+          var o = ask(q({ kind: 'MEET_ORDER', type: 'OPTIONS', title: 'プレイする順番を選んでください（先にプレイしたカードの効果から実行）', options: [{ label: 'メモリア → アタック' }, { label: 'アタック → メモリア' }] }));
+          attackFirst = o[0] === 1;
+        }
+        return { memoria: mem, attack: atk, attackFirst: attackFirst };
+      },
 
       chooseMultiTargets: function (candidates, n) {
         return ask(q({ kind: 'MULTI_TARGET', type: 'LEADERS', title: '対象のリーダーを最大' + n + '体選んでください', candidates: candidates, min: 0, max: n, preselect: firstN(n, candidates.length) }));

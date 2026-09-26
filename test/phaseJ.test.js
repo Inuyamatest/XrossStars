@@ -160,9 +160,7 @@ test('ボディアーマー：装備したリーダーの最大体力+40', () =>
 test('プロモのPPチケット（PR-067）も通常版と同じ効果', () => {
   assert.strictEqual(CardEffectData.getEffectsForCard('PR-067'), CardEffectData.getEffectsForCard('ST01-024'));
 });
-test('新機構が必要なタクティクス（追加マガジン・パワーフィールド）は未登録のまま（討伐クエストはbp05Ace.test.jsで登録を確認）', () => {
-  ['BP03-076', 'BP03-077'].forEach((n) => assert.strictEqual(CardEffectData.hasEffects(n), false, n));
-});
+// 追加マガジン・パワーフィールドは Phase M で登録した（test/phaseM.test.js参照）
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

@@ -317,11 +317,7 @@ console.log('=== 新しい仕組みが必要なため未登録のカード（意
 // BP04-045・BP04-052・BP03-024・BP03-031・BP01-026・ST01-016・ST02-012 は Phase K で登録した
 // （ST01-016/ST02-012 はアタック強化のみ。test/phaseK.test.js参照）。
 // ST01-005 / ST02-009 は所属データ（data/source/affiliations.json）を追加して登録した（test/phaseL.test.js参照）。
-['BP04-059', 'BP03-066', 'BP02-045'].forEach((cardId) => {
-  test(`${cardId}は新機構が必要なため未登録のまま`, () => {
-    assert.deepStrictEqual(CardEffectData.getEffectsForCard(cardId), []);
-  });
-});
+// BP04-059・BP03-066・BP02-045 も Phase M で登録した（test/phaseM.test.js参照）。
 
 // ============================================================
 console.log(`\n${passed} passed, ${failed} failed`);

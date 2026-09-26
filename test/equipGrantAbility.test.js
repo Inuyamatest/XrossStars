@@ -276,9 +276,7 @@ test('実カード：ヒーリングオーブを装備するとプレイ時に�
 console.log('=== UNVERIFIED確認: BP02-077オートタレットは未登録（メタ条件のため見送り） ===');
 // ============================================================
 
-test('BP02-077（オートタレット）はcardEffectDataに未登録である', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP02-077'), false);
-});
+// BP02-077（オートタレット）は Phase M で登録した（test/phaseM.test.js参照）
 
 // ============================================================
 console.log(`\n${passed} passed, ${failed} failed`);
