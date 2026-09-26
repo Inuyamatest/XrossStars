@@ -616,30 +616,8 @@
 
     // ---- 以下、バッチ2で画像確認したが今回は未登録のカード（新しい仕組みが必要なため）----
     //
-    // BP04-045 エリートコマンダー／BP04-052 ダイナミックデュオ：
-    //   「エコー」（ターン終了時にトラッシュへ行く代わりに横向きになり、次のメインフェイズ開始時に
-    //   コスト無しで横向きのままプレイし直す）という、プレイエリアのカードに「向き」という新しい状態を
-    //   持たせる必要のある新機構。playArea.entryに新フィールドを追加し、END_PHASE/START_PHASEの処理へ
-    //   フックする設計が必要なため、推測で実装しない。
-    //
-    // BP04-059 グレイトフルファーマー：アタックカードを実行後に同じカードをもう一度実行し直す
-    //   （REPLAY_FROM_PLAY_AREA、過去のPhaseで明示的に対象外とした機構）。
-    //
-    // BP03-024 頂きの景色：アタック後、プレイエリアのメモリアカードのコスト合計と同じ枚数を引く。
-    //   DERIVED_AMOUNTは現状LAST_DISTRIBUTED_HEAL_TOTALのみ対応で、「プレイエリアのコスト合計」を
-    //   ソースにするには新しいDERIVED_AMOUNT sourceの追加が必要なため見送る。
-    //
-    // BP03-031 ソニックチェイサー：アタック後、対戦相手のダメージを受けている他のリーダーすべてに20ダメージ。
-    //   「ダメージを受けている（damage>0）」で絞り込む新しいTarget Factoryが必要（既存のmakeAllOtherOpponentLeadersTarget
-    //   はisDownでしか絞り込まない）。既存Factoryの単純な模倣で作れるが、新設計になるため今回は見送る。
-    //
-    // BP03-066 ジェイルブレイク：「このターン中にメモリア/アタックカードの効果で引いたカード枚数」という
-    //   ターンをまたいだ累積カウンターの新設と、それを元にした割り振りダメージが必要なため見送る。
-    //
-    // BP02-045 巡り合う二人：デッキルック5枚から、コスト1以下のメモリア最大1枚"と"コスト1以下の
-    //   アタックカード最大1枚を選んでコスト無しでプレイする。Phase GのFREE_PLAY_MEMORIA系はメモリア専用の
-    //   ヘルパー（playMemoriaForFreeAndQueueEffects）しか無く、アタックカードを無償プレイするには
-    //   新たな攻撃者/対象の選択（新しい選択コールバック）が追加で必要になるため、今回は見送る。
+    // （このバッチで見送ったエコー・グレイトフルファーマー・頂きの景色・ソニックチェイサー・ジェイルブレイク・
+    //   巡り合う二人は、後の Phase K / Phase M で必要な仕組みを追加して登録済み）
     //
     // （BP01-026 CLUTCH!!! と、所属〔VSPO!/CR〕を使う ST01-005/ST01-016/ST02-009/ST02-012 は Phase K で登録済み）
 
@@ -1049,13 +1027,8 @@
     // ファイヤークラッカー："〖プレイ時〗対戦相手のリーダーすべてに10ダメージ。カードを1枚引く。"
     'BP03-078': [E({ trigger: 'ON_PLAY', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'MULTI', actions: [{ type: 'DAMAGE', amount: 10 }, { type: 'DRAW', amount: 1 }] } })],
 
-    // ---- 以下、Phase Jで本文を確認したが今回は未登録のタクティクス（新しい仕組みが必要なため） ----
-    // BP03-080/BP04-073 サイバネアーマー: 覚醒状態で「基本の体力」を置き換える装備（現行は加算のEQUIP_HP_MODIFIERのみ）。
-    // BP03-076 追加マガジン: トラッシュに置かれる代わりにタクティクスエリアへ戻る置換効果が未実装
-    //   （片方だけ登録すると使い切りになり本来の挙動と変わるため、全体を見送る）。
-    // BP03-077 パワーフィールド: 「このラウンド」持続する攻撃力修正と、ターン終了時にトラッシュへ置かない処理が未実装。
-    // BP03-079 ターゲットフラッグ: アタック対象を制限する装備（対象選択への制約）が未実装。
-    // BP01-094/BP02-075 復活ポータル、BP02-077 オートタレット: 以前から未登録（プレイ条件/付与能力の条件が未対応）。
+    // ---- Phase Jで見送ったタクティクス（サイバネアーマー・追加マガジン・パワーフィールド・ターゲットフラッグ・
+    //      復活ポータル・オートタレット）は Phase M で登録済み ----
     // BP04-079 討伐クエスト（タクティクス, 無色, cost0）
     // カードテキスト: "〖プレイ時〗自分のデッキの上から7枚を見る。その中からカード1枚を手札に加える。残りのカードをトラッシュに置く。"
     // 「手札に加える」は義務なので minPick: 1（見た中に1枚でもあれば必ず1枚加える）。
@@ -1067,10 +1040,7 @@
     // Phase K: テキストは登録済みなのに効果が未登録だった基本カードの一括登録
     // （例：クリティカルショットの「ダメージ+70」が乗らなかった不具合の修正）。
     // テキストは data/source/all-cards.json（カード画像で確認済み）のもの。
-    // 未実装のまま残すもの（新しい仕組みがさらに必要）:
-    //   （所属〔VSPO!/CR〕が必要なカードは data/source/affiliations.json を追加して登録済み）
-    //   BP02-045 巡り合う二人 / BP03-066 ジェイルブレイク / BP04-059 グレイトフルファーマー: 上の個別コメント参照。
-    //   タクティクスの未登録分は Phase J のコメント参照。
+    // （所属〔VSPO!/CR〕が必要なカードは data/source/affiliations.json、残りの11枚は Phase M で登録済み）
     // ============================================================
     // BP01-023 だまし討ち（アタック, 赤, cost1）
     // カードテキスト: "〖アタックする〗ダメージ+10。"
@@ -1698,6 +1668,75 @@
     ],
 
     // ============================================================
+    // Phase M: 新しい仕組みが必要で未登録だった11枚（テキストは data/source/all-cards.json）
+    // ============================================================
+
+    // BP01-094 / BP02-075 復活ポータル（タクティクス, 無色, cost2）
+    // カードテキスト: "このカードは、対戦相手よりダウンしているリーダーが多いなら、プレイできる。 〖プレイ時〗ダウンしている
+    //  自分のリーダー1体を、ダウンしていない状態に戻す。そのリーダーが装備しているカードすべてを表向きにトラッシュに置く。"
+    // プレイ条件はPLAY_CONDITIONS（下）。
+    'BP01-094': [E({ trigger: 'ON_PLAY', target: F.makeOwnDownedLeaderTarget(), action: { type: 'REVIVE_LEADER' } })],
+    'BP02-075': [E({ trigger: 'ON_PLAY', target: F.makeOwnDownedLeaderTarget(), action: { type: 'REVIVE_LEADER' } })],
+
+    // BP03-080 / BP04-073 サイバネアーマー（タクティクス, 無, cost0, 装備）
+    // カードテキスト: "これを装備しているリーダーが覚醒していないなら、基本の体力は140になる。これを装備しているリーダーが
+    //  覚醒しているなら、基本の体力は170になる。"（gameState.js getLeaderMaxHp が基本の体力を置き換える）
+    'BP03-080': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_BASE_HP_OVERRIDE', normal: 140, awakened: 170 } })],
+    'BP04-073': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_BASE_HP_OVERRIDE', normal: 140, awakened: 170 } })],
+
+    // BP03-076 追加マガジン（タクティクス, 無, cost0, 消費）
+    // カードテキスト: "このカードがプレイエリアからトラッシュに置かれるとき、代わりにタクティクスエリアに戻す。 〖プレイ時〗
+    //  手札を1枚捨てる。 〖アタック強化〗次のアタックのダメージ+30。"（戻す処理はKEYWORDSのRETURN_TO_TACTICS_AREA）
+    'BP03-076': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'SELF', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+    ],
+
+    // BP03-077 パワーフィールド（タクティクス, 無, cost0, 消費）
+    // カードテキスト: "〖ラウンド中〗このラウンド、自分のリーダーすべての攻撃力を+10する。（このカードはターン終了時に
+    //  トラッシュに置かない。）"（残す処理はKEYWORDSのSTAYS_IN_PLAY_THIS_ROUND）
+    'BP03-077': [E({ trigger: 'ON_PLAY', action: { type: 'ROUND_ATK_MODIFIER', amount: 10 } })],
+
+    // BP03-079 ターゲットフラッグ（タクティクス, 無, cost0, 装備）
+    // カードテキスト: "対戦相手がこのリーダーにアタックできるなら、対戦相手はこのリーダーにしかアタックできない。"
+    // （effectResolver.js getAllowedAttackTargets。カード効果によるダメージの対象は制限しない）
+    'BP03-079': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_TARGET_FLAG' } })],
+
+    // BP02-077 オートタレット（タクティクス, 無色, cost0, 装備）
+    // カードテキスト: "これを装備しているリーダーは以下の能力を持つ。「〖アタック後〗このアタックの〖アタック後〗効果で
+    //  ダメージを与えているなら、対戦相手の他のリーダーすべてに10ダメージ。この効果はターンに1回しか発動しない。」"
+    'BP02-077': [
+      E({
+        trigger: 'ON_PLAY',
+        duration: 'PERMANENT',
+        action: {
+          type: 'EQUIP_GRANT_ABILITY',
+          ability: {
+            trigger: 'AFTER_ATTACK',
+            condition: F.makeOncePerTurnCondition(F.makeAfterAttackDamageDealtCondition()),
+            target: F.makeAllOtherOpponentLeadersTarget(),
+            action: { type: 'DAMAGE', amount: 10 },
+          },
+        },
+      }),
+    ],
+
+    // BP02-045 巡り合う二人（メモリア, 赤, cost2, ACE）
+    // カードテキスト: "〖プレイ時〗自分のデッキの上から5枚を見る。その中からコスト1以下のメモリアカード最大1枚と、コスト1以下の
+    //  アタックカード最大1枚を、コストを支払わず好きな順番でプレイする。残りのカードをトラッシュに置く。（プレイしたカードの
+    //  効果は、左から順番に実行する。）"
+    'BP02-045': [E({ trigger: 'ON_PLAY', action: { type: 'DECK_LOOK_PLAY_MEMORIA_AND_ATTACK', count: 5, maxCost: 1 } })],
+
+    // BP03-066 ジェイルブレイク（メモリア, 緑, cost1, ACE）
+    // カードテキスト: "〖プレイ時〗このターン、メモリアカードとアタックカードの効果で引いたカード1枚につき20ダメージを、
+    //  対戦相手のリーダーに好きなように割り振って与える。このカードは、100ダメージまでしか割り振れない。"
+    'BP03-066': [E({ trigger: 'ON_PLAY', action: { type: 'DISTRIBUTED_DAMAGE_PER_EFFECT_DRAW', per: 20, max: 100 } })],
+
+    // BP04-059 グレイトフルファーマー（メモリア, 黄, cost1, ACE）
+    // カードテキスト: "〖アタック後〗このアタックカードの実行が終わったら、そのカードをプレイし直す。"
+    'BP04-059': [E({ trigger: 'AFTER_ATTACK', action: { type: 'REPLAY_ATTACK_CARD' } })],
+
+    // ============================================================
     // 第5弾 ACE（カード画像で確認。公式ページ未確認。カード番号は画像記載のもの）
     // ============================================================
 
@@ -1879,11 +1918,24 @@
     'BP01-022': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // 壁ジャンプ
     'BP01-084': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // 引っ張り合い
     'BP03-044': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // ロケットシャワー
+    'BP03-076': ['RETURN_TO_TACTICS_AREA'], // 追加マガジン：トラッシュに置く代わりにタクティクスエリアへ戻す
+    'BP03-077': ['STAYS_IN_PLAY_THIS_ROUND'], // パワーフィールド：ターン終了時にトラッシュに置かない
+  };
+
+  // プレイ条件（満たさないとプレイできない）。(state, {ownerPlayerId, cardIndex}) => boolean
+  var PLAY_CONDITIONS = {
+    'BP01-094': F.makeMoreDownedThanOpponentCondition(), // 復活ポータル
+    'BP02-075': F.makeMoreDownedThanOpponentCondition(), // 復活ポータル
   };
 
   // パラレル/プロモ（例: BP01-137 超新星 SRP）は通常版と同一効果なので、通常版の登録を引く。
   function resolveCardId(cardId) {
     return (ParallelAliases && !REGISTRY[cardId] && ParallelAliases[cardId]) || cardId;
+  }
+
+  function getPlayCondition(cardId) {
+    var id = PLAY_CONDITIONS[cardId] ? cardId : ((ParallelAliases && ParallelAliases[cardId]) || cardId);
+    return PLAY_CONDITIONS[id] || null;
   }
 
   function hasKeyword(cardId, keyword) {
@@ -1906,5 +1958,6 @@
     getEffectsForCard: getEffectsForCard,
     hasEffects: hasEffects,
     hasKeyword: hasKeyword,
+    getPlayCondition: getPlayCondition,
   };
 }));

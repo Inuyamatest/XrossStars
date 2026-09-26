@@ -27,7 +27,7 @@
 }(typeof self !== 'undefined' ? self : this, function (GameState, Phases, CardEffectData, Resolver) {
   'use strict';
 
-  var EQUIP_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY'];
+  var EQUIP_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY', 'EQUIP_BASE_HP_OVERRIDE', 'EQUIP_TARGET_FLAG'];
 
   function effectsOf(cardId) { return CardEffectData.getEffectsForCard(cardId); }
   function boostAmountOf(cardId) {
@@ -91,7 +91,7 @@
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
       aliveIndexes(player).forEach(function (ai) {
-        aliveIndexes(opp).forEach(function (ti) {
+        Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
           var est = estimateAttack(state, playerId, c.cardId, ai, ti, cardIndex);
           var score = scoreAttack(est, cost, c.cardId, player.leaders[ai]);
           if (!best || score > best.score) best = { score: score, instanceId: c.instanceId, cardId: c.cardId, cost: cost, attacker: ai, target: ti };
@@ -150,6 +150,7 @@
         var card = cardIndex[t.card.cardId];
         if (!card || typeof card.cost !== 'number' || card.cost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return; // 効果が未登録のタクティクスは使っても意味が無い
+        if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return; // プレイ条件（復活ポータル）
         var equip = isEquipment(t.card.cardId);
         plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: card.cost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityEffect(t.card.cardId) || equip });
       });
@@ -216,9 +217,23 @@
         q.options.forEach(function (o, i) { if ((counts[o.value] || 0) > (counts[q.options[bestIdx].value] || 0)) bestIdx = i; });
         return [bestIdx];
       }
+      if (q.kind === 'MEET_ORDER') return [0]; // メモリア（アタック強化）を先に
       return [player.hand.length >= 3 ? 0 : 1]; // はい／いいえ（ランダムに捨ててよいか）：手札に余裕があれば「はい」
     }
 
+    if (q.type === 'ALLOCATE' && q.kind === 'DAMAGE_ALLOC') {
+      // 残り体力が少ない相手から、倒せる分だけ割り振る（余りは一番残り体力が少ない相手へ）
+      var targets = q.candidates.map(function (ref, i) { return { i: i, hp: GameState.getLeaderCurrentHp(cardIndex, leaderOf(state, ref)) }; })
+        .sort(function (a, b) { return a.hp - b.hp; });
+      var dmg = q.candidates.map(function () { return 0; });
+      var remain = q.total;
+      targets.forEach(function (t) {
+        var need = Math.ceil(t.hp / q.step) * q.step;
+        if (need <= remain) { dmg[t.i] += need; remain -= need; }
+      });
+      if (remain > 0) dmg[targets[0].i] += remain;
+      return dmg;
+    }
     if (q.type === 'ALLOCATE') {
       // 一番ダメージを受けているリーダーから順に、受けているダメージの分だけ割り振る
       var order = q.candidates.map(function (ref, i) { return { i: i, dmg: leaderOf(state, ref).damage }; }).sort(function (a, b) { return b.dmg - a.dmg; });
@@ -241,7 +256,7 @@
           .sort(byHpAsc(state, cardIndex)).reverse();
         return healthy.length ? [healthy[0].i] : [];
       }
-      if (q.kind === 'MOVE_EQUIP_DEST') {
+      if (q.kind === 'ATTACKER' || q.kind === 'MOVE_EQUIP_DEST') {
         var bestAtk = cands.slice().sort(function (a, b) {
           return GameState.getLeaderCurrentAtk(cardIndex, leaderOf(state, b.ref)) - GameState.getLeaderCurrentAtk(cardIndex, leaderOf(state, a.ref));
         });

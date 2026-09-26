@@ -277,6 +277,29 @@
         status: 'PROVISIONAL',
         source: 'ST01-005/ST02-009/ST01-016/ST02-012 のテキストからの解釈。所属の一覧は data/source/affiliations.json（ユーザー提供のカード画像）。',
       },
+      // Phase M（残っていた11枚）で決めた解釈
+      phaseMPolicy: {
+        // 復活ポータル：戻したリーダーの覚醒状態はそのまま、ダメージは0から。装備は表向きでトラッシュ
+        reviveKeepsAwakened: true,
+        // サイバネアーマー：基本の体力を置き換え、体力+の装備はその上に加算。複数装備したら後から装備したものを使う
+        baseHpOverrideStacking: 'LAST_EQUIPPED_WINS_PLUS_MODIFIERS',
+        // 追加マガジン：ターン終了時・ラウンド終了時のどちらでも、トラッシュの代わりにタクティクスエリアへ戻す
+        returnToTacticsAreaTiming: 'END_PHASE_AND_ROUND_END',
+        // パワーフィールド：ダウン中のリーダーも含めて自分のリーダーすべて。ラウンド終了でカードはトラッシュ（表向き）へ
+        roundAtkModifierIncludesDowned: true,
+        // ターゲットフラッグ：制限するのはアタックの対象だけ（カード効果のダメージの対象は制限しない）
+        targetFlagRestrictsEffectTargets: false,
+        // オートタレット：同じアタックのアタックカード・メモリア等の〖アタック後〗がすべて解決した後に判定する
+        autoTurretEvaluatedAfterOtherAfterAttack: true,
+        // ジェイルブレイク：メモリア/アタックカードの効果で引いた枚数だけ数える（覚醒時効果・タクティクスは数えない）
+        jailbreakCountsOnlyMemoriaAndAttackEffects: true,
+        // 巡り合う二人：選んだカードはこの効果の後に選んだ順で1枚ずつ解決。アタックはアタッカー/対象を解決時に選ぶ
+        meetTwoResolutionOrder: 'AFTER_THIS_EFFECT_IN_CHOSEN_ORDER',
+        // グレイトフルファーマー：このアタックの効果がすべて解決した後に、元のアタッカー（ダウンしていれば選び直し）でもう一度
+        gratefulFarmerReplayTiming: 'AFTER_ALL_EFFECTS_OF_THIS_ATTACK',
+        status: 'PROVISIONAL',
+        source: 'BP01-094/BP02-075/BP03-080/BP04-073/BP03-076/BP03-077/BP03-079/BP02-077/BP02-045/BP03-066/BP04-059 のテキストからの解釈。',
+      },
     };
   }
 

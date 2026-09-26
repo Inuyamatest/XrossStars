@@ -106,6 +106,10 @@
   function getLeaderMaxHp(cardIndex, leader) {
     var card = getCardData(cardIndex, leader.cardId);
     var hp = leader.awakened ? card.awakenHp : card.hp;
+    // 「基本の体力は140になる」（サイバネアーマー）：装備が基本の体力を置き換える（後から装備したものを優先）
+    (leader.equipment || []).forEach(function (equip) {
+      if (equip.baseHpOverride) hp = leader.awakened ? equip.baseHpOverride.awakened : equip.baseHpOverride.normal;
+    });
     var base = hp == null ? 0 : hp;
     return base + getEquipmentHpModifierSum(leader);
   }
@@ -127,8 +131,9 @@
   // フィールド（leader.tempAtkModifier）に持たせ、完全に独立して加算する。
   // 「いつ消えるか」はこの関数の責務ではない（stateを受け取らないため判定できない）。
   // effectResolver.js側が能動的にクリアする設計（詳細はeffectResolver.jsのコメント参照）。
+  // ターン中の修正（tempAtkModifier）と、ラウンド中の修正（roundAtkModifier：パワーフィールド）の合計
   function getTempAtkModifierSum(leader) {
-    return leader.tempAtkModifier || 0;
+    return (leader.tempAtkModifier || 0) + (leader.roundAtkModifier || 0);
   }
 
   function getLeaderCurrentAtk(cardIndex, leader) {

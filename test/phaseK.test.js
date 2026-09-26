@@ -102,12 +102,11 @@ test('メモリアのアタック強化（胴だよ胴！+50）と合わせる�
   const t = state.players.playerA.leaders[0];
   assert.ok(t.isDown, 'HP100のリーダーに150ならダウン');
 });
-test('効果が未登録のまま残っているのは、新しい仕組みが必要な11枚だけ（所属を使う2枚はPhase Lで登録）', () => {
+test('テキストがあるのに効果が未登録のカードは残っていない（残っていた11枚はPhase Mで登録）', () => {
   const fixtures = [FILLER_ATTACK, MEMORIA_0, MEMORIA_1, MEMORIA_2]; // このテストで効果を外して使っているカード
   const rows = allCards.filter((c) => !c.isParallel && ['ATTACK', 'MEMORIA', 'TACTICS'].includes(c.cardType) && c.text &&
     !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber] && !fixtures.includes(c.cardNumber));
-  assert.deepStrictEqual(rows.map((c) => c.cardNumber).sort(), ['BP01-094', 'BP02-045', 'BP02-075', 'BP02-077', 'BP03-066', 'BP03-076', 'BP03-077',
-    'BP03-079', 'BP03-080', 'BP04-059', 'BP04-073']);
+  assert.deepStrictEqual(rows.map((c) => c.cardNumber), []);
 });
 
 // ============================================================

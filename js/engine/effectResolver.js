@@ -64,6 +64,56 @@
     try { return fn(); } finally { resolvingEffect = prev; }
   }
 
+  // 盤面のどこかにあるカードインスタンスのカード番号を探す（効果の出どころの種類を知るため）
+  function findCardIdInState(state, instanceId) {
+    var found = null;
+    ['playerA', 'playerB'].forEach(function (pid) {
+      if (found) return;
+      var p = state.players[pid];
+      var zones = [p.hand, p.deck, p.playArea.map(function (e) { return e.card; }), p.trash.map(function (t) { return t.card; }),
+        p.tacticsArea.map(function (t) { return t.card; })];
+      p.leaders.forEach(function (l) { zones.push(l.equipment || []); });
+      zones.forEach(function (z) { (z || []).forEach(function (c) { if (!found && c && c.instanceId === instanceId) found = c.cardId; }); });
+    });
+    return found;
+  }
+
+  // ---- 効果によるドロー（ジェイルブレイク用に「このターン、メモリア/アタックカードの効果で引いた枚数」を記録する）----
+  // 覚醒時効果（リーダー）やタクティクスの効果で引いたカードは数えない。
+  function effectDraw(state, playerId, amount, cardIndex) {
+    var drawn = Deck.drawCards(state, playerId, amount) || [];
+    var r = resolvingEffect;
+    if (!r || r.trigger === 'ON_AWAKEN' || !drawn.length) return drawn;
+    var cardId = r.cardId || findCardIdInState(state, r.sourceInstanceId);
+    var card = cardId && cardIndex && cardIndex[cardId];
+    if (!card || (card.cardType !== 'ATTACK' && card.cardType !== 'MEMORIA')) return drawn;
+    var player = state.players[playerId];
+    var key = state.match.roundNumber + ':' + state.turn.turnNumber;
+    if (!player.effectDraws || player.effectDraws.key !== key) player.effectDraws = { key: key, count: 0 };
+    player.effectDraws.count += drawn.length;
+    return drawn;
+  }
+
+  function effectDrawsThisTurn(state, playerId) {
+    var d = state.players[playerId].effectDraws;
+    return d && d.key === state.match.roundNumber + ':' + state.turn.turnNumber ? d.count : 0;
+  }
+
+  // ---- 「対戦相手はこのリーダーにしかアタックできない」（ターゲットフラッグ）----
+  // アタックを受けられる相手リーダーのindex一覧。ターゲットフラッグを装備した生存リーダーがいれば、そのリーダーだけ。
+  function getAllowedAttackTargets(state, attackerPlayerId) {
+    var opp = state.players[GameState.getOpponentId(attackerPlayerId)];
+    var alive = opp.leaders.map(function (l, i) { return l.isDown ? -1 : i; }).filter(function (i) { return i >= 0; });
+    var flagged = alive.filter(function (i) { return (opp.leaders[i].equipment || []).some(function (e) { return e.targetFlag; }); });
+    return flagged.length ? flagged : alive;
+  }
+
+  // ---- プレイ条件（復活ポータル「対戦相手よりダウンしているリーダーが多いなら、プレイできる」）----
+  function canPlayCardNow(state, playerId, cardId, cardIndex) {
+    var cond = CardEffectData.getPlayCondition(cardId);
+    return !cond || !!cond(state, { ownerPlayerId: playerId, cardIndex: cardIndex });
+  }
+
   // ---- Action適用（GameState変更の実体）----
   // targets: LeaderRef[]（{playerId, leaderIndex}）。actionによっては使わない（DRAW/RECOVER_PP等）。
   function applyAction(state, action, targets, ctx, cardIndex) {
@@ -73,9 +123,9 @@
       case 'DRAW':
         // action.who: 'ALL'（「すべてのプレイヤーはカードを1枚引く」）。省略時は自分。
         if (action.who === 'ALL') {
-          [ctx.ownerPlayerId, GameState.getOpponentId(ctx.ownerPlayerId)].forEach(function (pid) { Deck.drawCards(state, pid, action.amount); });
+          [ctx.ownerPlayerId, GameState.getOpponentId(ctx.ownerPlayerId)].forEach(function (pid) { effectDraw(state, pid, action.amount, cardIndex); });
         } else {
-          Deck.drawCards(state, ctx.ownerPlayerId, action.amount);
+          effectDraw(state, ctx.ownerPlayerId, action.amount, cardIndex);
         }
         return state;
 
@@ -348,7 +398,7 @@
           var cd = ctx.cardIndex[e.card.cardId];
           return (cd && cd.cardType === 'MEMORIA' && typeof cd.cost === 'number') ? sum + cd.cost : sum;
         }, 0);
-        if (costSum > 0) Deck.drawCards(state, ctx.ownerPlayerId, costSum);
+        if (costSum > 0) effectDraw(state, ctx.ownerPlayerId, costSum, cardIndex);
         return state;
       }
 
@@ -373,7 +423,7 @@
         var revealedCard = ctx.cardIndex[revealedTop.cardId];
         Events.logEvent(state, 'CARD_REVEALED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: revealedTop.cardId, declared: declared });
         if (revealedCard && revealedCard.cardType === declared) {
-          Deck.drawCards(state, ctx.ownerPlayerId, action.draw); // 公開したカードは上にあるので、そのまま引く1枚目になる
+          effectDraw(state, ctx.ownerPlayerId, action.draw, cardIndex); // 公開したカードは上にあるので、そのまま引く1枚目になる
         } else {
           rPlayer.deck.shift();
           rPlayer.trash.push({ card: revealedTop, faceUp: false });
@@ -381,8 +431,97 @@
         return state;
       }
 
+      case 'REVIVE_LEADER':
+        // 復活ポータル「ダウンしている自分のリーダー1体を、ダウンしていない状態に戻す。そのリーダーが装備している
+        // カードすべてを表向きにトラッシュに置く。」対象はtarget（makeOwnDownedLeaderTarget）で選ぶ。
+        // 覚醒状態はそのまま（PROVISIONAL、ruleConfig.js phaseMPolicy）。ダウン時にダメージは0になっているので0から。
+        (targets || []).forEach(function (ref) {
+          var reviver = state.players[ref.playerId];
+          var leader = reviver.leaders[ref.leaderIndex];
+          if (!leader.isDown) return;
+          leader.isDown = false;
+          leader.damage = 0;
+          (leader.equipment || []).forEach(function (eq) { reviver.trash.push({ card: eq, faceUp: true }); });
+          leader.equipment = [];
+          Events.logEvent(state, 'LEADER_REVIVED', { playerId: ref.playerId, leaderIndex: ref.leaderIndex });
+        });
+        return state;
+
+      case 'ROUND_ATK_MODIFIER':
+        // パワーフィールド「このラウンド、自分のリーダーすべての攻撃力を+10する。」ラウンド終了時に消える
+        // （processRoundEndWithEffects）。ダウンしているリーダーも「自分のリーダー」なので含める。
+        state.players[ctx.ownerPlayerId].leaders.forEach(function (l) { l.roundAtkModifier = (l.roundAtkModifier || 0) + action.amount; });
+        return state;
+
+      case 'DISTRIBUTED_DAMAGE_PER_EFFECT_DRAW': {
+        // ジェイルブレイク「このターン、メモリアカードとアタックカードの効果で引いたカード1枚につき20ダメージを、
+        // 対戦相手のリーダーに好きなように割り振って与える。このカードは、100ダメージまでしか割り振れない。」
+        // 割り振りはctx.chooseDistributedDamage(candidates, total, state) => [{playerId, leaderIndex, amount}]。
+        // 省略時は先頭の候補にすべて。
+        var dmgTotal = Math.min(effectDrawsThisTurn(state, ctx.ownerPlayerId) * action.per, action.max);
+        if (dmgTotal <= 0) return state;
+        var dmgCands = EffectFactories.makeAllAliveOpponentLeadersTarget()(state, ctx);
+        if (!dmgCands.length) return state;
+        var allocs = ctx.chooseDistributedDamage ? (ctx.chooseDistributedDamage(dmgCands.slice(), dmgTotal, state) || [])
+          : [{ playerId: dmgCands[0].playerId, leaderIndex: dmgCands[0].leaderIndex, amount: dmgTotal }];
+        var given = 0;
+        allocs.forEach(function (a) {
+          var amount = Math.min(a.amount || 0, dmgTotal - given);
+          if (amount <= 0 || !dmgCands.some(function (c) { return c.playerId === a.playerId && c.leaderIndex === a.leaderIndex; })) return;
+          given += amount;
+          dealDamageAndCheckDown(state, { playerId: a.playerId, leaderIndex: a.leaderIndex }, amount, cardIndex, ctx);
+        });
+        return state;
+      }
+
+      case 'DECK_LOOK_PLAY_MEMORIA_AND_ATTACK': {
+        // 巡り合う二人「自分のデッキの上から5枚を見る。その中からコスト1以下のメモリアカード最大1枚と、コスト1以下の
+        // アタックカード最大1枚を、コストを支払わず好きな順番でプレイする。残りのカードをトラッシュに置く。
+        // （プレイしたカードの効果は、左から順番に実行する。）」
+        // 選択はctx.chooseMeetTwo(memoriaCands, attackCands, state) => { memoria, attack, attackFirst }。
+        // 省略時は各先頭の候補を、メモリア→アタックの順でプレイする。選んだカードは「このカードの効果の後」に
+        // 選んだ順でResolutionStackへ積み、1枚ずつ解決する（アタックは解決時にアタッカー/対象を選ぶ）。
+        var meetPlayer = state.players[ctx.ownerPlayerId];
+        var meetLooked = meetPlayer.deck.splice(0, Math.min(action.count, meetPlayer.deck.length));
+        function meetCands(type) {
+          return meetLooked.filter(function (c) {
+            var cd = ctx.cardIndex[c.cardId];
+            return cd && cd.cardType === type && typeof cd.cost === 'number' && cd.cost <= action.maxCost;
+          }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
+        }
+        var memC = meetCands('MEMORIA');
+        var atkC = meetCands('ATTACK');
+        var pickMeet = ctx.chooseMeetTwo ? (ctx.chooseMeetTwo(memC.slice(), atkC.slice(), state) || {})
+          : { memoria: memC[0] ? memC[0].instanceId : null, attack: atkC[0] ? atkC[0].instanceId : null, attackFirst: false };
+        var memCard = pickMeet.memoria && memC.some(function (c) { return c.instanceId === pickMeet.memoria; }) ? meetLooked.find(function (c) { return c.instanceId === pickMeet.memoria; }) : null;
+        var atkCard = pickMeet.attack && atkC.some(function (c) { return c.instanceId === pickMeet.attack; }) ? meetLooked.find(function (c) { return c.instanceId === pickMeet.attack; }) : null;
+        meetLooked.forEach(function (c) {
+          if (c === memCard || c === atkCard) return;
+          meetPlayer.trash.push({ card: c, faceUp: false });
+        });
+        var memPending = memCard ? buildDeferredFreeMemoria(memCard, ctx, cardIndex) : null;
+        var atkPending = atkCard ? buildDeferredFreeAttack(atkCard, ctx, cardIndex) : null;
+        (pickMeet.attackFirst ? [atkPending, memPending] : [memPending, atkPending]).forEach(function (p) {
+          if (p) ResolutionStack.push(state.resolutionStack, p);
+        });
+        return state;
+      }
+
+      case 'REPLAY_ATTACK_CARD': {
+        // グレイトフルファーマー「このアタックカードの実行が終わったら、そのカードをプレイし直す。」
+        // このアタックに紐づく効果がすべて解決した後（ResolutionStackの末尾）に、プレイエリアにある同じアタックカードで
+        // もう一度アタックする（コストは支払わない。アタッカー/対象は解決時に決める）。
+        if (!ctx.attackCardInstanceId) return state;
+        var replayEntry = state.players[ctx.ownerPlayerId].playArea.find(function (e) { return e.card.instanceId === ctx.attackCardInstanceId; });
+        if (!replayEntry) return state;
+        ResolutionStack.push(state.resolutionStack, buildDeferredFreeAttack(replayEntry.card, ctx, cardIndex, { fromPlayArea: true }));
+        return state;
+      }
+
       case 'ATTACK_DAMAGE_BONUS':
       case 'EQUIP_HP_MODIFIER':
+      case 'EQUIP_BASE_HP_OVERRIDE':
+      case 'EQUIP_TARGET_FLAG':
       case 'EQUIP_ATK_MODIFIER':
       case 'EQUIP_GRANT_ABILITY':
       case 'MULTI_ATTACK':
@@ -401,7 +540,23 @@
   // 先頭のリーダーでアタックする。アタックを受けるリーダーはctx.chooseFreeAttackTarget(candidates, state) => index
   // （省略時は元のアタックを受けたリーダー、ダウンしていれば生存している先頭のリーダー）。
   // アタッカー/対象がいない場合はプレイできないため、そのカードは裏向きでトラッシュに置く（PROVISIONAL）。
-  function buildDeferredFreeAttack(cardInstance, ctx, cardIndex) {
+  // 巡り合う二人：デッキから選んだメモリアを、解決時にコストを支払わずにプレイするPendingEffect
+  function buildDeferredFreeMemoria(cardInstance, ctx, cardIndex) {
+    return {
+      id: nextEffectId(),
+      sourceInstanceId: ctx.sourceInstanceId,
+      trigger: 'ON_PLAY',
+      ownerPlayerId: ctx.ownerPlayerId,
+      condition: null,
+      resolve: function (state) {
+        Events.logEvent(state, 'FREE_ATTACK_PLAYED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: cardInstance.cardId });
+        return playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, cardInstance, cardIndex, pickChoiceCallbacks(ctx));
+      },
+    };
+  }
+
+  // opts.fromPlayArea: プレイエリアにあるカードをもう一度プレイする（グレイトフルファーマー）
+  function buildDeferredFreeAttack(cardInstance, ctx, cardIndex, opts) {
     return {
       id: nextEffectId(),
       sourceInstanceId: ctx.sourceInstanceId,
@@ -410,22 +565,33 @@
       condition: null,
       resolve: function (state) {
         return withResolvingEffect({ sourceInstanceId: cardInstance.instanceId, cardId: cardInstance.cardId, trigger: 'FREE_ATTACK', ownerPlayerId: ctx.ownerPlayerId }, function () {
-          return resolveDeferredFreeAttack(state, cardInstance, ctx, cardIndex);
+          return resolveDeferredFreeAttack(state, cardInstance, ctx, cardIndex, opts || {});
         });
       },
     };
   }
 
-  function resolveDeferredFreeAttack(state, cardInstance, ctx, cardIndex) {
+  function resolveDeferredFreeAttack(state, cardInstance, ctx, cardIndex, opts) {
     var ownerId = ctx.ownerPlayerId;
     var player = state.players[ownerId];
     var targetPlayerId = GameState.getOpponentId(ownerId);
+    if (opts.fromPlayArea) {
+      // プレイエリアから取り出して、もう一度プレイする（プレイエリアに無くなっていれば何もしない）
+      var entryIdx = player.playArea.findIndex(function (e) { return e.card.instanceId === cardInstance.instanceId; });
+      if (entryIdx < 0) return state;
+      player.playArea.splice(entryIdx, 1);
+    }
+    var aliveOwn = player.leaders.map(function (l, i) { return l.isDown ? -1 : i; }).filter(function (i) { return i >= 0; });
     var attackerIndex = ctx.attackerLeaderIndex;
     if (attackerIndex == null || !player.leaders[attackerIndex] || player.leaders[attackerIndex].isDown) {
-      attackerIndex = player.leaders.findIndex(function (l) { return !l.isDown; });
+      // 元のアタッカーがいない（巡り合う二人のようにアタックに紐づかない、またはダウンした）ならアタッカーを選ぶ
+      attackerIndex = aliveOwn.length ? aliveOwn[0] : -1;
+      if (aliveOwn.length > 1 && ctx.chooseFreeAttackAttacker) {
+        var ap = ctx.chooseFreeAttackAttacker(aliveOwn.map(function (i) { return { playerId: ownerId, leaderIndex: i }; }), state);
+        if (ap != null && ap >= 0 && ap < aliveOwn.length) attackerIndex = aliveOwn[ap];
+      }
     }
-    var targetCandidates = [];
-    state.players[targetPlayerId].leaders.forEach(function (l, i) { if (!l.isDown) targetCandidates.push({ playerId: targetPlayerId, leaderIndex: i }); });
+    var targetCandidates = getAllowedAttackTargets(state, ownerId).map(function (i) { return { playerId: targetPlayerId, leaderIndex: i }; });
     if (attackerIndex < 0 || targetCandidates.length === 0) {
       player.trash.push({ card: cardInstance, faceUp: false });
       return state;
@@ -463,6 +629,8 @@
     if (target.isDown) return false; // ダウン中はダメージを受けない（spec 3-2章）
     target.damage += amount;
     Events.logEvent(state, 'DAMAGE_DEALT', { playerId: targetRef.playerId, leaderIndex: targetRef.leaderIndex, amount: amount, source: 'CARD_EFFECT' });
+    // オートタレット「このアタックの〖アタック後〗効果でダメージを与えているなら」用の記録
+    if (ctx && ctx.attackTrace && resolvingEffect && resolvingEffect.trigger === 'AFTER_ATTACK') ctx.attackTrace.afterAttackDamage = true;
 
     if (GameState.getLeaderCurrentHp(cardIndex, target) <= 0) {
       target.isDown = true;
@@ -574,18 +742,29 @@
   // トラッシュに置く（PROVISIONAL、ruleConfig.js bp05AcePolicy.echoAtRoundEnd）。
 
   // Phases.runEndPhaseの代わりに呼ぶ。縦向きのエコーカードだけをプレイエリアに残して横向きにする。
+  // Phase M: パワーフィールド（STAYS_IN_PLAY_THIS_ROUND「ターン終了時にトラッシュに置かない」）はプレイエリアに残し、
+  // 追加マガジン（RETURN_TO_TACTICS_AREA「プレイエリアからトラッシュに置かれるとき、代わりにタクティクスエリアに戻す」）は
+  // タクティクスエリアへ戻す。
   function runEndPhaseWithEffects(state, handDiscardChooserFn) {
-    var player = state.players[state.turn.activePlayer];
+    var pid = state.turn.activePlayer;
+    var player = state.players[pid];
     var kept = player.playArea.filter(function (entry) {
       return !entry.isTactics && !entry.echoHorizontal && CardEffectData.hasKeyword(entry.card.cardId, 'ECHO');
     });
-    player.playArea = player.playArea.filter(function (entry) { return kept.indexOf(entry) < 0; });
+    var stays = player.playArea.filter(function (entry) { return CardEffectData.hasKeyword(entry.card.cardId, 'STAYS_IN_PLAY_THIS_ROUND'); });
+    var returns = player.playArea.filter(function (entry) { return CardEffectData.hasKeyword(entry.card.cardId, 'RETURN_TO_TACTICS_AREA'); });
+    player.playArea = player.playArea.filter(function (entry) { return kept.indexOf(entry) < 0 && stays.indexOf(entry) < 0 && returns.indexOf(entry) < 0; });
     var result = Phases.runEndPhase(state, handDiscardChooserFn);
-    kept.forEach(function (entry, i) {
+    stays.forEach(function (entry) { player.playArea.push(entry); });
+    kept.forEach(function (entry) {
       entry.echoHorizontal = true;
-      entry.order = i;
       player.playArea.push(entry);
-      Events.logEvent(state, 'ECHO_TURNED_HORIZONTAL', { playerId: state.turn.activePlayer, cardId: entry.card.cardId });
+      Events.logEvent(state, 'ECHO_TURNED_HORIZONTAL', { playerId: pid, cardId: entry.card.cardId });
+    });
+    player.playArea.forEach(function (entry, i) { entry.order = i; });
+    returns.forEach(function (entry) {
+      player.tacticsArea.push({ card: entry.card, faceUp: true });
+      Events.logEvent(state, 'TACTICS_RETURNED_TO_AREA', { playerId: pid, cardId: entry.card.cardId });
     });
     return result;
   }
@@ -617,10 +796,26 @@
   }
 
   function processRoundEndWithEffects(state, chooseIndexFn) {
+    // ラウンド終了時のプレイエリア一掃でも、追加マガジンはトラッシュの代わりにタクティクスエリアへ戻す
+    var returning = {};
+    ['playerA', 'playerB'].forEach(function (pid) {
+      state.players[pid].playArea.forEach(function (e) {
+        if (CardEffectData.hasKeyword(e.card.cardId, 'RETURN_TO_TACTICS_AREA')) returning[e.card.instanceId] = pid;
+      });
+    });
     var result = Match.processRoundEnd(state, chooseIndexFn);
     if (result.roundEnded) {
       clearTempAtkModifiers(state, 'playerA');
       clearTempAtkModifiers(state, 'playerB');
+      ['playerA', 'playerB'].forEach(function (pid) {
+        var p = state.players[pid];
+        p.leaders.forEach(function (l) { l.roundAtkModifier = 0; }); // パワーフィールドは「このラウンド」だけ
+        p.trash = p.trash.filter(function (t) {
+          if (returning[t.card.instanceId] !== pid) return true;
+          p.tacticsArea.push({ card: t.card, faceUp: true });
+          return false;
+        });
+      });
     }
     return result;
   }
@@ -757,7 +952,7 @@
   // これらのAction typeは「即時にGameStateを書き換えるAction」ではなく、装備時に専用の計算関数が
   // 参照するマーカーとしてのみ存在する（EQUIP_HP_MODIFIER/EQUIP_ATK_MODIFIER/EQUIP_GRANT_ABILITY）。
   // ON_PLAYの一般的なキュー処理からは常に除外する（そのままresolveすればapplyAction()が例外を投げるため）。
-  var EQUIP_MARKER_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY'];
+  var EQUIP_MARKER_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY', 'EQUIP_BASE_HP_OVERRIDE', 'EQUIP_TARGET_FLAG'];
 
   // ---- ON_PLAY：カードをプレイした瞬間の効果をResolutionStackへ積む ----
   // options（playMemoriaCardWithEffects/playTacticsCardWithEffectsの呼び出し元が渡すもの）のうち、
@@ -769,6 +964,7 @@
     'chooseSelfDamage', 'chooseDeckLookAddToHand', 'chooseDiscard', 'chooseFreePlayFromHand', 'chooseDeckLookPlay',
     'chooseReplayFromPlayArea', 'chooseApexDiscard', 'chooseDeckLookAttack', 'chooseFreeAttackTarget',
     'chooseAttackDiscard', 'chooseConfirm', 'chooseDeclareCardType',
+    'chooseDistributedDamage', 'chooseMeetTwo', 'chooseFreeAttackAttacker',
   ];
   function pickChoiceCallbacks(source) {
     var extra = {};
@@ -897,6 +1093,9 @@
     var player = state.players[playerId];
     var areaEntry = player.tacticsArea.find(function (t) { return t.card.instanceId === cardInstanceId; });
     var cardId = areaEntry ? areaEntry.card.cardId : null;
+    if (cardId && !canPlayCardNow(state, playerId, cardId, cardIndex)) {
+      throw new Error('このカードは今はプレイできません（プレイ条件を満たしていません）');
+    }
 
     var result = Phases.playTacticsCard(state, playerId, cardInstanceId, options, cardIndex);
 
@@ -908,6 +1107,11 @@
         equipEntry.hpModifier = computeEquipHpModifierForCard(equipEntry.cardId);
         equipEntry.atkModifier = computeEquipAtkModifierForCard(equipEntry.cardId);
         equipEntry.grantedAbilities = computeGrantedAbilitiesForCard(equipEntry.cardId);
+        // サイバネアーマー（基本の体力を置き換える）・ターゲットフラッグ（アタック対象の制限）
+        CardEffectData.getEffectsForCard(equipEntry.cardId).forEach(function (e) {
+          if (e.action && e.action.type === 'EQUIP_BASE_HP_OVERRIDE') equipEntry.baseHpOverride = { normal: e.action.normal, awakened: e.action.awakened };
+          if (e.action && e.action.type === 'EQUIP_TARGET_FLAG') equipEntry.targetFlag = true;
+        });
       }
     }
     if (cardId) {
@@ -990,7 +1194,7 @@
           }
           if (ids.length === 0) return;
           discardByInstanceIds(state, playerId, ids);
-          if (a.draw) Deck.drawCards(state, playerId, a.draw);
+          if (a.draw) effectDraw(state, playerId, a.draw, cardIndex);
           bonus += a.bonus;
         } else if (a.type === 'DISCARD_UP_TO_FOR_BONUS') {
           // オーバードライブ「自分の手札のカードを最大2枚公開する。それらのカードを捨てる。捨てたアタックカード1枚につき、
@@ -1006,7 +1210,7 @@
             if (cd.cardType === 'ATTACK') bonus += a.perAttackBonus;
             if (cd.cardType === 'MEMORIA') draws += a.perMemoriaDraw;
           });
-          if (draws) Deck.drawCards(state, playerId, draws);
+          if (draws) effectDraw(state, playerId, draws, cardIndex);
         } else if (a.type === 'MILL_OPPONENT_TOP_FOR_BONUS') {
           // 神速フリック/天衣無縫「対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードが〇〇カードなら、ダメージ+20。」
           // 対戦相手のデッキが0枚なら何もしない（トラッシュからの再構築はしない。PROVISIONAL）。
@@ -1096,6 +1300,8 @@
     var ctx = {
       ownerPlayerId: playerId,
       sourceInstanceId: cardInstanceId,
+      attackCardInstanceId: cardInstanceId,
+      attackTrace: {},
       attackerPlayerId: playerId,
       attackerLeaderIndex: attackerLeaderIndex,
       targetPlayerId: targetPlayerId,
@@ -1133,8 +1339,6 @@
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
       .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
 
-    queueEquipmentGrantedAfterAttackEffects(state, playerId, attackerLeaderIndex, ctx, cardIndex);
-
     if (drainPendingAfterAttack) {
       var queued = player.pendingAfterAttackEffects || [];
       player.pendingAfterAttackEffects = [];
@@ -1143,6 +1347,8 @@
         ResolutionStack.push(state.resolutionStack, buildPendingEffect(item.effect, itemCtx, cardIndex));
       });
     }
+
+    queueEquipmentGrantedAfterAttackEffects(state, playerId, attackerLeaderIndex, ctx, cardIndex);
 
     if (!attackerWasAwakenedBefore && result.state.players[playerId].leaders[attackerLeaderIndex].awakened) {
       var awakenCtx = Object.assign({}, ctx, { chooseTarget: chooseHealTarget || chooseTarget });
@@ -1192,8 +1398,8 @@
       var attackerIndex = atk.attackerLeaderIndex;
       if (!state.players[playerId].leaders[attackerIndex] || state.players[playerId].leaders[attackerIndex].isDown) attackerIndex = firstAliveIndex(playerId);
       var targetIndex = atk.targetLeaderIndex;
-      var targetLeader = state.players[atk.targetPlayerId].leaders[targetIndex];
-      if (!targetLeader || targetLeader.isDown) targetIndex = firstAliveIndex(atk.targetPlayerId);
+      var allowedTargets = getAllowedAttackTargets(state, playerId);
+      if (allowedTargets.indexOf(targetIndex) < 0) targetIndex = allowedTargets.length ? allowedTargets[0] : -1;
       if (attackerIndex < 0 || targetIndex < 0) break;
       lastResult = declareOneAttackForMultiAttack(
         state, playerId, cardInstanceId, cardId, attackCardEffects,
@@ -1227,9 +1433,14 @@
     // Phases.playAttackCard呼び出し前（＝このカードがまだプレイエリアに積まれる前）の
     // 時点で判定に必要なctxを組み立てておく。overkillAmount/chooseTargetはこの時点では
     // まだ確定しないため後で同じオブジェクトに追記する（ctxを二重に作らない）。
+    if (getAllowedAttackTargets(state, playerId).indexOf(options.targetLeaderIndex) < 0) {
+      throw new Error('そのリーダーにはアタックできません（ターゲットフラッグを装備したリーダーにしかアタックできません）');
+    }
     var ctx = {
       ownerPlayerId: playerId,
       sourceInstanceId: cardInstanceId,
+      attackCardInstanceId: cardInstanceId,
+      attackTrace: {},
       attackerPlayerId: playerId,
       attackerLeaderIndex: options.attackerLeaderIndex,
       targetPlayerId: options.targetPlayerId,
@@ -1291,9 +1502,6 @@
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
       .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, ctx, cardIndex)); });
 
-    // アタッカーの装備が付与するAFTER_ATTACK能力をResolutionStackへ（Phase D-3A）
-    queueEquipmentGrantedAfterAttackEffects(state, playerId, options.attackerLeaderIndex, ctx, cardIndex);
-
     // このターン（この1回のアタック）のためにメモリア等が積んでおいたAFTER_ATTACK効果をResolutionStackへ
     // （sourceInstanceIdは各メモリア自身のIDのまま保持し、アタックカードのIDで上書きしない）
     var queued = player.pendingAfterAttackEffects || [];
@@ -1302,6 +1510,11 @@
       var itemCtx = Object.assign({}, ctx, { sourceInstanceId: item.sourceInstanceId });
       ResolutionStack.push(state.resolutionStack, buildPendingEffect(item.effect, itemCtx, cardIndex));
     });
+
+    // アタッカーの装備が付与するAFTER_ATTACK能力をResolutionStackへ（Phase D-3A）。
+    // オートタレット「このアタックの〖アタック後〗効果でダメージを与えているなら」を判定できるように、
+    // アタックカード・メモリア等の〖アタック後〗より後に解決されるよう最後に積む（Phase M）。
+    queueEquipmentGrantedAfterAttackEffects(state, playerId, options.attackerLeaderIndex, ctx, cardIndex);
 
     // アタックカード自身の〖アタック強化〗（マウントタックル）は、このアタックの後の「次のアタック」に積む
     linkBoostAndAfterAttack(state, playerId, { instanceId: cardInstanceId, cardId: cardId }, cardIndex, false);
@@ -1366,6 +1579,9 @@
     // UI向け：選択コールバックの一覧と、解決中の効果の情報
     CHOICE_CALLBACK_KEYS: CHOICE_CALLBACK_KEYS,
     getEffectivePlayCost: getEffectivePlayCost,
+    getAllowedAttackTargets: getAllowedAttackTargets,
+    canPlayCardNow: canPlayCardNow,
+    effectDrawsThisTurn: effectDrawsThisTurn,
     computeAttackTimeBoost: computeAttackTimeBoost,
     getResolvingEffect: getResolvingEffect,
     makeUpToNOpponentLeadersTarget: EffectFactories.makeUpToNOpponentLeadersTarget,
