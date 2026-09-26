@@ -121,7 +121,7 @@ test('第5弾は16名、各色4名、全員に画像がある', () => {
   bp05.forEach((c) => assert.ok(c.imageUrl, c.cardNumber));
 });
 test('覚醒後HP/ATKは「HP+30・ATK+10」、未確認データとして扱われる', () => {
-  allCards.filter((c) => c.set === 'BP05').forEach((c) => {
+  allCards.filter((c) => c.cardType === 'LEADER' && c.set === 'BP05').forEach((c) => {
     assert.strictEqual(c.awakenHp, c.hp + 30);
     assert.strictEqual(c.awakenAtk, c.atk + 10);
     assert.strictEqual(c.confirmed, false);

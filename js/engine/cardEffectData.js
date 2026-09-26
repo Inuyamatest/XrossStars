@@ -940,9 +940,12 @@
     // BP04-028 シンクロトリニティ（アタック, 青, cost1, buildRule: リーダー：白波らむね）
     // カードテキスト: "〖アタックする〗〖アタック後〗自分のデッキの上から3枚を見る。その中からエース以外の
     //  コスト0のカード1枚を公開し、手札に加えてもよい。残りのカードをトラッシュに置く。"
-    // 「デッキの上から複数枚を見て、条件に合う1枚だけ手札に加え、残りをトラッシュに置く」は、
-    // Phase Gで実装したDECK_LOOK_FREE_PLAY_MEMORIA（見た中から即プレイ）とは異なり「手札に加える」
-    // という結果になる新しいAction type（DECK_LOOK_ADD_TO_HAND相当）が必要なため見送る。
+    // 第5弾ACE（アブソリュートドミニオン）の実装で追加したDECK_LOOK_ADD_TO_HANDで登録する。
+    // カード種類の限定は無い（「エース以外のコスト0のカード」）。「加えてもよい」だが手札に加えるだけで
+    // 失うものが無いため、選択コールバック省略時は加える（ruleConfig.js bp05AcePolicy）。
+    'BP04-028': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 3, maxPick: 1, filter: { cost: 0, excludeAce: true } } }),
+    ],
 
     // ============================================================
     // Phase I: アタック/メモリア全種の画像バッチで本文を確認・補完したカードのうち、
@@ -1098,9 +1101,87 @@
     //   （片方だけ登録すると使い切りになり本来の挙動と変わるため、全体を見送る）。
     // BP03-077 パワーフィールド: 「このラウンド」持続する攻撃力修正と、ターン終了時にトラッシュへ置かない処理が未実装。
     // BP03-079 ターゲットフラッグ: アタック対象を制限する装備（対象選択への制約）が未実装。
-    // BP04-079 討伐クエスト: デッキ上7枚から1枚を手札に加える（DECK_LOOK_ADD_TO_HAND相当）が未実装。
     // BP04-076 アイテムショップ: トラッシュの裏向きカードをデッキに戻してシャッフルする処理が未実装。
     // BP01-094/BP02-075 復活ポータル、BP02-077 オートタレット: 以前から未登録（プレイ条件/付与能力の条件が未対応）。
+    // BP04-079 討伐クエスト（タクティクス, 無色, cost0）
+    // カードテキスト: "〖プレイ時〗自分のデッキの上から7枚を見る。その中からカード1枚を手札に加える。残りのカードをトラッシュに置く。"
+    // 「手札に加える」は義務なので minPick: 1（見た中に1枚でもあれば必ず1枚加える）。
+    'BP04-079': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 7, maxPick: 1, minPick: 1 } }),
+    ],
+
+    // ============================================================
+    // 第5弾 ACE（カード画像で確認。公式ページ未確認。カード番号は画像記載のもの）
+    // ============================================================
+
+    // BP05-017 デュアルハザード（アタック, 赤, cost1, ACE）
+    // カードテキスト: "〖アタックする〗アタッカーがダメージを受けているなら、ダメージ+40。
+    //  アタッカーの残り体力が10なら、さらにダメージ+40。"
+    // アタック宣言時（このカードをプレイした時点）のアタッカーの状態で判定する。
+    'BP05-017': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeAttackerDamagedCondition(), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } }),
+      E({ trigger: 'ON_ATTACK', condition: F.makeAttackerRemainingHpCondition({ operator: 'EQ', value: 10 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } }),
+    ],
+
+    // BP05-024 アブソリュートドミニオン（アタック, 青, cost1, ACE）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗自分のデッキの上から5枚を見る。その中からコスト0の
+    //  メモリアカードを最大3枚公開し、手札に加える。残りのカードをトラッシュに置く。"
+    'BP05-024': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 5, maxPick: 3, filter: { cardType: 'MEMORIA', cost: 0 } } }),
+    ],
+
+    // BP05-031 ダブルダウン（アタック, 黄, cost2, ACE）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗プレイエリアにメモリアカードが2枚以上あるなら、
+    //  対戦相手の他のリーダー1体に100ダメージ。"
+    'BP05-031': [
+      E({
+        trigger: 'AFTER_ATTACK',
+        condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+        target: F.makeSingleOtherOpponentLeaderTarget(),
+        action: { type: 'DAMAGE', amount: 100 },
+      }),
+    ],
+
+    // BP05-038 頂点捕食者（アタック, 緑, cost1, ACE）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗自分の手札のカードを、コストの合計が2以上になるように
+    //  好きな枚数公開し、捨ててもよい。そうしたなら自分のデッキの上から4枚を見る。その中からコスト2以下の
+    //  「頂点捕食者」以外のアタックカード1枚を、コストを支払わずにプレイしてもよい。残りのカードをトラッシュに置く。
+    //  （プレイしたカードの効果は、このアタックが終わってから実行する。）"
+    'BP05-038': [
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DISCARD_COST_THEN_DECK_LOOK_FREE_ATTACK', minDiscardCost: 2, count: 4, maxCost: 2, excludeName: '頂点捕食者' } }),
+    ],
+
+    // BP05-045 共に至る極致（メモリア, 赤, cost1, ACE）
+    // カードテキスト: "〖プレイ時〗自分の体力40以上のリーダー1体に30ダメージを与えてもよい。そうしたなら、
+    //  カードを2枚引く。〖アタック強化〗次のアタックのダメージ+50。"
+    'BP05-045': [
+      E({ trigger: 'ON_PLAY', action: { type: 'OPTIONAL_SELF_DAMAGE_THEN', amount: 30, minHp: 40, then: { type: 'DRAW', amount: 2 } } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+    ],
+
+    // BP05-052 ヴァリアブルピック（メモリア, 青, cost2, ACE）
+    // カードテキスト: "〖プレイ時〗対戦相手は手札を2枚捨てる。対戦相手のリーダー最大2体に30ダメージ。"
+    // 手札を捨てる処理と対象を取るダメージを別々のエフェクトにする（MULTIにまとめると、対象がいない場合に
+    // 手札を捨てる処理まで行われなくなるため）。
+    'BP05-052': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 2 } }),
+      E({ trigger: 'ON_PLAY', target: F.makeUpToNOpponentLeadersTarget(2), action: { type: 'DAMAGE', amount: 30 } }),
+    ],
+
+    // BP05-059 魔王再臨（メモリア, 黄, cost0, ACE）
+    // カードテキスト: "〖プレイ時〗カードを1枚引く。エコー（…）"  エコーはKEYWORDS（下）で表す。
+    'BP05-059': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }),
+    ],
+
+    // BP05-066 ハセシンの刑執行（メモリア, 緑, cost1, ACE）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+20。〖アタック後〗対戦相手の他のリーダーすべてに
+    //  10ダメージ。エコー（…）"  エコーはKEYWORDS（下）で表す。
+    'BP05-066': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 20 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } }),
+    ],
+
     // ============================================================
     // リーダー覚醒時効果：6種の定型文すべて（未登録だった既存62名＋第5弾16名）
     // 覚醒時効果の文言は全リーダーでこの6種のいずれかに完全一致することを確認済み。
@@ -1199,9 +1280,21 @@
     'BP05-L02': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // Selly (IGV)
   };
 
+  // キーワード能力（効果Triggerではなく、ルール処理側が参照する常在の能力）。
+  // ECHO: エコー（処理はeffectResolver.js runEndPhaseWithEffects/runStartPhaseWithEffects）
+  var KEYWORDS = {
+    'BP05-059': ['ECHO'], // 魔王再臨
+    'BP05-066': ['ECHO'], // ハセシンの刑執行
+  };
+
   // パラレル/プロモ（例: BP01-137 超新星 SRP）は通常版と同一効果なので、通常版の登録を引く。
   function resolveCardId(cardId) {
     return (ParallelAliases && !REGISTRY[cardId] && ParallelAliases[cardId]) || cardId;
+  }
+
+  function hasKeyword(cardId, keyword) {
+    var id = KEYWORDS[cardId] ? cardId : ((ParallelAliases && ParallelAliases[cardId]) || cardId);
+    return (KEYWORDS[id] || []).indexOf(keyword) >= 0;
   }
 
   function getEffectsForCard(cardId) {
@@ -1215,7 +1308,9 @@
 
   return {
     REGISTRY: REGISTRY,
+    KEYWORDS: KEYWORDS,
     getEffectsForCard: getEffectsForCard,
     hasEffects: hasEffects,
+    hasKeyword: hasKeyword,
   };
 }));

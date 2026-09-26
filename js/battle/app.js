@@ -270,7 +270,7 @@
     var state;
     try {
       state = Eng.Match.createMatch(config);
-      Eng.Phases.runStartPhase(state);
+      startTurn(state);
     } catch (e) {
       alert('対戦を開始できませんでした: ' + e.message);
       return;
@@ -461,6 +461,10 @@
 
     var play = player.playArea.length ? player.playArea.map(function (e) {
       var card = cardOf(e.card.cardId);
+      // エコーで横向きになっているカードは横向きに表示する（次の自分のメインフェイズ開始時にプレイし直される）
+      if (e.echoHorizontal) {
+        return '<div class="bt-mini echo" title="' + esc(card.name) + '（エコー：横向き）" data-act="show-detail" data-card="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div><span class="bt-echo-tag">ECHO</span></div>';
+      }
       return '<div class="bt-mini" title="' + esc(card.name) + '" data-act="show-detail" data-card="' + esc(e.card.cardId) + '"><div class="bt-mcard">' + imgTag(card, false, 'bt-mnoimg') + '</div></div>';
     }).join('') : '<span class="bt-zone-empty">なし</span>';
 
@@ -495,6 +499,10 @@
       case 'LEADER_DOWNED': return { cls: 'down', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」ダウン' };
       case 'LEADER_AWAKENED': return { cls: 'awake', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」覚醒！' };
       case 'EQUIPMENT_ATTACHED': return { cls: 'play', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」に「' + cardOf(p.cardId).name + '」を装備' };
+      case 'CARD_ADDED_TO_HAND_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：デッキから1枚を手札に加えた' };
+      case 'FREE_ATTACK_PLAYED_BY_EFFECT': return { cls: 'play', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」をコストを支払わずにプレイ' };
+      case 'ECHO_TURNED_HORIZONTAL': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」はエコーで横向きに' };
+      case 'ECHO_REPLAYED': return { cls: 'play', text: pShort(p.playerId) + '：エコー「' + cardOf(p.cardId).name + '」をプレイし直した' };
       case 'CARD_DISCARDED_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」を捨てた' };
       case 'END_PHASE_DRAW': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：残りPPで' + p.count + '枚ドロー' } : null;
       case 'HAND_DISCARDED_OVER_LIMIT': return { cls: '', text: pShort(p.playerId) + '：手札上限で' + p.count + '枚捨てた' };
@@ -689,6 +697,13 @@
   }
 
   // ================= アクション =================
+  // スタートフェイズ（PP回復・ドロー）→メインフェイズ開始時の処理（エコーのプレイし直し）。
+  // エコーで積まれたプレイ時効果はここで解決しておく（次の操作まで待たせない）。
+  function startTurn(state) {
+    Eng.Resolver.runStartPhaseWithEffects(state, cardIndex);
+    Eng.ResolutionStack.resolveAll(state.resolutionStack, state);
+  }
+
   function afterAction() {
     if (game.state.match.status === 'FINISHED') { sel = null; render(); return; }
     var result = Eng.Resolver.processRoundEndWithEffects(game.state);
@@ -698,7 +713,7 @@
         ? '両者同時敗北。このラウンドの勝者はいません。'
         : (game.state.match.roundWins.playerA + game.state.match.roundWins.playerB > 0
           ? 'ラウンドが終了しました。次のラウンドを開始します。' : 'ラウンドが終了しました。');
-      Eng.Phases.runStartPhase(game.state);
+      startTurn(game.state);
     }
     sel = null;
     render();
@@ -753,10 +768,10 @@
   function doEndTurn() {
     var state = game.state;
     try {
-      Eng.Phases.runEndPhase(state);
+      Eng.Resolver.runEndPhaseWithEffects(state);
       if (state.match.status === 'FINISHED') { sel = null; render(); return; }
       Eng.Resolver.endTurnAndSwitchWithEffects(state);
-      Eng.Phases.runStartPhase(state);
+      startTurn(state);
       if (state.match.status === 'FINISHED') { sel = null; render(); return; }
     } catch (e) { alert(e.message); return; }
     sel = null;

@@ -514,9 +514,6 @@ test('BP01-022 壁ジャンプ：未登録（同名カードによるコスト�
 test('BP01-061 逃走成功：未登録（全プレイヤードローはDRAWにwhoパラメータが必要）', () => {
   assert.strictEqual(CardEffectData.hasEffects('BP01-061'), false);
 });
-test('BP04-028 シンクロトリニティ：未登録（デッキルック→条件一致1枚だけ手札に加える新機構が必要）', () => {
-  assert.strictEqual(CardEffectData.hasEffects('BP04-028'), false);
-});
 test('BP04-023 天衣無縫：未登録（相手デッキ公開結果に応じた分岐が必要）', () => {
   assert.strictEqual(CardEffectData.hasEffects('BP04-023'), false);
 });
