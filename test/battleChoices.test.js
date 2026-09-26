@@ -36,13 +36,7 @@ const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004'];
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 LEADERS_A.concat(LEADERS_B).forEach((id) => { delete CardEffectData.REGISTRY[id]; });
 const noEffect = (c) => !c.ban && !c.isParallel && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber];
-// 効果の無いカードを優先して選ぶ。該当が無ければ（ほぼ全カードに効果を登録済みのため）条件に合うカードの効果をこのテスト内だけ外して使う
-function plainCard(pred) {
-  const pool = allCards.filter((c) => pred(c) && !c.ban && !c.isParallel && !CardEffectData.KEYWORDS[c.cardNumber]);
-  const c = pool.find((x) => !CardEffectData.hasEffects(x.cardNumber)) || pool[0];
-  delete CardEffectData.REGISTRY[c.cardNumber];
-  return c.cardNumber;
-}
+const plainCard = require('./helpers/plainCard.js')(allCards, CardEffectData, __filename);
 const FILLER_ATTACK = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 1);
 const ATTACK_COST2 = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 2);
 const MEMORIA_COST1 = plainCard((c) => c.cardType === 'MEMORIA' && c.cost === 1 && c.ace !== true);
@@ -176,6 +170,10 @@ test('共に至る極致：リーダーを選べば30ダメージを与えて2�
 test('候補が1体だけの単体対象は質問しない', () => {
   const cb = Choices.makeCallbacks(() => { throw new Error('質問は出ないはず'); }, { getActivePlayerId: () => 'playerA', getResolvingEffect: () => null });
   assert.strictEqual(cb.chooseTarget([{ playerId: 'playerB', leaderIndex: 2 }]), 0);
+});
+test('手札に加える枚数が0のデッキルック（気まずい空間）は質問しない', () => {
+  const cb = Choices.makeCallbacks(() => { throw new Error('質問は出ないはず'); }, { getActivePlayerId: () => 'playerA', getResolvingEffect: () => null });
+  assert.deepStrictEqual(cb.chooseDeckLookAddToHand([{ instanceId: 'x', cardId: 'y' }], 0), []);
 });
 test('配分回復（ALLOCATE）の答えは割り振り量として返る', () => {
   const cands = [{ playerId: 'playerA', leaderIndex: 0 }, { playerId: 'playerA', leaderIndex: 1 }];

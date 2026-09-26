@@ -772,6 +772,7 @@
     if (c.cost != null) chips.push('コスト ' + c.cost);
     if (c.rarity) chips.push(c.rarity);
     if (c.ace) chips.push('ACE');
+    (c.affiliations || []).forEach(function (a) { chips.push(a); });
     if (c.cardType === 'LEADER') {
       chips.push('HP ' + c.hp + ' / ATK ' + c.atk);
       if (c.awakenHp != null) chips.push('覚醒後 HP ' + c.awakenHp + ' / ATK ' + c.awakenAtk);
@@ -1226,6 +1227,7 @@
     if (c.cost != null) chips.push('コスト ' + c.cost);
     if (c.rarity) chips.push(c.rarity);
     if (c.ace) chips.push('ACE');
+    (c.affiliations || []).forEach(function (a) { chips.push(a); });
     var stats = '';
     if (c.cardType === 'LEADER') {
       stats = '<div class="bt-pv-stats"><span' + (awakened ? '' : ' class="on"') + '>HP ' + c.hp + ' / ATK ' + c.atk + '</span>' +

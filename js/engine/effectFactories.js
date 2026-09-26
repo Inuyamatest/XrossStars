@@ -367,6 +367,25 @@
     };
   }
 
+  // ---- リーダーの所属（「VSPO!」等。data/source/affiliations.json → カードデータの affiliations）----
+  function leaderHasAffiliation(cardIndex, leader, affiliation) {
+    var card = cardIndex && cardIndex[leader.cardId];
+    return !!card && (card.affiliations || []).indexOf(affiliation) >= 0;
+  }
+
+  // 自分の「〇〇」を持つリーダーの数（所属は印刷情報なのでダウン中も数える）
+  function countOwnLeadersWithAffiliation(state, ctx, affiliation) {
+    return state.players[ctx.ownerPlayerId].leaders.filter(function (l) { return leaderHasAffiliation(ctx.cardIndex, l, affiliation); }).length;
+  }
+
+  // 「自分のリーダーすべてが『〇〇』を持つなら」（クロスファイア・魔王降臨）
+  function makeAllOwnLeadersHaveAffiliationCondition(affiliation) {
+    return function (state, ctx) {
+      var leaders = state.players[ctx.ownerPlayerId].leaders;
+      return leaders.length > 0 && leaders.every(function (l) { return leaderHasAffiliation(ctx.cardIndex, l, affiliation); });
+    };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -395,5 +414,7 @@
     makeDiscardedThisTurnCondition: makeDiscardedThisTurnCondition,
     makeNoOtherCardsInPlayAreaCondition: makeNoOtherCardsInPlayAreaCondition,
     makeAllOtherDamagedOpponentLeadersTarget: makeAllOtherDamagedOpponentLeadersTarget,
+    countOwnLeadersWithAffiliation: countOwnLeadersWithAffiliation,
+    makeAllOwnLeadersHaveAffiliationCondition: makeAllOwnLeadersHaveAffiliationCondition,
   };
 }));

@@ -124,7 +124,7 @@
       },
 
       chooseDeckLookAddToHand: function (cands, maxPick) {
-        if (!cands.length) return [];
+        if (!cands.length || !(maxPick > 0)) return []; // 手札に加えない効果（気まずい空間）は選ぶものが無い
         var a = ask(q({ type: 'CARDS', title: '手札に加えるカードを選んでください（最大' + maxPick + '枚）', cards: cardList(cands), min: 0, max: maxPick, preselect: firstN(maxPick, cands.length), declineLabel: '加えない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
