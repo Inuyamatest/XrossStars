@@ -174,6 +174,9 @@ img{display:block}
 .bt-mini .bt-mnoimg{font-size:8px;color:var(--sub);padding:3px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center}
 .bt-mini.tactics{width:84px}
 .bt-mini.tactics .bt-mcard{aspect-ratio:88/63}
+.bt-mini.tactics.secret{cursor:default}
+.bt-mini .bt-mcard.bt-mback{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#2c2834 0 6px,#23202a 6px 12px)}
+.bt-mini .bt-mback span{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--sub);padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.45)}
 .bt-mini.echo{width:72px}
 .bt-mini.echo .bt-mcard{aspect-ratio:88/63;position:relative;border-color:var(--yellow)}
 .bt-mini.echo .bt-mcard img{position:absolute;top:50%;left:50%;width:71.59%;height:139.68%;transform:translate(-50%,-50%) rotate(90deg)}

@@ -410,9 +410,9 @@
     return '' +
       '<div class="bt-battle">' +
         renderScore(state) +
-        renderSide(state, top, readOnly, deltas, false) +
+        renderSide(state, top, readOnly, deltas, false, true) +
         renderCenter(state) +
-        renderSide(state, bottom, readOnly, deltas, true) +
+        renderSide(state, bottom, readOnly, deltas, true, !!hideHand && !humanId()) +
       '</div>' +
       (readOnly ? '' : renderDock(state, bottom, hideHand));
   }
@@ -439,7 +439,8 @@
       '</div>';
   }
 
-  function renderSide(state, playerId, readOnly, deltas, isBottom) {
+  // hideSecret: 裏向きのタクティクスを裏面で表示する（相手側。人どうしの対戦で端末を渡す前は自分側も）
+  function renderSide(state, playerId, readOnly, deltas, isBottom, hideSecret) {
     var player = state.players[playerId];
     var isActive = playerId === state.turn.activePlayer;
     var pp = player.ppCards.max - player.ppCards.tapped;
@@ -458,7 +459,7 @@
     var row = '' +
       '<div class="bt-row">' +
         '<div class="bt-leaders">' + player.leaders.map(function (l, i) { return renderLeader(playerId, l, i, readOnly, deltas[playerId + ':' + i]); }).join('') + '</div>' +
-        renderField(state, playerId, isActive, readOnly) +
+        renderField(state, playerId, isActive, readOnly, hideSecret) +
       '</div>';
     return '<section class="bt-side' + (playerId === 'playerB' ? ' pB' : '') + (isActive ? ' is-active' : ' is-opp') + '">' +
       strip + row + '</section>';
@@ -544,13 +545,17 @@
       '</div>';
   }
 
-  function renderField(state, playerId, isActive, readOnly) {
+  function renderField(state, playerId, isActive, readOnly, hideSecret) {
     var player = state.players[playerId];
     if (isRemoteSide(playerId)) readOnly = true; // CPU・オンラインの相手のカードは操作できない
     var canPlay = !readOnly && isActive && Eng.Phases.canPlayTactics(state);
     var pp = player.ppCards.max - player.ppCards.tapped;
 
     var tactics = player.tacticsArea.length ? player.tacticsArea.map(function (t) {
+      // 相手が選んで裏向きに置いたタクティクスは見せない（表向きのPPチケットは見せる）
+      if (hideSecret && !t.faceUp) {
+        return '<div class="bt-mini tactics secret" title="裏向きのタクティクス"><div class="bt-mcard bt-mback"><span>TACTICS</span></div></div>';
+      }
       var card = cardOf(t.card.cardId);
       var equip = isEquipmentCard(t.card.cardId);
       var affordable = card.cost != null && card.cost <= pp;
