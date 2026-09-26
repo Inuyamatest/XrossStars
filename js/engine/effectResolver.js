@@ -133,6 +133,7 @@
         var player = state.players[ctx.ownerPlayerId];
         var recover = Math.min(action.amount, player.ppCards.tapped); // FAQ Q9: 乗っている分以上は回復しない
         player.ppCards.tapped -= recover;
+        if (recover > 0) Events.logEvent(state, 'PP_RECOVERED', { playerId: ctx.ownerPlayerId, amount: recover, cardId: ctx.cardId || null });
         return state;
       }
 
@@ -997,7 +998,7 @@
   function playMemoriaForFreeAndQueueEffects(state, playerId, cardInstance, cardIndex, extraCtx) {
     var player = state.players[playerId];
     player.playArea.push({ card: cardInstance, order: player.playArea.length, pendingTriggers: [] });
-    Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: cardInstance.cardId });
+    Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: cardInstance.cardId, ppPaid: 0, free: true });
     return queueMemoriaPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
   }
 
@@ -1374,15 +1375,17 @@
     if (attacks.length !== count) {
       throw new Error('MULTI_ATTACK（' + count + '回）に対してoptions.attacksの指定が' + attacks.length + '件です（' + count + '件必要）');
     }
+    var multiPaid = 0;
     if (!options.freePlay) {
       var multiAttackCost = Phases.requireKnownCost(cardData);
       if (!Phases.payPP(player, multiAttackCost)) {
         throw new Error('PPが不足しています（必要:' + multiAttackCost + '）');
       }
+      multiPaid = multiAttackCost;
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
-    Events.logEvent(state, 'CARD_PLAYED', { playerId: playerId, cardId: instance.cardId, kind: 'ATTACK' });
+    Events.logEvent(state, 'CARD_PLAYED', { playerId: playerId, cardId: instance.cardId, kind: 'ATTACK', ppPaid: multiPaid, free: !!options.freePlay });
 
     function firstAliveIndex(pid) {
       return state.players[pid].leaders.findIndex(function (l) { return !l.isDown; });
@@ -1482,7 +1485,11 @@
       freePlay: freePlay,
     }, cardIndex);
     consumePendingBoosts(state, playerId);
-    if (ctx.ppRecoverAfterPay) player.ppCards.tapped = Math.max(0, player.ppCards.tapped - ctx.ppRecoverAfterPay);
+    if (ctx.ppRecoverAfterPay) {
+      var recovered = Math.min(ctx.ppRecoverAfterPay, player.ppCards.tapped);
+      player.ppCards.tapped -= recovered;
+      if (recovered > 0) Events.logEvent(state, 'PP_RECOVERED', { playerId: playerId, amount: recovered, cardId: cardId });
+    }
 
     // ダウンした場合のみOverkillの概念が成立する（PROVISIONAL、ruleConfig.js参照）
     var overkillAmount = result.downed ? Math.max(0, totalDamageForOverkill - targetHpBeforeAttack) : null;

@@ -105,15 +105,17 @@
     var player = state.players[playerId];
     var idx = findInHand(player, cardInstanceId);
     var card = GameState.getCardData(cardIndex, player.hand[idx].cardId);
+    var ppPaid = 0;
     if (!(options && options.freePlay)) {
       var cost = requireKnownCost(card);
       if (!payPP(player, cost)) {
         throw new Error('PPが不足しています（必要:' + cost + '）');
       }
+      ppPaid = cost;
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
-    Events.logEvent(state, 'CARD_PLAYED', { playerId: playerId, cardId: instance.cardId, kind: 'ATTACK' });
+    Events.logEvent(state, 'CARD_PLAYED', { playerId: playerId, cardId: instance.cardId, kind: 'ATTACK', ppPaid: ppPaid, free: !!(options && options.freePlay) });
 
     var damage = options.attackCardBaseDamage;
     if (damage == null) {
@@ -135,15 +137,17 @@
     var player = state.players[playerId];
     var idx = findInHand(player, cardInstanceId);
     var card = GameState.getCardData(cardIndex, player.hand[idx].cardId);
+    var ppPaid = 0;
     if (!(options && options.freePlay)) {
       var cost = requireKnownCost(card);
       if (!payPP(player, cost)) {
         throw new Error('PPが不足しています（必要:' + cost + '）');
       }
+      ppPaid = cost;
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
-    Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: instance.cardId });
+    Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: instance.cardId, ppPaid: ppPaid, free: !!(options && options.freePlay) });
 
     if (options && options.attackBoostAmount) {
       Combat.queueAttackBoost(state, playerId, options.attackBoostAmount, instance.instanceId);
@@ -169,7 +173,7 @@
 
     player.tacticsArea.splice(areaIdx, 1);
     state.turn.tacticsPlayedThisTurn = true;
-    Events.logEvent(state, 'TACTICS_PLAYED', { playerId: playerId, cardId: entry.card.cardId, subType: options.subType });
+    Events.logEvent(state, 'TACTICS_PLAYED', { playerId: playerId, cardId: entry.card.cardId, subType: options.subType, ppPaid: cost });
 
     if (options.subType === 'EQUIPMENT') {
       if (options.equipLeaderIndex == null) throw new Error('装備タクティクスカードには equipLeaderIndex が必要です');
