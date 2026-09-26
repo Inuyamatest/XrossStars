@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20260926d';
+  var APP_VERSION = '20260926f';
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -149,7 +149,7 @@
   // ---------- CPU対戦 ----------
   // game.cpu: CPUが操作するプレイヤー（'playerB'）。人どうしの対戦ではnull。
   function isCpu(pid) { return !!(game && game.cpu && game.cpu === pid); }
-  function cpuTurnActive() { return !!(game && game.cpu && game.state.turn.activePlayer === game.cpu && game.state.match.status !== 'FINISHED'); }
+  function cpuTurnActive() { return !!(game && game.cpu && game.state.turn.activePlayer === game.cpu && game.state.match.status !== 'FINISHED' && game.state.turn.phase !== 'ROUND_SETUP'); }
   // この端末で操作するプレイヤー（CPU対戦では人の側、オンライン対戦では自分の側。人どうしの対戦ではnull）
   function humanId() {
     if (game && game.cpu) return game.cpu === 'playerA' ? 'playerB' : 'playerA';
@@ -176,6 +176,7 @@
     if (previewEl) refreshPreview(); // 要素が作り直されたので、マウスの位置にあるカードで表示し直す
     playNewEffects();
     scheduleCpu();
+    scheduleRoundSetup();
   }
 
   // 手札ドック（固定表示）の実際の高さに合わせて盤面の下余白を取り、最下段が隠れないようにする
@@ -301,6 +302,7 @@
         tacticsDeckCardIds: (deckB.tactics || []).slice(),
       },
       ppTicketCardId: PP_TICKET_CARD_ID,
+      deferRoundSetup: true, // 各ラウンド：タクティクスを選んで置いてから手札を配る（SETUP行動）
     };
   }
 
@@ -316,8 +318,7 @@
 
     var state;
     try {
-      state = Eng.Match.createMatch(config);
-      startTurn(state, {});
+      state = Eng.Match.createMatch(config); // タクティクスの選択と手札の配布は、画面を出してから SETUP 行動で
     } catch (e) {
       alert('対戦を開始できませんでした: ' + e.message);
       return;
@@ -355,12 +356,14 @@
     var state = game.state;
     var finished = state.match.status === 'FINISHED';
     // CPU対戦では手番交代の確認画面は不要（人のプレイヤーは常に自分の側を見ている）
-    var handoffPending = !game.cpu && !game.online && !finished && !lastRoundBanner && state.turn.activePlayer !== seenActive;
+    var settingUp = state.turn.phase === 'ROUND_SETUP';
+    var handoffPending = !game.cpu && !game.online && !finished && !lastRoundBanner && !settingUp && state.turn.activePlayer !== seenActive;
     var html = renderBattleBoard(state, finished, handoffPending);
 
     if (finished) html += renderMatchEndOverlay(state);
     else if (lastRoundBanner) html += renderRoundEndOverlay(lastRoundBanner);
     else if (handoffPending) html += renderHandoffOverlay(state);
+    else if (settingUp && game.online && net && net.role !== 'host') html += renderWaitingSetupOverlay();
     if (detailCardId) html += renderDetailOverlay(detailCardId);
     if (logOpen) html += renderLogDrawer(state);
     html += renderNetBanner();
@@ -371,6 +374,11 @@
   function renderWaitingRemoteOverlay() {
     return '<div class="bt-overlay bt-net-wait"><div class="bt-overlay-box"><div class="bt-cpu-thinking" style="justify-content:center"><span class="bt-cpu-dot"></span><b>相手が選択しています…</b></div>' +
       '<p>相手のカードの効果で、相手が選ぶ場面です。</p></div></div>';
+  }
+
+  function renderWaitingSetupOverlay() {
+    return '<div class="bt-overlay bt-net-wait"><div class="bt-overlay-box"><div class="bt-cpu-thinking" style="justify-content:center"><span class="bt-cpu-dot"></span><b>ラウンドの準備を待っています…</b></div>' +
+      '<p>お互いにタクティクスを選んでから、手札が配られます。</p></div></div>';
   }
 
   // 接続が切れた・盤面がずれた等の知らせ（画面上部）
@@ -889,7 +897,7 @@
   // ---------- 選択が必要になりうる行動の実行（js/battle/choices.js のリプレイ方式） ----------
   // 行動は「記述」（desc）で表す。オンライン対戦ではこの記述と乱数のシード、選択の答えだけを相手に送り、
   // 相手の端末でも同じ手順を再生して同じ盤面にする。
-  //   { t: 'ATTACK', pid, id, opt } / { t: 'MEMORIA', pid, id } / { t: 'TACTICS', pid, id, sub, eq } / { t: 'END' }
+  //   { t: 'ATTACK', pid, id, opt } / { t: 'MEMORIA', pid, id } / { t: 'TACTICS', pid, id, sub, eq } / { t: 'END' } / { t: 'SETUP' }
   function actionFn(desc) {
     switch (desc.t) {
       case 'ATTACK':
@@ -906,6 +914,13 @@
         return function (state, cb) {
           Eng.Resolver.playTacticsCardWithEffects(state, desc.pid, desc.id, Object.assign({ subType: desc.sub, equipLeaderIndex: desc.eq }, cb), cardIndex);
           return finishAction(state, cb);
+        };
+      case 'SETUP':
+        // ラウンド開始：両プレイヤーがタクティクスを選んで置く → 手札を4枚ずつ配る → 先攻の1ターン目を始める
+        return function (state, cb, ask) {
+          Eng.Match.runRoundSetup(state, Choices.makeTacticsChooser(ask));
+          startTurn(state, cb);
+          return { setup: true };
         };
       case 'END':
         return function (state, cb, ask) {
@@ -926,6 +941,12 @@
   // opts: { seed?（相手から受け取った行動の再生時）, remote?（相手の行動）, onError? }
   function performAction(desc, opts) {
     opts = opts || {};
+    if (desc.t === 'SETUP' && (lastRoundBanner || game.hold)) {
+      // オンラインのゲスト：ホストが次のラウンドを始めたら、決着の表示・お知らせは閉じる
+      lastRoundBanner = null;
+      game.hold = null;
+      prevHp = {};
+    }
     pendingChoice = {
       base: game.state,
       seed: opts.seed != null ? opts.seed : Math.floor(Math.random() * 4294967296),
@@ -995,7 +1016,8 @@
     Eng.ResolutionStack.resolveAll(state.resolutionStack, state);
     var snapshot = Choices.deepClone(state);
     var result = Eng.Resolver.processRoundEndWithEffects(state);
-    if (result.roundEnded && !result.matchEnded) startTurn(state, callbacks);
+    // 次のラウンドのタクティクス選択・手札の配布は、決着の演出を見せた後の SETUP 行動で行う
+    if (result.roundEnded && !result.matchEnded && state.turn.phase !== 'ROUND_SETUP') startTurn(state, callbacks);
     if (result.roundEnded) result.snapshot = snapshot;
     return result;
   }
@@ -1167,7 +1189,7 @@
       Eng.GameState.resetInstanceIds();
       state = withSeed(seed, function () {
         var s0 = Eng.Match.createMatch(config);
-        startTurn(s0, {});
+        if (s0.turn.phase !== 'ROUND_SETUP') startTurn(s0, {});
         return s0;
       });
     } catch (e) {
@@ -1214,6 +1236,8 @@
   function isValidRemoteAct(desc) {
     if (!desc || !game || !game.online) return false;
     var remote = game.online.local === 'playerA' ? 'playerB' : 'playerA';
+    if (desc.t === 'SETUP') return remote === 'playerA' && game.state.turn.phase === 'ROUND_SETUP'; // ラウンドの準備はホストが始める
+    if (game.state.turn.phase === 'ROUND_SETUP') return false;
     if (game.state.turn.activePlayer !== remote) return false;
     if (desc.t === 'END') return true;
     return ['ATTACK', 'MEMORIA', 'TACTICS'].indexOf(desc.t) >= 0 && desc.pid === remote && typeof desc.id === 'string';
@@ -1372,6 +1396,22 @@
     }
   }
 
+  // ---------- ラウンド開始の準備（タクティクスを選んで置く → 手札を配る） ----------
+  // 盤面がROUND_SETUPになったら、決着の演出・ラウンド終了のお知らせが済んでから SETUP 行動を始める。
+  // オンライン対戦ではホストだけが始め、ゲストは届いた行動を再生する（自分のタクティクスは自分の端末で選ぶ）。
+  var setupTimer = null;
+  function roundSetupReady() {
+    return screen === 'battle' && game && game.state.turn.phase === 'ROUND_SETUP' && game.state.match.status !== 'FINISHED' &&
+      !pendingChoice && !game.hold && !lastRoundBanner && !(game.online && (!net || net.role !== 'host'));
+  }
+  function scheduleRoundSetup() {
+    if (setupTimer || !roundSetupReady()) return;
+    setupTimer = setTimeout(function () {
+      setupTimer = null;
+      if (roundSetupReady()) performAction({ t: 'SETUP' });
+    }, 400); // 盤面が表示されてから選択画面を出す
+  }
+
   // ---------- CPUの手番 ----------
   // 描画のたびに、CPUの手番で待ち状態（ラウンド終了の表示・選択画面・カード詳細）でなければ、少し間をおいて1手進める。
   var cpuTimer = null;
@@ -1493,8 +1533,8 @@
         return renderChoiceLeader(state, ref, i, pc.selection[i] > 0, ctrl);
       }).join('') + '</div>';
     } else if (!pc.revealed) {
-      body = '<div class="bt-choice-secret"><p>' + esc(PLAYER_LABEL[chooser]) + 'の手札から選びます。' + esc(PLAYER_LABEL[chooser]) + 'に端末を渡してください。</p>' +
-        '<button class="bt-btn primary" data-act="choice-reveal">手札を表示する</button></div>';
+      body = '<div class="bt-choice-secret"><p>' + (qn.secretNote ? esc(PLAYER_LABEL[chooser]) + 'が' + esc(qn.secretNote) : esc(PLAYER_LABEL[chooser]) + 'の手札から選びます。') + esc(PLAYER_LABEL[chooser]) + 'に端末を渡してください。</p>' +
+        '<button class="bt-btn primary" data-act="choice-reveal">' + esc(qn.revealLabel || '手札を表示する') + '</button></div>';
     } else {
       body = '<div class="bt-choice-grid cards">' + qn.cards.map(function (c, i) {
         var card = cardOf(c.cardId);
@@ -1637,6 +1677,7 @@
     }
     if (act === 'dismiss-round-banner') { lastRoundBanner = null; render(); return; }
     if (game && game.hold) return; // 決着の演出中は操作できない
+    if (game && game.state.turn.phase === 'ROUND_SETUP') return; // タクティクスの選択・手札の配布の前
     if (opponentTurnActive()) return; // CPU・オンラインの相手の手番中は操作できない（詳細表示・ログ等は上で処理済み）
     if (act === 'end-turn') { doEndTurn(); return; }
     if (act === 'cancel-select') { sel = null; render(); return; }

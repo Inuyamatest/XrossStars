@@ -300,6 +300,16 @@
         status: 'PROVISIONAL',
         source: 'BP01-094/BP02-075/BP03-080/BP04-073/BP03-076/BP03-077/BP03-079/BP02-077/BP02-045/BP03-066/BP04-059 のテキストからの解釈。',
       },
+      // 各ラウンド開始時のタクティクス（match.js runRoundSetup。対戦画面は deferRoundSetup で使う）
+      tacticsSetupPolicy: {
+        // タクティクスはプレイヤーが選ぶ（ランダムではない）。選び終えてから手札4枚を配る
+        playerChoosesTactics: true,
+        dealHandAfterTactics: true,
+        // 質問する順番：そのラウンドの先攻→後攻（お互い裏向きに置くので、順番は結果に影響しない）
+        askOrder: 'FIRST_PLAYER_THEN_SECOND',
+        status: 'PROVISIONAL',
+        source: 'PPチケットのテキスト「1ラウンド目のタクティクスカードを選択した後、後攻のプレイヤーはこのカードをタクティクスエリアに置く」、spec 4章⑥〜⑧の順番、ユーザー指摘（タクティクスをセットしてから手札を配る）。',
+      },
     };
   }
 
