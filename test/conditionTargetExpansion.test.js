@@ -17,6 +17,13 @@ const Combat = require('../js/engine/combat.js');
 const Match = require('../js/engine/match.js');
 const CardEffectCore = require('../js/engine/cardEffect.js');
 const CardEffectData = require('../js/engine/cardEffectData.js');
+
+// このファイルは他のカード効果を検証するため、フィクスチャのリーダーのうち後から覚醒時効果を登録した
+// 第1弾6名の覚醒時効果をこのファイル内でだけ無効化する（アタックでダウンを取ると攻撃側が覚醒し、
+// 検証対象と無関係なダメージ/ドローが混ざるため）。覚醒時効果そのものは test/leaderAwaken.test.js で検証する。
+['BP01-001', 'BP01-002', 'BP01-004', 'BP01-005', 'BP01-006', 'BP01-008'].forEach(function (id) {
+  CardEffectData.REGISTRY[id] = (CardEffectData.REGISTRY[id] || []).filter(function (e) { return e.trigger !== 'ON_AWAKEN'; });
+});
 const EffectResolver = require('../js/engine/effectResolver.js');
 const EffectFactories = require('../js/engine/effectFactories.js');
 
