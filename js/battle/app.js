@@ -345,6 +345,13 @@
       if (detailCardId) choiceHtml += renderDetailOverlay(detailCardId);
       return choiceHtml;
     }
+    if (game.hold) {
+      // ラウンドが決まった一撃の直後は、その瞬間の盤面（最後のリーダーがDOWN）を操作不可で残し、演出を見せきる
+      var holdHtml = renderBattleBoard(game.hold.view, true, false);
+      if (detailCardId) holdHtml += renderDetailOverlay(detailCardId);
+      if (logOpen) holdHtml += renderLogDrawer(game.state);
+      return holdHtml + renderNetBanner();
+    }
     var state = game.state;
     var finished = state.match.status === 'FINISHED';
     // CPU対戦では手番交代の確認画面は不要（人のプレイヤーは常に自分の側を見ている）
@@ -982,21 +989,41 @@
   }
 
   // 行動の後処理（効果の解決・ラウンド終了判定・次ラウンドの開始）。行動のfn内で呼ぶ。
+  // ラウンドが終わった場合は、次のラウンドの準備で盤面が片付けられる前の盤面を result.snapshot に残す（演出を見せる間の表示用）。
   function finishAction(state, callbacks) {
     if (state.match.status === 'FINISHED') return { finished: true };
+    Eng.ResolutionStack.resolveAll(state.resolutionStack, state);
+    var snapshot = Choices.deepClone(state);
     var result = Eng.Resolver.processRoundEndWithEffects(state);
     if (result.roundEnded && !result.matchEnded) startTurn(state, callbacks);
+    if (result.roundEnded) result.snapshot = snapshot;
     return result;
   }
 
+  var HOLD_AFTER_FX_MS = 900; // 演出が終わってから、ラウンド終了・試合終了の画面を出すまでの間
+
   function afterActionDone(result) {
-    if (result && result.roundEnded && !result.matchEnded) {
-      lastRoundBanner = result.simultaneous
-        ? '両者同時敗北。このラウンドの勝者はいません。'
-        : (game.state.match.roundWins.playerA + game.state.match.roundWins.playerB > 0
-          ? 'ラウンドが終了しました。次のラウンドを開始します。' : 'ラウンドが終了しました。');
+    if (result && result.roundEnded) {
+      // すぐに次のラウンドの盤面へ切り替えず、決着の瞬間の盤面で演出を見せきってから知らせる（playNewEffects → releaseHold）
+      game.hold = {
+        view: result.snapshot || game.state,
+        banner: result.matchEnded ? null : (result.simultaneous
+          ? '両者同時敗北。このラウンドの勝者はいません。'
+          : (game.state.match.roundWins.playerA + game.state.match.roundWins.playerB > 0
+            ? 'ラウンドが終了しました。次のラウンドを開始します。' : 'ラウンドが終了しました。')),
+        timer: null,
+      };
     }
     sel = null;
+    render();
+  }
+
+  function releaseHold() {
+    var h = game && game.hold;
+    if (!h) return;
+    game.hold = null;
+    prevHp = {}; // 次のラウンドでHPが戻るのを回復の演出として出さない
+    if (h.banner) lastRoundBanner = h.banner;
     render();
   }
 
@@ -1314,12 +1341,14 @@
   var healSoundPending = false;
   function playNewEffects() {
     if (screen !== 'battle' || !game || pendingChoice) return;
+    if (game.hold && game.hold.timer) return; // 決着の盤面を見せている間に届いた分は、次のラウンドの盤面で再生する
     var log = game.state.actionLog;
+    var timing = null;
     if (game.fxSeen == null || game.fxSeen > log.length) game.fxSeen = log.length;
     if (log.length > game.fxSeen) {
       var events = log.slice(game.fxSeen);
       game.fxSeen = log.length;
-      var timing = Fx.play(events, {
+      timing = Fx.play(events, {
         leaderEl: function (pid, idx) { return root.querySelector('[data-leader="' + pid + ':' + idx + '"] .bt-lcard'); },
         cardImg: function (cardId) { return cardImg(cardOf(cardId), false); },
         cardName: function (cardId) { return cardOf(cardId).name; },
@@ -1337,6 +1366,10 @@
       });
     }
     if (healSoundPending) { healSoundPending = false; Fx.sound('heal'); }
+    if (game.hold && !game.hold.timer) {
+      var h = game.hold;
+      h.timer = setTimeout(function () { if (game && game.hold === h) releaseHold(); }, (timing ? timing.total : 0) + HOLD_AFTER_FX_MS);
+    }
   }
 
   // ---------- CPUの手番 ----------
@@ -1346,12 +1379,12 @@
   var CPU_DELAY_MS = 900;
 
   function scheduleCpu() {
-    if (cpuTimer || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || detailCardId) return;
+    if (cpuTimer || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || detailCardId || game.hold) return;
     cpuTimer = setTimeout(function () { cpuTimer = null; cpuStep(); }, Math.max(CPU_DELAY_MS, Fx.remainingMs() + 300)); // 演出が終わってから次の1手
   }
 
   function cpuStep() {
-    if (screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner) return;
+    if (screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || game.hold) return;
     var state = game.state;
     var pid = game.cpu;
     var key = state.match.roundNumber + ':' + state.turn.turnNumber;
@@ -1603,6 +1636,7 @@
       return;
     }
     if (act === 'dismiss-round-banner') { lastRoundBanner = null; render(); return; }
+    if (game && game.hold) return; // 決着の演出中は操作できない
     if (opponentTurnActive()) return; // CPU・オンラインの相手の手番中は操作できない（詳細表示・ログ等は上で処理済み）
     if (act === 'end-turn') { doEndTurn(); return; }
     if (act === 'cancel-select') { sel = null; render(); return; }
