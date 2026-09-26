@@ -8,6 +8,23 @@
   window.XS_LEADER_IMAGE_DIR = 'cards/';
 
   window.XS_LEADER_IMAGES = {
+    // 第5弾（LRP画像から切り抜き。通常版の画像が出たら差し替える）
+    '秋雪こはく': 'cards/BP05-L01.webp',
+    'Selly (IGV)': 'cards/BP05-L02.webp',
+    'dtto.': 'cards/BP05-L03.webp',
+    'LEO': 'cards/BP05-L04.webp',
+    '碧依さくら': 'cards/BP05-L05.webp',
+    'Kamito (IGV)': 'cards/BP05-L06.webp',
+    '渋谷ハル (IGV)': 'cards/BP05-L07.webp',
+    'tttcheekyttt': 'cards/BP05-L08.webp',
+    '神成きゅぴ (IGV)': 'cards/BP05-L09.webp',
+    '胡桃のあ (IGV)': 'cards/BP05-L10.webp',
+    'Cpt (IGV)': 'cards/BP05-L11.webp',
+    'Ras (IGV)': 'cards/BP05-L12.webp',
+    'Arya Kuroha': 'cards/BP05-L13.webp',
+    '花芽すみれ (IGV)': 'cards/BP05-L14.webp',
+    'Zeder': 'cards/BP05-L15.webp',
+    'ハセシン': 'cards/BP05-L16.webp',
     'うぉっか': 'cards/imgi_2_image.webp',
     '昏昏アリア': 'cards/imgi_3_image.webp',
     '夜乃くろむ': 'cards/BP04-092_yano-kuromu.webp',

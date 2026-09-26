@@ -1101,6 +1101,102 @@
     // BP04-079 討伐クエスト: デッキ上7枚から1枚を手札に加える（DECK_LOOK_ADD_TO_HAND相当）が未実装。
     // BP04-076 アイテムショップ: トラッシュの裏向きカードをデッキに戻してシャッフルする処理が未実装。
     // BP01-094/BP02-075 復活ポータル、BP02-077 オートタレット: 以前から未登録（プレイ条件/付与能力の条件が未対応）。
+    // ============================================================
+    // リーダー覚醒時効果：6種の定型文すべて（未登録だった既存62名＋第5弾16名）
+    // 覚醒時効果の文言は全リーダーでこの6種のいずれかに完全一致することを確認済み。
+    // 「対戦相手のリーダー1体」は他の、の限定が無いので生存リーダー全員が候補（既定は先頭）。
+    // 「自分のリーダー1体を20回復」は既存のMondo（ST02-002）と同じく、既定では覚醒したリーダー自身を選ぶ。
+    // ============================================================
+
+    // 「自分のリーダー1体を20回復する。」（18名）
+    'BP01-008': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 英リサ
+    'BP01-009': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 胡桃のあ
+    'ST01-004': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 花芽なずな
+    'BP02-001': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 赤見かるび
+    'BP02-012': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // わいわい
+    'BP02-016': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 八雲べに
+    'BP03-002': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 紫宮るな
+    'BP03-007': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 柊ツルギ
+    'BP03-016': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 夜絆ニウ
+    'BP04-002': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 昏昏アリア
+    'BP04-008': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 夜乃くろむ
+    'BP04-010': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 千燈ゆうひ
+    'BP04-016': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 天帝フォルテ
+    'AN01-003': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 一ノ瀬うるは (AN1)
+    'BP05-L01': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 秋雪こはく
+    'BP05-L07': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 渋谷ハル (IGV)
+    'BP05-L09': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 神成きゅぴ (IGV)
+    'BP05-L14': [E({ trigger: 'ON_AWAKEN', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 20 } })], // 花芽すみれ (IGV)
+
+    // 「カードを1枚引く。」（20名）
+    'BP01-004': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // ふらんしすこ
+    'BP01-005': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // Kamito
+    'BP01-012': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // VanilLa
+    'BP01-014': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // ありさか
+    'ST01-001': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // 一ノ瀬うるは
+    'ST02-003': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // Cpt
+    'BP02-004': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // 蝶屋はなび
+    'BP02-006': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // かずのこ
+    'BP02-015': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // ボンちゃん
+    'BP03-005': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // ズズ
+    'BP03-014': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // けんき
+    'BP03-015': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // 猫汰つな
+    'BP04-001': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // うぉっか
+    'BP04-007': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // まざー3
+    'BP04-009': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // おぼ
+    'BP04-015': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // じゃすぱー
+    'AN01-004': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // 白雪レイド (AN1)
+    'BP05-L08': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // tttcheekyttt
+    'BP05-L10': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // 胡桃のあ (IGV)
+    'BP05-L15': [E({ trigger: 'ON_AWAKEN', action: { type: 'DRAW', amount: 1 } })], // Zeder
+
+    // 「カードを2枚引き、手札を2枚捨てる。」（5名）
+    'AN01-001': [E({ trigger: 'ON_AWAKEN', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } })], // うるか (AN1)
+    'BP05-L03': [E({ trigger: 'ON_AWAKEN', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } })], // dtto.
+    'BP05-L06': [E({ trigger: 'ON_AWAKEN', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } })], // Kamito (IGV)
+    'BP05-L11': [E({ trigger: 'ON_AWAKEN', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } })], // Cpt (IGV)
+    'BP05-L13': [E({ trigger: 'ON_AWAKEN', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } })], // Arya Kuroha
+
+    // 「対戦相手のリーダー1体に10ダメージ。」（16名）
+    'BP01-011': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 兎咲ミミ
+    'BP01-016': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // nqrse
+    'ST02-001': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // Selly
+    'ST01-002': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 小雀とと
+    'BP02-002': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 如月れん
+    'BP02-005': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // あれる
+    'BP02-009': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 甘結もか
+    'BP02-011': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // kinako
+    'BP03-001': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 天月
+    'BP03-009': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 藍沢エマ
+    'BP03-011': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // ととみっくす
+    'BP04-004': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // らいじん
+    'BP04-005': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 神楽めあ
+    'BP04-013': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 乾伸一郎
+    'BP05-L12': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // Ras (IGV)
+    'BP05-L16': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })], // ハセシン
+
+    // 「対戦相手のリーダー1体に20ダメージ。」（10名）
+    'BP01-002': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 小森めと
+    'BP01-015': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // だるまいずごっど
+    'BP02-008': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // トナカイト
+    'BP03-006': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 紡木こかげ
+    'BP03-010': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 鬼ヶ谷テン
+    'BP04-006': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 白波らむね
+    'BP04-012': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // とおこ
+    'AN01-002': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 橘ひなの (AN1)
+    'BP05-L04': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // LEO
+    'BP05-L05': [E({ trigger: 'ON_AWAKEN', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })], // 碧依さくら
+
+    // 「対戦相手のリーダーすべてに10ダメージ。」（9名）
+    'BP01-001': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // うるか
+    'BP01-006': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 渋谷ハル
+    'ST02-004': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // Ras
+    'ST01-003': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 花芽すみれ
+    'BP02-010': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 神成きゅぴ
+    'BP02-014': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // どぐら
+    'BP03-004': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // rion
+    'BP03-012': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // 猫麦とろろ
+    'BP05-L02': [E({ trigger: 'ON_AWAKEN', target: F.makeAllAliveOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } })], // Selly (IGV)
   };
 
   // パラレル/プロモ（例: BP01-137 超新星 SRP）は通常版と同一効果なので、通常版の登録を引く。
