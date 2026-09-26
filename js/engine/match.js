@@ -167,6 +167,11 @@
       player.playArea = [];
       player.hand.forEach(function (card) { player.trash.push({ card: card, faceUp: false }); });
       player.hand = [];
+      // 使われなかった「次のアタック」への強化・アタック後効果は次のラウンドへ持ち越さない（元のカードはトラッシュへ）
+      player.pendingAttackBoost = 0;
+      player.pendingBoostSources = [];
+      player.pendingAttackTimeBoosts = [];
+      player.pendingAfterAttackEffects = [];
       player.leaders.forEach(function (l) { l.damage = 0; });
       player.leaders.forEach(function (l) { l.isDown = false; });
     });
