@@ -4,6 +4,7 @@
  *  - decideAction: 倒せる相手を狙う／強化メモリアをアタックの前に使う／PPが無ければターン終了
  *  - answerQuestion: 選択画面の各種質問に、条件を満たす答えを返す
  *  - CPU同士でランダムなデッキの試合を最後まで行える（エラー・無限ループが無い）
+ *  - 強さ（弱・中・強）: 弱/強の1手も正しい手になっている・強は中より勝ち、中は弱より勝つ
  */
 const assert = require('assert');
 const CardLookup = require('../js/engine/cardLookup.js');
@@ -51,7 +52,7 @@ function randomDeck(rnd) {
 }
 
 // CPU同士の1試合（画面の app.js と同じ順番でエンジンを呼ぶ）
-function simulateMatch(seed) {
+function simulateMatch(seed, levels) {
   const rnd = seeded(seed);
   const orig = Math.random;
   Math.random = rnd;
@@ -83,7 +84,7 @@ function simulateMatch(seed) {
       const excluded = {};
       let roundEnded = false;
       for (let step = 0; step < 30 && state.match.status !== 'FINISHED'; step++) {
-        const act = Cpu.decideAction(state, pid, cardIndex, null, excluded);
+        const act = Cpu.decideAction(state, pid, cardIndex, levels ? { level: levels[pid], random: rnd } : null, excluded);
         if (act.type === 'END') break;
         try {
           if (act.type === 'ATTACK') { EffectResolver.playAttackCardWithEffects(state, pid, act.instanceId, Object.assign({}, act.options, cb), cardIndex); stats.attacks++; }
@@ -197,6 +198,55 @@ test('ランダムなデッキで10試合、すべて最後まで終わり、CPU
     totalAttacks += r.stats.attacks;
   }
   assert.ok(totalAttacks > 50);
+});
+
+// ============================================================
+console.log('=== CPUの強さ（弱・中・強） ===');
+// ============================================================
+test('強：倒せる相手がいれば、その相手を狙う', () => {
+  const s = makeState();
+  hand(s, 'ST02-007');
+  s.players.playerB.leaders[2].damage = GameState.getLeaderMaxHp(cardIndex, s.players.playerB.leaders[2]) - 60;
+  const act = Cpu.decideAction(s, 'playerA', cardIndex, { level: 'HARD' });
+  assert.strictEqual(act.type, 'ATTACK');
+  assert.strictEqual(act.options.targetLeaderIndex, 2);
+});
+test('強：PPが足りなければターン終了。考えるときに元の盤面を変えない', () => {
+  const s = makeState();
+  hand(s, 'ST02-007'); hand(s, 'BP01-054');
+  const before = JSON.stringify(s);
+  assert.notStrictEqual(Cpu.decideAction(s, 'playerA', cardIndex, { level: 'HARD' }).type, 'END');
+  assert.strictEqual(JSON.stringify(s), before);
+  s.players.playerA.ppCards.tapped = 3;
+  assert.strictEqual(Cpu.decideAction(s, 'playerA', cardIndex, { level: 'HARD' }).type, 'END');
+});
+test('弱：何度選ばせても、手札・PPの範囲の手かターン終了', () => {
+  const s = makeState();
+  const ids = [hand(s, 'ST02-007'), hand(s, 'BP01-054'), hand(s, 'BP01-046')];
+  const rnd = seeded(7);
+  for (let i = 0; i < 200; i++) {
+    const act = Cpu.decideAction(s, 'playerA', cardIndex, { level: 'EASY', random: rnd });
+    if (act.type === 'END') continue;
+    assert.ok(ids.includes(act.instanceId));
+    if (act.type === 'ATTACK') assert.ok(act.options.targetLeaderIndex >= 0 && act.options.targetLeaderIndex < 4);
+  }
+});
+test('強さの順：強は中に、中は弱に勝ち越す（同じデッキで席を入れ替えて各12試合）', () => {
+  function series(strong, weak) {
+    let wins = 0;
+    for (let i = 0; i < 12; i++) {
+      const swap = i % 2 === 1;
+      const levels = swap ? { playerA: weak, playerB: strong } : { playerA: strong, playerB: weak };
+      const r = simulateMatch(500 + Math.floor(i / 2), levels);
+      assert.strictEqual(r.state.match.status, 'FINISHED');
+      if (r.state.match.winner === (swap ? 'playerB' : 'playerA')) wins++;
+    }
+    return wins;
+  }
+  const hn = series('HARD', 'NORMAL');
+  const ne = series('NORMAL', 'EASY');
+  assert.ok(hn >= 7, '強 vs 中 ' + hn + '/12');
+  assert.ok(ne >= 7, '中 vs 弱 ' + ne + '/12');
 });
 
 console.log('\n' + passed + ' passed, ' + failed + ' failed');

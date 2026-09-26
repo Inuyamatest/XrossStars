@@ -133,7 +133,15 @@
     mode: 'STANDARD',
     firstPlayer: 'playerA',
     opponent: 'HUMAN', // 'HUMAN'（2人で交互に操作） | 'CPU'（プレイヤーBをCPUが操作）
+    cpuLevel: loadCpuLevel(), // 'EASY'（弱） | 'NORMAL'（中） | 'HARD'（強）
   };
+  var CPU_LEVEL_JA = { EASY: '弱', NORMAL: '中', HARD: '強' };
+  function loadCpuLevel() {
+    try { var v = localStorage.getItem('xs-battle-cpu-level'); if (v === 'EASY' || v === 'NORMAL' || v === 'HARD') return v; } catch (e) { /* 保存できない環境 */ }
+    return 'NORMAL';
+  }
+  function saveCpuLevel(v) { try { localStorage.setItem('xs-battle-cpu-level', v); } catch (e) { /* 保存できない環境 */ } }
+  function cpuLabel() { return 'CPU（' + CPU_LEVEL_JA[setup.cpuLevel] + '）'; }
   var game = null; // { state }
   var sel = null;  // 手番プレイヤーの操作中の選択状態
   var logOpen = false;
@@ -223,6 +231,11 @@
             '<button data-act="set-opponent" data-value="HUMAN" class="' + (setup.opponent === 'HUMAN' ? 'on' : '') + '">人（交互に操作）</button>' +
             '<button data-act="set-opponent" data-value="CPU" class="' + (setup.opponent === 'CPU' ? 'on' : '') + '">CPU</button>' +
           '</span></div>' +
+          (setup.opponent === 'CPU' ? '<div class="bt-opt">CPUの強さ <span class="bt-seg">' +
+            ['EASY', 'NORMAL', 'HARD'].map(function (lv) {
+              return '<button data-act="set-cpu-level" data-value="' + lv + '" class="' + (setup.cpuLevel === lv ? 'on' : '') + '">' + CPU_LEVEL_JA[lv] + '</button>';
+            }).join('') +
+          '</span></div>' : '') +
           '<div class="bt-opt">先攻 <span class="bt-seg">' +
             '<button data-act="set-first" data-value="playerA" class="' + (setup.firstPlayer === 'playerA' ? 'on' : '') + '">A</button>' +
             '<button data-act="set-first" data-value="playerB" class="' + (setup.firstPlayer === 'playerB' ? 'on' : '') + '">B</button>' +
@@ -235,7 +248,10 @@
           '対象や「してもよい」を選ぶ効果は、選択画面で選びます。' +
           'カード効果はエンジンに登録済みのカードのみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。' +
           '2人で遊ぶときは、手札は自分の手番のときだけ表示され、手番交代時は確認画面を挟みます。' +
-          'プレイヤーBを「CPU」にすると、CPUが自動で手番を進めます（倒せる相手を優先して狙う、シンプルな思考です）。' +
+          'プレイヤーBを「CPU」にすると、CPUが自動で手番を進めます。強さは3段階です。' +
+          '弱：ときどきランダムな手を選んだり、途中でターンを終えたりします。' +
+          '中：倒せる相手を優先して狙う、シンプルな思考です。' +
+          '強：使える手をすべて試して、ターンの終わりまで先読みして一番よい手を選びます（相手の手札・山札は見ません）。' +
         '</details>' +
       '</div>';
   }
@@ -326,7 +342,8 @@
 
     game = { state: state, cpu: setup.opponent === 'CPU' ? 'playerB' : null, fxSeen: state.actionLog.length };
     PLAYER_LABEL.playerA = 'プレイヤーA';
-    PLAYER_LABEL.playerB = game.cpu ? 'CPU' : 'プレイヤーB';
+    game.cpuLevel = setup.cpuLevel;
+    PLAYER_LABEL.playerB = game.cpu ? cpuLabel() : 'プレイヤーB';
     cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
     sel = null;
     lastRoundBanner = null;
@@ -1129,7 +1146,7 @@
     if (net && net.conn) net.conn.close();
     net = null;
     PLAYER_LABEL.playerA = 'プレイヤーA';
-    PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? 'CPU' : 'プレイヤーB';
+    PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabel() : 'プレイヤーB';
   }
 
   // 試合中に相手がつながり直したら、試合の設定と全行動を送り直して同じ盤面に戻す（ホスト）
@@ -1435,7 +1452,7 @@
     var key = state.match.roundNumber + ':' + state.turn.turnNumber;
     if (cpuTurn.key !== key) cpuTurn = { key: key, excluded: {}, steps: 0, last: null };
     cpuTurn.steps += 1;
-    var act = cpuTurn.steps > 30 ? { type: 'END' } : Cpu.decideAction(state, pid, cardIndex, { isEquipment: isEquipmentCard }, cpuTurn.excluded);
+    var act = cpuTurn.steps > 30 ? { type: 'END' } : Cpu.decideAction(state, pid, cardIndex, { isEquipment: isEquipmentCard, level: game.cpuLevel || 'NORMAL' }, cpuTurn.excluded);
     var failed = function () { cpuTurn.excluded[act.instanceId] = true; render(); };
     if (act.type === 'END') {
       cpuTurn.last = 'ターン終了';
@@ -1650,7 +1667,8 @@
     }
     if (act === 'set-mode') { setup.mode = el.getAttribute('data-value'); render(); return; }
     if (act === 'set-first') { setup.firstPlayer = el.getAttribute('data-value'); render(); return; }
-    if (act === 'set-opponent') { setup.opponent = el.getAttribute('data-value'); PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? 'CPU' : 'プレイヤーB'; render(); return; }
+    if (act === 'set-opponent') { setup.opponent = el.getAttribute('data-value'); PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabel() : 'プレイヤーB'; render(); return; }
+    if (act === 'set-cpu-level') { setup.cpuLevel = el.getAttribute('data-value'); saveCpuLevel(setup.cpuLevel); PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabel() : 'プレイヤーB'; render(); return; }
     if (act === 'coinflip') {
       setup.firstPlayer = Math.random() < 0.5 ? 'playerA' : 'playerB';
       render();

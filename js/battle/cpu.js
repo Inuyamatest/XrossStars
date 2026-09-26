@@ -12,6 +12,13 @@
  *   4. アタックできないときは、ドロー・回復・ダメージなど強化以外の効果を持つカードを使う
  *   5. 何もできなければターン終了（残ったPPはドローになる）
  * 手札・デッキの中身はCPU自身のものだけを見る（相手の非公開情報は使わない）。
+ *
+ * 強さ（helpers.level）:
+ *   'EASY'   … 弱：使えるカード・アタックの対象をランダムに選び、途中でターンを終えることもある
+ *   'NORMAL' … 中：上の貪欲法（既定）
+ *   'HARD'   … 強：使える手をすべて盤面のコピーで試し、そのターンの残りを「中」の方針で最後まで進めて
+ *               （終了フェイズのドローまで含めて）盤面を点数化し、一番点数の高い手を選ぶ
+ *   ※「強」も相手の手札・山札の中身は見ない（シミュレーションで引くカードは自分の山札から）。
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
@@ -19,12 +26,13 @@
       require('../engine/gameState.js'),
       require('../engine/phases.js'),
       require('../engine/cardEffectData.js'),
-      require('../engine/effectResolver.js')
+      require('../engine/effectResolver.js'),
+      require('./choices.js')
     );
   } else {
-    root.XS_BATTLE_CPU = factory(root.XS_ENGINE_STATE, root.XS_ENGINE_PHASES, root.XS_ENGINE_CARD_EFFECT_DATA, root.XS_ENGINE_EFFECT_RESOLVER);
+    root.XS_BATTLE_CPU = factory(root.XS_ENGINE_STATE, root.XS_ENGINE_PHASES, root.XS_ENGINE_CARD_EFFECT_DATA, root.XS_ENGINE_EFFECT_RESOLVER, root.XS_BATTLE_CHOICES);
   }
-}(typeof self !== 'undefined' ? self : this, function (GameState, Phases, CardEffectData, Resolver) {
+}(typeof self !== 'undefined' ? self : this, function (GameState, Phases, CardEffectData, Resolver, Choices) {
   'use strict';
 
   var EQUIP_ACTION_TYPES = ['EQUIP_HP_MODIFIER', 'EQUIP_ATK_MODIFIER', 'EQUIP_GRANT_ABILITY', 'EQUIP_BASE_HP_OVERRIDE', 'EQUIP_TARGET_FLAG'];
@@ -125,9 +133,16 @@
     return best;
   }
 
-  // 次の1手。helpers: { isEquipment(cardId) }、excluded: このターンに失敗したカード（instanceId → true）
+  // 次の1手。helpers: { isEquipment(cardId), level?: 'EASY'|'NORMAL'|'HARD', random?() }、
+  // excluded: このターンに失敗したカード（instanceId → true）
   function decideAction(state, playerId, cardIndex, helpers, excluded) {
-    excluded = excluded || {};
+    var level = helpers && helpers.level;
+    if (level === 'EASY') return decideEasy(state, playerId, cardIndex, helpers, excluded || {});
+    if (level === 'HARD') return decideHard(state, playerId, cardIndex, helpers, excluded || {});
+    return decideNormal(state, playerId, cardIndex, helpers, excluded || {});
+  }
+
+  function decideNormal(state, playerId, cardIndex, helpers, excluded) {
     var isEquipment = (helpers && helpers.isEquipment) || isEquipmentByEffects;
     var player = state.players[playerId];
     var pp = ppLeft(player);
@@ -188,6 +203,182 @@
     if (utility.length) return toAction(utility[0]);
 
     return { type: 'END' };
+  }
+
+  // ---------- 使える手の一覧（弱・強で使う） ----------
+  function legalActions(state, playerId, cardIndex, helpers, excluded) {
+    var isEquipment = (helpers && helpers.isEquipment) || isEquipmentByEffects;
+    var player = state.players[playerId];
+    var oppId = GameState.getOpponentId(playerId);
+    var pp = ppLeft(player);
+    var acts = [];
+    player.hand.forEach(function (c) {
+      if (excluded[c.instanceId]) return;
+      var card = cardIndex[c.cardId];
+      if (!card) return;
+      var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
+      if (cost == null || cost > pp) return;
+      if (card.cardType === 'MEMORIA') {
+        acts.push({ type: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId });
+      } else if (card.cardType === 'ATTACK') {
+        var count = Resolver.getMultiAttackCount(c.cardId);
+        aliveIndexes(player).forEach(function (ai) {
+          Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
+            var one = { attackerLeaderIndex: ai, targetPlayerId: oppId, targetLeaderIndex: ti };
+            var options = one;
+            if (count) {
+              options = { attacks: [] };
+              for (var k = 0; k < count; k++) options.attacks.push(Object.assign({}, one));
+            }
+            acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: options });
+          });
+        });
+      }
+    });
+    if (Phases.canPlayTactics(state)) {
+      player.tacticsArea.forEach(function (t) {
+        if (excluded[t.card.instanceId]) return;
+        var card = cardIndex[t.card.cardId];
+        if (!card || typeof card.cost !== 'number' || card.cost > pp) return;
+        if (!CardEffectData.hasEffects(t.card.cardId)) return;
+        if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return;
+        if (isEquipment(t.card.cardId)) {
+          aliveIndexes(player).forEach(function (li) {
+            acts.push({ type: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, subType: 'EQUIPMENT', equipLeaderIndex: li });
+          });
+        } else {
+          acts.push({ type: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, subType: 'CONSUMABLE', equipLeaderIndex: null });
+        }
+      });
+    }
+    return acts;
+  }
+
+  // ---------- 弱 ----------
+  var EASY_END_RATE = 0.06;
+  var EASY_SMART_RATE = 0.75;
+  function decideEasy(state, playerId, cardIndex, helpers, excluded) {
+    var rnd = (helpers && helpers.random) || Math.random;
+    var acts = legalActions(state, playerId, cardIndex, helpers, excluded);
+    if (!acts.length || rnd() < EASY_END_RATE) return { type: 'END' }; // まだ使えるカードがあってもターンを終えることがある
+    if (rnd() < EASY_SMART_RATE) return decideNormal(state, playerId, cardIndex, helpers, excluded); // 4回に3回くらいは「中」と同じ手
+    var attacks = acts.filter(function (a) { return a.type === 'ATTACK'; });
+    var others = acts.filter(function (a) { return a.type !== 'ATTACK'; });
+    var pool = attacks.length && (!others.length || rnd() < 0.6) ? attacks : others;
+    return pool[Math.floor(rnd() * pool.length)];
+  }
+
+  // ---------- 強（盤面のコピーで試して点数化） ----------
+  // シミュレーション用の盤面のコピー。行動ログはこのターンの分だけ残す（「このターン〜していれば」の判定用）
+  function cloneForSim(state) {
+    var log = state.actionLog || [];
+    var cur = log.filter(function (e) { return e.turnNumber === state.turn.turnNumber && e.roundNumber === state.match.roundNumber; });
+    var shallow = Object.assign({}, state, { actionLog: [] });
+    var copy = Choices.deepClone(shallow);
+    copy.actionLog = cur.slice();
+    return copy;
+  }
+
+  // 効果の選択はCPUの答え方で進める（相手が選ぶ質問も、CPUの答え方で代わりに答える）
+  function simEnv(s, cardIndex) {
+    var ask = function (q) { return answerQuestion(q, s, q.chooser || s.turn.activePlayer, cardIndex); };
+    return {
+      ask: ask,
+      cb: Choices.makeCallbacks(ask, { getActivePlayerId: function () { return s.turn.activePlayer; }, getResolvingEffect: Resolver.getResolvingEffect }),
+    };
+  }
+
+  function withSimRandom(fn) {
+    var orig = Math.random;
+    Math.random = Choices.seededRandom(20260926);
+    try { return fn(); } finally { Math.random = orig; }
+  }
+
+  // 1手を盤面のコピーで実行する（対戦画面の行動と同じく、最後にラウンド終了の判定まで行う）。失敗したらnull
+  function simulate(state, playerId, act, cardIndex) {
+    var s = cloneForSim(state);
+    var env = simEnv(s, cardIndex);
+    try {
+      withSimRandom(function () {
+        if (act.type === 'ATTACK') Resolver.playAttackCardWithEffects(s, playerId, act.instanceId, Object.assign({}, act.options, env.cb), cardIndex);
+        else if (act.type === 'MEMORIA') Resolver.playMemoriaCardWithEffects(s, playerId, act.instanceId, Object.assign({}, env.cb), cardIndex);
+        else Resolver.playTacticsCardWithEffects(s, playerId, act.instanceId, Object.assign({ subType: act.subType, equipLeaderIndex: act.equipLeaderIndex }, env.cb), cardIndex);
+        if (s.match.status !== 'FINISHED') Resolver.processRoundEndWithEffects(s);
+      });
+      return s;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function turnOver(s, playerId, base) {
+    return s.match.status === 'FINISHED' || s.turn.phase === 'ROUND_SETUP' || s.turn.activePlayer !== playerId ||
+      s.match.roundNumber !== base.match.roundNumber;
+  }
+
+  // ターンの残りを「中」の方針で進め、終了フェイズ（残ったPPのドロー・手札上限）まで行う
+  function playOutTurn(s, playerId, cardIndex, helpers, base) {
+    var excl = {};
+    for (var step = 0; step < 10 && !turnOver(s, playerId, base); step++) {
+      var a = decideNormal(s, playerId, cardIndex, helpers, excl);
+      if (a.type === 'END') break;
+      var next = simulate(s, playerId, a, cardIndex);
+      if (!next) { excl[a.instanceId] = true; continue; }
+      s = next;
+    }
+    if (!turnOver(s, playerId, base)) {
+      var env = simEnv(s, cardIndex);
+      try { withSimRandom(function () { Resolver.runEndPhaseWithEffects(s, Choices.makeHandLimitChooser(env.ask, playerId)); }); } catch (e) { /* 評価はそのまま */ }
+    }
+    return s;
+  }
+
+  // 盤面の点数（playerIdから見て。baseは考え始めた時点の盤面）
+  function evaluate(s, playerId, cardIndex, base) {
+    var oppId = GameState.getOpponentId(playerId);
+    if (s.match.status === 'FINISHED') return s.match.winner === playerId ? 1e6 : (s.match.winner === 'DRAW' ? 0 : -1e6);
+    var won = (s.match.roundWins[playerId] - base.match.roundWins[playerId]) - (s.match.roundWins[oppId] - base.match.roundWins[oppId]);
+    if (won || s.match.roundNumber !== base.match.roundNumber) return won * 1e5;
+    var score = 0;
+    s.players[oppId].leaders.forEach(function (l) {
+      if (l.isDown) { score += 420; return; }
+      var max = GameState.getLeaderMaxHp(cardIndex, l);
+      var hp = GameState.getLeaderCurrentHp(cardIndex, l);
+      score += (max - hp) * 1.0 + (hp <= 40 ? 25 : 0);
+    });
+    var me = s.players[playerId];
+    me.leaders.forEach(function (l) {
+      if (l.isDown) { score -= 420; return; }
+      var max = GameState.getLeaderMaxHp(cardIndex, l);
+      var hp = GameState.getLeaderCurrentHp(cardIndex, l);
+      score -= (max - hp) * 0.8;
+      if (l.awakened) score += 30;
+      score += (l.equipment || []).length * 18;
+    });
+    score += me.hand.length * 14;
+    score += (me.pendingAttackBoost || 0) * 0.5;
+    score += me.tacticsArea.length * 4;
+    return score;
+  }
+
+  function decideHard(state, playerId, cardIndex, helpers, excluded) {
+    var base = state;
+    var best = { score: evaluate(playOutTurnFromEnd(state, playerId, cardIndex), playerId, cardIndex, base), act: { type: 'END' } };
+    legalActions(state, playerId, cardIndex, helpers, excluded).forEach(function (act) {
+      var s1 = simulate(state, playerId, act, cardIndex);
+      if (!s1) return;
+      var score = evaluate(playOutTurn(s1, playerId, cardIndex, helpers, base), playerId, cardIndex, base);
+      if (score > best.score + 0.001) best = { score: score, act: act };
+    });
+    return best.act;
+  }
+
+  // 今すぐターンを終えた場合の盤面（終了フェイズまで）
+  function playOutTurnFromEnd(state, playerId, cardIndex) {
+    var s = cloneForSim(state);
+    var env = simEnv(s, cardIndex);
+    try { withSimRandom(function () { Resolver.runEndPhaseWithEffects(s, Choices.makeHandLimitChooser(env.ask, playerId)); }); } catch (e) { /* そのまま */ }
+    return s;
   }
 
   // ---------- 選択画面への回答 ----------
@@ -318,6 +509,7 @@
   return {
     decideAction: decideAction,
     answerQuestion: answerQuestion,
+    LEVELS: ['EASY', 'NORMAL', 'HARD'],
     estimateAttack: estimateAttack,
   };
 }));
