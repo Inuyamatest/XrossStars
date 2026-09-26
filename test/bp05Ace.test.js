@@ -39,13 +39,7 @@ LEADERS_A.concat(LEADERS_B).forEach((id) => { delete CardEffectData.REGISTRY[id]
 
 const PP_TICKET = 'ST01-024';
 const noEffect = (c) => !c.ban && !c.isParallel && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber];
-// 効果の無いカードを優先して選ぶ。該当が無ければ（ほぼ全カードに効果を登録済みのため）条件に合うカードの効果をこのテスト内だけ外して使う
-function plainCard(pred) {
-  const pool = allCards.filter((c) => pred(c) && !c.ban && !c.isParallel && !CardEffectData.KEYWORDS[c.cardNumber]);
-  const c = pool.find((x) => !CardEffectData.hasEffects(x.cardNumber)) || pool[0];
-  delete CardEffectData.REGISTRY[c.cardNumber];
-  return c.cardNumber;
-}
+const plainCard = require('./helpers/plainCard.js')(allCards, CardEffectData, __filename);
 const FILLER_ATTACK = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 1);
 const ATTACK_COST2 = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 2);
 const ATTACK_COST3 = plainCard((c) => c.cardType === 'ATTACK' && c.cost === 3);

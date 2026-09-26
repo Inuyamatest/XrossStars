@@ -266,6 +266,17 @@
         status: 'PROVISIONAL',
         source: 'data/source/all-cards.json の各カードテキストからの解釈。公式FAQ等は未確認。',
       },
+      // リーダーの所属（VSPO!/CR）を使うカード（クロスファイア・魔王降臨・初の栄冠・変わらない関係）の解釈。
+      affiliationPolicy: {
+        // 所属はカードに印刷された情報なので、「自分のリーダーすべてが持つなら」「持つリーダー1体につき」は
+        // ダウンしているリーダーも含めて数える
+        countDownedLeaders: true,
+        // 「このアタックを受けたリーダーはダウンする」は、このアタックのダメージが残り体力に届くように上乗せして表す
+        // （アタックでダウンさせた扱いになり、アタッカーの覚醒などの通常の処理が行われる）
+        downTargetImplementation: 'ATTACK_DAMAGE_REACHES_REMAINING_HP',
+        status: 'PROVISIONAL',
+        source: 'ST01-005/ST02-009/ST01-016/ST02-012 のテキストからの解釈。所属の一覧は data/source/affiliations.json（ユーザー提供のカード画像）。',
+      },
     };
   }
 

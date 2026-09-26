@@ -16,6 +16,7 @@ const EffectResolver = require('../js/engine/effectResolver.js');
 
 const cardIndex = CardLookup.loadDefaultCardIndexNode();
 const allCards = Object.values(cardIndex);
+const plainCard = require('./helpers/plainCard.js')(allCards, CardEffectData, __filename);
 
 let passed = 0;
 let failed = 0;
@@ -35,7 +36,7 @@ function test(name, fn) {
 const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004'];
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
+const FILLER_ATTACK = plainCard((c) => c.cardType === 'ATTACK' && c.color === 'red');
 const BLUE_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'blue' && !c.ban)[0].cardNumber;
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(0, 5).map((c) => c.cardNumber);
 const TACTICS_5_B = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban).slice(5, 10).map((c) => c.cardNumber);

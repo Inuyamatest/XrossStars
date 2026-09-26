@@ -641,12 +641,7 @@
     //   ヘルパー（playMemoriaForFreeAndQueueEffects）しか無く、アタックカードを無償プレイするには
     //   新たな攻撃者/対象の選択（新しい選択コールバック）が追加で必要になるため、今回は見送る。
     //
-    // BP01-026 CLUTCH!!!：手札のコスト0カードを公開・破棄してもよい、という任意コストのボーナス
-    //   （OPTIONAL_DISCARD_THEN_BONUS、過去のPhaseで対象外）。
-    //
-    // ST01-005 クロスファイア／ST01-016 初の栄冠／ST02-009 魔王降臨／ST02-012 変わらない関係：
-    //   「自分のリーダーすべてが特定のタグ（VSPO!/CR等）を持つなら」という判定は、過去のPhaseで
-    //   明示的に対象外とされたタグデータ・TAG_CONDITION機構が必要なため見送る。
+    // （BP01-026 CLUTCH!!! と、所属〔VSPO!/CR〕を使う ST01-005/ST01-016/ST02-009/ST02-012 は Phase K で登録済み）
 
     // ============================================================
     // Phase E: 条件付きON_ATTACK/ATTACK_BOOSTボーナス機構を追加したことで登録可能になったカード
@@ -1073,8 +1068,7 @@
     // （例：クリティカルショットの「ダメージ+70」が乗らなかった不具合の修正）。
     // テキストは data/source/all-cards.json（カード画像で確認済み）のもの。
     // 未実装のまま残すもの（新しい仕組みがさらに必要）:
-    //   ST01-005 クロスファイア / ST02-009 魔王降臨: 「自分のリーダーすべてが『VSPO!』/『CR』を持つなら」
-    //     → リーダーデータに所属（VSPO!/CR等）の情報が無い。
+    //   （所属〔VSPO!/CR〕が必要なカードは data/source/affiliations.json を追加して登録済み）
     //   BP02-045 巡り合う二人 / BP03-066 ジェイルブレイク / BP04-059 グレイトフルファーマー: 上の個別コメント参照。
     //   タクティクスの未登録分は Phase J のコメント参照。
     // ============================================================
@@ -1622,16 +1616,79 @@
 
     // ST01-016 初の栄冠（メモリア, 緑, cost1）
     // カードテキスト: "〖アタック強化〗次のアタックのダメージ+30。 〖アタック後〗対戦相手の他のリーダー1体に、自分の「VSPO!」を持つリーダー1体につき10ダメージ。"
-    // 未実装：〖アタック後〗は「VSPO!」を持つリーダーの数が必要だが、リーダーデータに所属（VSPO!/CR等）の情報が無いため登録していない（アタック強化のみ）。
+    // 所属はdata/source/affiliations.json（ユーザー提供のVSPO!カード画像で確認）。
     'ST01-016': [
-      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: { type: 'PER_OWN_LEADER_WITH_AFFILIATION', affiliation: 'VSPO!', per: 10 } } })
+    ],
+
+    // ST01-005 クロスファイア（アタック, 緑, cost3）
+    // カードテキスト: "〖アタックする〗自分のリーダーすべてが「VSPO!」を持つなら、このアタックを受けたリーダーはダウンする。"
+    // 「ダウンする」は、このアタックのダメージが相手の残り体力に届くように上乗せして表す（DOWN_TARGET。アタックでダウンさせた扱い）。
+    'ST01-005': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeAllOwnLeadersHaveAffiliationCondition('VSPO!'), action: { type: 'DOWN_TARGET' } })
     ],
 
     // ST02-012 変わらない関係（メモリア, 赤, cost1）
     // カードテキスト: "〖アタック強化〗次のアタックのダメージ+30。 〖アタック後〗対戦相手の他のリーダー1体に、自分の「CR」を持つリーダー1体につき10ダメージ。"
     // 未実装：〖アタック後〗は「CR」を持つリーダーの数が必要だが、リーダーデータに所属の情報が無いため登録していない（アタック強化のみ）。
     'ST02-012': [
-      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: { type: 'PER_OWN_LEADER_WITH_AFFILIATION', affiliation: 'CR', per: 10 } } })
+    ],
+
+    // ST02-009 魔王降臨（アタック, 赤, cost3）
+    // カードテキスト: "〖アタックする〗自分のリーダーすべてが「CR」を持つなら、このアタックを受けたリーダーはダウンする。"
+    'ST02-009': [
+      E({ trigger: 'ON_ATTACK', condition: F.makeAllOwnLeadersHaveAffiliationCondition('CR'), action: { type: 'DOWN_TARGET' } })
+    ],
+
+    // ---- 台帳のテキストが「要確認」だったカード（カード画像で本文・ビルドルールを確認して台帳を更新） ----
+    // BP01-048 スリフティプレイ（アタック, 緑, cost0）"〖アタックする〗ダメージ-20。"
+    'BP01-048': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: -20 } })],
+    // BP01-060 副音声（メモリア, 赤, cost1）"〖プレイ時〗カードを1枚引く。〖アタック強化〗次のアタックのダメージ+30。"
+    'BP01-060': [
+      E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+    ],
+    // BP01-072 花火づくり（メモリア, 黄, cost1）"〖プレイ時〗カードを2枚引き、手札を2枚捨てる。〖アタック強化〗次のアタックのダメージ+30。"
+    'BP01-072': [
+      E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+    ],
+    // BP01-078 偶然の邂逅（メモリア, 黄, cost1）"〖アタック強化〗次のアタックのダメージ+30。〖アタック後〗対戦相手の他のリーダーすべてに10ダメージ。"
+    'BP01-078': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+      E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } }),
+    ],
+    // BP02-022 油断大敵 / BP02-030 ミラクルナイフ / BP02-036 スウィートドリーム（アタック, cost1）"〖アタックする〗ダメージ+10。"
+    'BP02-022': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    'BP02-030': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    'BP02-036': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    // BP02-026 ドレッドフォーム（アタック, 青, cost1）"〖アタックする〗〖アタック後〗対戦相手の他のリーダー1体に10ダメージ。"
+    'BP02-026': [E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })],
+    // BP02-027 不撓不屈（アタック, 青, cost1）"〖アタックする〗対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードがメモリアカードなら、ダメージ+20。"
+    'BP02-027': [E({ trigger: 'ON_ATTACK', action: { type: 'MILL_OPPONENT_TOP_FOR_BONUS', cardType: 'MEMORIA', bonus: 20 } })],
+    // BP02-046 いただきま～す！（メモリア, 赤, cost1）"〖アタック強化〗次のアタックのダメージ+50。"
+    'BP02-046': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })],
+    // BP02-047 ケーキのおうち / ST01-018 面接官（メモリア, cost1）"〖プレイ時〗自分のリーダー1体を30回復する。〖アタック強化〗次のアタックのダメージ+30。"
+    'BP02-047': [
+      E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 30 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+    ],
+    'ST01-018': [
+      E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 30 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
+    ],
+    // BP02-050 邪念払拭（メモリア, 赤, cost0）"〖プレイ時〗対戦相手のリーダー1体に20ダメージ。"
+    'BP02-050': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
+    // BP02-054 焦土の王者（メモリア, 青, cost0）"〖プレイ時〗カードを1枚引き、手札を1枚捨てる。"
+    'BP02-054': [E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 1 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 1 }] } })],
+    // BP02-055 やさぐれメイド（メモリア, 青, cost1）"〖アタック強化〗次のアタックのダメージ+60。"
+    'BP02-055': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })],
+    // BP02-056 美味しいよね（メモリア, 青, cost0）"〖アタック強化〗プレイエリアにメモリアカードが3枚以上あるなら、次のアタックのダメージ+30。（メモリアカードの数は〖アタック強化〗を実行するときに数える。）"
+    'BP02-056': [
+      E({ trigger: 'ATTACK_BOOST', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), modifier: { type: 'DAMAGE_BONUS', amount: 30 } }),
     ],
 
     // BP04-076 アイテムショップ（タクティクス, 無色, cost0）

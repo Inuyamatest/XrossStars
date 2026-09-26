@@ -80,6 +80,13 @@ function main() {
 
   const out = [];
 
+  // リーダーの所属（「VSPO!」等。data/source/affiliations.json）。カード番号 → 所属名[]
+  const affiliationSource = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/source/affiliations.json'), 'utf8'));
+  const affiliationsByNumber = {};
+  Object.keys(affiliationSource).filter((k) => !k.startsWith('_')).forEach((aff) => {
+    affiliationSource[aff].forEach((num) => { (affiliationsByNumber[num] = affiliationsByNumber[num] || []).push(aff); });
+  });
+
   // --- リーダー（正データは leaders.js。Excel側とはcardNumber単位で既に突き合わせ済み）---
   leaders.forEach((l) => {
     out.push({
@@ -95,6 +102,7 @@ function main() {
       atk: l.attack ?? null,
       awakenHp: l.awakenedHp ?? null,
       awakenAtk: l.awakenedAttack ?? null,
+      affiliations: affiliationsByNumber[l.cardNumber.split('/')[0]] || [],
       buildRule: null,
       buildRuleParsed: null,
       ace: false,

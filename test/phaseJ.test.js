@@ -15,6 +15,7 @@ const EffectResolver = require('../js/engine/effectResolver.js');
 
 const cardIndex = CardLookup.loadDefaultCardIndexNode();
 const allCards = Object.values(cardIndex);
+const plainCard = require('./helpers/plainCard.js')(allCards, CardEffectData, __filename);
 
 let passed = 0;
 let failed = 0;
@@ -33,7 +34,7 @@ function test(name, fn) {
 const LEADERS_A = ['BP01-001', 'BP01-002', 'BP01-003', 'BP01-004'];
 const LEADERS_B = ['BP01-005', 'BP01-006', 'BP01-007', 'BP01-008'];
 const PP_TICKET = 'ST01-024';
-const FILLER_ATTACK = allCards.filter((c) => c.cardType === 'ATTACK' && c.color === 'red' && !c.ban && c.cost === 1 && !CardEffectData.hasEffects(c.cardNumber) && !CardEffectData.KEYWORDS[c.cardNumber])[0].cardNumber;
+const FILLER_ATTACK = plainCard((c) => c.cardType === 'ATTACK' && c.color === 'red' && c.cost === 1);
 const TACTICS_5 = allCards.filter((c) => c.cardType === 'TACTICS' && !c.ban && !c.isParallel).slice(0, 5).map((c) => c.cardNumber);
 
 // 先攻（playerA）1ターン目はタクティクスを使えないため、テストは後攻（playerB）の手番を作って行う

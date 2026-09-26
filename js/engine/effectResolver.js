@@ -96,7 +96,8 @@
       case 'DAMAGE': {
         // Phase D-3: action.amountは数値のほか、{type:'DERIVED_AMOUNT', source}も受け付ける
         // （ドレインロッドの「回復した数値と同じダメージ」用）。既存の数値指定は完全に後方互換。
-        var damageAmount = resolveActionAmount(action.amount, ctx);
+        var damageAmount = resolveActionAmount(action.amount, ctx, state);
+        if (damageAmount <= 0) return state;
         (targets || []).forEach(function (ref) {
           dealDamageAndCheckDown(state, ref, damageAmount, cardIndex, ctx);
         });
@@ -485,8 +486,13 @@
   // {type:'DERIVED_AMOUNT', source} の場合のみ、ctx.derivedValues（同一MULTI内の直前のActionが
   // 書き込んだ解決中の一時値）から値を取り出す。現時点で確認できている実カードの用法は
   // LAST_DISTRIBUTED_HEAL_TOTAL（ドレインロッド）のみ。
-  function resolveActionAmount(amountSpec, ctx) {
+  function resolveActionAmount(amountSpec, ctx, state) {
     if (typeof amountSpec === 'number') return amountSpec;
+    if (amountSpec && amountSpec.type === 'PER_OWN_LEADER_WITH_AFFILIATION') {
+      // 初の栄冠「自分の『VSPO!』を持つリーダー1体につき10ダメージ」。所属はリーダーの印刷情報なので、
+      // ダウンしているリーダーも数える（PROVISIONAL、ruleConfig.js affiliationPolicy）。
+      return EffectFactories.countOwnLeadersWithAffiliation(state, ctx, amountSpec.affiliation) * amountSpec.per;
+    }
     if (amountSpec && amountSpec.type === 'DERIVED_AMOUNT') {
       if (amountSpec.source === 'LAST_DISTRIBUTED_HEAL_TOTAL') {
         return (ctx.derivedValues && ctx.derivedValues.lastDistributedHealTotal) || 0;
@@ -1033,6 +1039,20 @@
     return bonus;
   }
 
+  // ---- 「このアタックを受けたリーダーはダウンする」（クロスファイア・魔王降臨）----
+  // 条件を満たすとき、このアタックのダメージがちょうど相手の残り体力に届くように上乗せする
+  // （＝アタックでダウンさせた扱いになり、アタッカーの覚醒などの通常の処理がそのまま行われる。PROVISIONAL）。
+  function computeDownTargetBonus(state, playerId, cardId, ctx, baseDamage, cardIndex) {
+    var applies = CardEffectData.getEffectsForCard(cardId).some(function (e) {
+      return e.trigger === 'ON_ATTACK' && e.action && e.action.type === 'DOWN_TARGET' && (!e.condition || e.condition(state, ctx));
+    });
+    if (!applies) return 0;
+    var target = state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex];
+    var attacker = state.players[playerId].leaders[ctx.attackerLeaderIndex];
+    var planned = (state.players[playerId].pendingAttackBoost || 0) + baseDamage + GameState.getLeaderCurrentAtk(cardIndex, attacker);
+    return Math.max(0, GameState.getLeaderCurrentHp(cardIndex, target) - planned);
+  }
+
   // ---- ON_ATTACK：アタックカード自身の固有ダメージをattackCardBaseDamageとして算出 ----
   // Phase E: state/ctxを受け取り、ATTACK_DAMAGE_BONUSにconditionが付いていれば評価する
   // （例：アナイアレーション「自分のリーダーの色がすべて異なるなら」、オールスターコンボ
@@ -1228,6 +1248,7 @@
     var baseDamage = runPreDamageAttackActions(state, playerId, cardInstanceId, cardId, ctx, cardIndex)
       + computeAttackCardBaseDamage(cardId, state, ctx)
       + computeAttackTimeBoost(state, playerId, ctx);
+    baseDamage += computeDownTargetBonus(state, playerId, cardId, ctx, baseDamage, cardIndex);
 
     // Phase D-2-D: OVERKILL_AMOUNT用に、combat.js内で計算される合計ダメージと同じ式を
     // ここで独立して事前計算しておく（combat.js自体は無改修。既存のdealDamageAndCheckDownが
