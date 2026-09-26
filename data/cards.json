@@ -10652,18 +10652,18 @@
   "atk": null,
   "awakenHp": null,
   "awakenAtk": null,
-  "buildRule": "リーダー：白雪レイド",
+  "buildRule": "リーダー：うぉっか",
   "buildRuleParsed": {
    "kind": "LEADER_NAME",
-   "leaderName": "白雪レイド",
-   "raw": "リーダー：白雪レイド"
+   "leaderName": "うぉっか",
+   "raw": "リーダー：うぉっか"
   },
   "ace": false,
   "ban": false,
   "text": "〖プレイ時〗カードを2枚引く。",
   "effectSummary": "〖プレイ時〗カードを2枚引く。",
   "officialUrl": "https://xross-stars.com/card/7-048",
-  "confirmStatus": "専用カード画像で確認（公式ページ未確認）",
+  "confirmStatus": "カード画像で確認（公式ページ未確認）。ビルドルールをカード画像の「リーダー：うぉっか」に修正",
   "confirmed": false,
   "parallelGroupId": "BP04-048",
   "imageUrl": "cards/BP04-048.webp",
