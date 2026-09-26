@@ -242,6 +242,55 @@
     };
   }
 
+  // ---- 第5弾ACE：対象最大N体／アタッカーの状態を見るCondition ----
+
+  // 「対戦相手のリーダー最大N体」（ヴァリアブルピック）。アタックに紐づかないON_PLAY用なので
+  // 対戦相手の生存リーダー全員が候補。選択はctx.chooseMultiTargets(candidates, n, state) => index[]。
+  // 省略時は先頭からN体を選ぶ（「最大」なので0体も選べるが、ダメージを与える効果のため既定では上限まで選ぶ。
+  // PROVISIONAL、ruleConfig.js bp05AcePolicy参照）。範囲外・重複のindexは無視する。
+  function makeUpToNOpponentLeadersTarget(n) {
+    return function (state, ctx) {
+      var opponentId = GameState.getOpponentId(ctx.ownerPlayerId);
+      var candidates = [];
+      state.players[opponentId].leaders.forEach(function (l, i) { if (!l.isDown) candidates.push({ playerId: opponentId, leaderIndex: i }); });
+      if (candidates.length === 0) return [];
+      var picks = ctx.chooseMultiTargets
+        ? (ctx.chooseMultiTargets(candidates.slice(), n, state) || [])
+        : candidates.map(function (c, i) { return i; });
+      var seen = {};
+      var results = [];
+      picks.forEach(function (i) {
+        if (results.length >= n || seen[i] || i < 0 || i >= candidates.length) return;
+        seen[i] = true;
+        results.push(candidates[i]);
+      });
+      return results;
+    };
+  }
+
+  function getAttackerLeader(state, ctx) {
+    if (ctx.attackerPlayerId == null || ctx.attackerLeaderIndex == null) return null;
+    return state.players[ctx.attackerPlayerId].leaders[ctx.attackerLeaderIndex] || null;
+  }
+
+  // 「アタッカーがダメージを受けているなら」（デュアルハザード）：ダメージカウンターが1以上乗っている
+  function makeAttackerDamagedCondition() {
+    return function (state, ctx) {
+      var attacker = getAttackerLeader(state, ctx);
+      return !!attacker && (attacker.damage || 0) > 0;
+    };
+  }
+
+  // 「アタッカーの残り体力が10なら」（デュアルハザード）。spec: { operator, value }
+  // 残り体力は装備の体力修正込み（GameState.getLeaderCurrentHp）で判定する。
+  function makeAttackerRemainingHpCondition(spec) {
+    return function (state, ctx) {
+      var attacker = getAttackerLeader(state, ctx);
+      if (!attacker || !ctx.cardIndex) return false;
+      return compareByOperator(GameState.getLeaderCurrentHp(ctx.cardIndex, attacker), spec.operator, spec.value);
+    };
+  }
+
   return {
     compareByOperator: compareByOperator,
     countPlayAreaByType: countPlayAreaByType,
@@ -258,5 +307,8 @@
     makeAnyOpponentLeaderTarget: makeAnyOpponentLeaderTarget,
     makeAllAliveOpponentLeadersTarget: makeAllAliveOpponentLeadersTarget,
     makeAllLeadersDifferentColorsCondition: makeAllLeadersDifferentColorsCondition,
+    makeUpToNOpponentLeadersTarget: makeUpToNOpponentLeadersTarget,
+    makeAttackerDamagedCondition: makeAttackerDamagedCondition,
+    makeAttackerRemainingHpCondition: makeAttackerRemainingHpCondition,
   };
 }));

@@ -213,6 +213,119 @@
         return state;
       }
 
+      case 'DECK_LOOK_ADD_TO_HAND': {
+        // 第5弾ACE アブソリュートドミニオン／BP04-028 シンクロトリニティ／BP04-079 討伐クエスト：
+        // 「自分のデッキの上から{count}枚を見る。その中から{filter}のカードを（最大）{maxPick}枚手札に加える。
+        //  残りのカードをトラッシュに置く。」
+        // action: { count, maxPick, minPick?, filter?: { cardType?, cost?, excludeAce? } }
+        // 選択はctx.chooseDeckLookAddToHand(candidates, maxPick, state) => instanceId[]。
+        // PROVISIONAL（ruleConfig.js bp05AcePolicy）: コールバック省略時は先頭から上限まで手札に加える
+        // （手札に加えるだけで失うものが無いため、FREE_PLAY系の「辞退」とは既定を変えている）。
+        // minPick（「手札に加える」と義務になっている討伐クエスト）は、選択が足りなければ先頭から補う。
+        var lookPlayer = state.players[ctx.ownerPlayerId];
+        var looked = lookPlayer.deck.splice(0, Math.min(action.count, lookPlayer.deck.length));
+        var filter = action.filter || {};
+        var addCandidates = looked.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          if (!cd) return false;
+          if (filter.cardType && cd.cardType !== filter.cardType) return false;
+          if (filter.cost != null && cd.cost !== filter.cost) return false; // コスト未確定（null）は一致しない
+          if (filter.excludeAce && cd.ace === true) return false;
+          return true;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
+        var pickIds = ctx.chooseDeckLookAddToHand
+          ? (ctx.chooseDeckLookAddToHand(addCandidates.slice(), action.maxPick, state) || [])
+          : addCandidates.map(function (c) { return c.instanceId; });
+        var picked = [];
+        pickIds.forEach(function (id) {
+          if (picked.length >= action.maxPick || picked.indexOf(id) >= 0) return;
+          if (addCandidates.some(function (c) { return c.instanceId === id; })) picked.push(id);
+        });
+        var minPick = Math.min(action.minPick || 0, addCandidates.length);
+        addCandidates.forEach(function (c) {
+          if (picked.length < minPick && picked.indexOf(c.instanceId) < 0) picked.push(c.instanceId);
+        });
+        looked.forEach(function (c) {
+          if (picked.indexOf(c.instanceId) >= 0) {
+            lookPlayer.hand.push(c);
+            Events.logEvent(state, 'CARD_ADDED_TO_HAND_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: c.cardId });
+          } else {
+            lookPlayer.trash.push({ card: c, faceUp: false });
+          }
+        });
+        return state;
+      }
+
+      case 'OPTIONAL_SELF_DAMAGE_THEN': {
+        // 第5弾ACE 共に至る極致「自分の体力{minHp}以上のリーダー1体に{amount}ダメージを与えてもよい。
+        // そうしたなら、{then}」。選択はctx.chooseSelfDamage(candidates, state) => index（-1/null＝辞退）。
+        // コールバック省略時は辞退（自分のリーダーが傷つくコストを伴う「してもよい」のため）。
+        // 「体力」は現在の残り体力（装備修正込み）で判定する（PROVISIONAL、ruleConfig.js bp05AcePolicy）。
+        var selfCandidates = [];
+        state.players[ctx.ownerPlayerId].leaders.forEach(function (l, i) {
+          if (!l.isDown && GameState.getLeaderCurrentHp(cardIndex, l) >= action.minHp) selfCandidates.push({ playerId: ctx.ownerPlayerId, leaderIndex: i });
+        });
+        if (selfCandidates.length === 0 || !ctx.chooseSelfDamage) return state;
+        var selfPick = ctx.chooseSelfDamage(selfCandidates.slice(), state);
+        if (selfPick == null || selfPick < 0 || selfPick >= selfCandidates.length) return state;
+        dealDamageAndCheckDown(state, selfCandidates[selfPick], action.amount, cardIndex, null);
+        if (action.then) applyAction(state, action.then, [], ctx, cardIndex);
+        return state;
+      }
+
+      case 'DISCARD_COST_THEN_DECK_LOOK_FREE_ATTACK': {
+        // 第5弾ACE 頂点捕食者「自分の手札のカードを、コストの合計が{minDiscardCost}以上になるように好きな枚数
+        // 公開し、捨ててもよい。そうしたなら自分のデッキの上から{count}枚を見る。その中からコスト{maxCost}以下の
+        // 「{excludeName}」以外のアタックカード1枚を、コストを支払わずにプレイしてもよい。残りのカードを
+        // トラッシュに置く。（プレイしたカードの効果は、このアタックが終わってから実行する。）」
+        // 捨てる選択: ctx.chooseApexDiscard(candidates, minDiscardCost, state) => instanceId[]（省略時は辞退）。
+        //   合計コストが足りない選択は「しなかった」扱い（何も捨てない）。コスト未確定のカードは候補外。
+        // プレイする選択: ctx.chooseDeckLookAttack(candidates, state) => instanceId|null（省略時は先頭の候補。
+        //   手札を捨てるコストを既に払った後なので、既定ではプレイする側に倒す。PROVISIONAL）。
+        // 選んだアタックは「このアタックが終わってから」実行するため、ResolutionStackの末尾に積む
+        // （FIFOなので、このアタックで既に積まれている他の効果がすべて解決した後にアタックが行われる）。
+        var apexPlayer = state.players[ctx.ownerPlayerId];
+        var discardCandidates = apexPlayer.hand.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          return cd && typeof cd.cost === 'number';
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: ctx.cardIndex[c.cardId].cost }; });
+        var discardIds = ctx.chooseApexDiscard ? (ctx.chooseApexDiscard(discardCandidates.slice(), action.minDiscardCost, state) || []) : [];
+        var discardChosen = [];
+        discardIds.forEach(function (id) {
+          if (discardChosen.some(function (c) { return c.instanceId === id; })) return;
+          var cand = discardCandidates.find(function (c) { return c.instanceId === id; });
+          if (cand) discardChosen.push(cand);
+        });
+        var discardTotal = discardChosen.reduce(function (sum, c) { return sum + c.cost; }, 0);
+        if (discardChosen.length === 0 || discardTotal < action.minDiscardCost) return state; // しなかった
+        discardChosen.forEach(function (cand) {
+          var hIdx = apexPlayer.hand.findIndex(function (c) { return c.instanceId === cand.instanceId; });
+          var discarded = apexPlayer.hand.splice(hIdx, 1)[0];
+          apexPlayer.trash.push({ card: discarded, faceUp: false });
+          Events.logEvent(state, 'CARD_DISCARDED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: discarded.cardId });
+        });
+
+        var apexLooked = apexPlayer.deck.splice(0, Math.min(action.count, apexPlayer.deck.length));
+        var attackCandidates = apexLooked.filter(function (c) {
+          var cd = ctx.cardIndex[c.cardId];
+          return cd && cd.cardType === 'ATTACK' && typeof cd.cost === 'number' && cd.cost <= action.maxCost && cd.name !== action.excludeName;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
+        var chosenAttackId = null;
+        if (attackCandidates.length > 0) {
+          chosenAttackId = ctx.chooseDeckLookAttack ? ctx.chooseDeckLookAttack(attackCandidates.slice(), state) : attackCandidates[0].instanceId;
+          if (!attackCandidates.some(function (c) { return c.instanceId === chosenAttackId; })) chosenAttackId = null;
+        }
+        var chosenAttack = null;
+        apexLooked.forEach(function (c) {
+          if (c.instanceId === chosenAttackId) chosenAttack = c;
+          else apexPlayer.trash.push({ card: c, faceUp: false });
+        });
+        if (chosenAttack) {
+          ResolutionStack.push(state.resolutionStack, buildDeferredFreeAttack(chosenAttack, ctx, cardIndex));
+        }
+        return state;
+      }
+
       case 'ATTACK_DAMAGE_BONUS':
       case 'EQUIP_HP_MODIFIER':
       case 'EQUIP_ATK_MODIFIER':
@@ -226,6 +339,58 @@
       default:
         throw new Error('未知のActionTypeです（cardEffectData.jsの設定を確認してください）: ' + action.type);
     }
+  }
+
+  // 頂点捕食者：デッキから選んだアタックカードを「このアタックが終わってから」コストを支払わずにプレイする
+  // PendingEffect。解決時点で、元のアタッカーが生存していればそのリーダーで、ダウンしていれば生存している
+  // 先頭のリーダーでアタックする。アタックを受けるリーダーはctx.chooseFreeAttackTarget(candidates, state) => index
+  // （省略時は元のアタックを受けたリーダー、ダウンしていれば生存している先頭のリーダー）。
+  // アタッカー/対象がいない場合はプレイできないため、そのカードは裏向きでトラッシュに置く（PROVISIONAL）。
+  function buildDeferredFreeAttack(cardInstance, ctx, cardIndex) {
+    return {
+      id: nextEffectId(),
+      sourceInstanceId: ctx.sourceInstanceId,
+      trigger: 'AFTER_ATTACK',
+      ownerPlayerId: ctx.ownerPlayerId,
+      condition: null,
+      resolve: function (state) {
+        var ownerId = ctx.ownerPlayerId;
+        var player = state.players[ownerId];
+        var targetPlayerId = GameState.getOpponentId(ownerId);
+        var attackerIndex = ctx.attackerLeaderIndex;
+        if (attackerIndex == null || !player.leaders[attackerIndex] || player.leaders[attackerIndex].isDown) {
+          attackerIndex = player.leaders.findIndex(function (l) { return !l.isDown; });
+        }
+        var targetCandidates = [];
+        state.players[targetPlayerId].leaders.forEach(function (l, i) { if (!l.isDown) targetCandidates.push({ playerId: targetPlayerId, leaderIndex: i }); });
+        if (attackerIndex < 0 || targetCandidates.length === 0) {
+          player.trash.push({ card: cardInstance, faceUp: false });
+          return state;
+        }
+        var targetPick = ctx.chooseFreeAttackTarget
+          ? ctx.chooseFreeAttackTarget(targetCandidates.slice(), state)
+          : targetCandidates.findIndex(function (c) { return c.leaderIndex === ctx.targetLeaderIndex; });
+        if (targetPick == null || targetPick < 0 || targetPick >= targetCandidates.length) targetPick = 0;
+        var targetIndex = targetCandidates[targetPick].leaderIndex;
+
+        player.hand.push(cardInstance); // playAttackCardWithEffectsは手札のカードを対象にするため一時的に手札を経由する
+        Events.logEvent(state, 'FREE_ATTACK_PLAYED_BY_EFFECT', { playerId: ownerId, cardId: cardInstance.cardId });
+        var freeOptions = {
+          freePlay: true,
+          attackerLeaderIndex: attackerIndex,
+          targetPlayerId: targetPlayerId,
+          targetLeaderIndex: targetIndex,
+          chooseTarget: ctx.chooseTarget,
+        };
+        var count = getMultiAttackCount(cardInstance.cardId);
+        if (count) {
+          freeOptions.attacks = [];
+          for (var i = 0; i < count; i++) freeOptions.attacks.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: targetPlayerId, targetLeaderIndex: targetIndex });
+        }
+        playAttackCardWithEffects(state, ownerId, cardInstance.instanceId, freeOptions, cardIndex);
+        return state;
+      },
+    };
   }
 
   // ダメージ処理＋ダウン判定＋（アタックに紐づく場合のみ）アタッカーの覚醒判定。
@@ -334,6 +499,46 @@
   // （ruleConfig.js参照）。phases.js/match.js自体は無改修で、それぞれを薄くラップして
   // クリア処理を追加する（Phase D-2監査でturnNumberがラウンドごとにリセットされることが
   // 判明したのと同じ理由で、ターン終了だけでなくラウンド終了時のクリアも必要）。
+  // ---- エコー（第5弾 BP05-059 魔王再臨 / BP05-066 ハセシンの刑執行）----
+  // 「自分のターン終了時、このカードが縦向きならトラッシュに置く代わりに、横向きにする。
+  //  自分のメインフェイズ開始時、このカードが横向きならコストを支払わずに、横向きのままプレイし直す。」
+  // 横向きはプレイエリアのエントリの echoHorizontal: true で表す。横向きのままプレイし直したカードは、
+  // 次のターン終了時には横向きなので通常どおりトラッシュに置かれる（＝エコーは1回だけ繰り返す）。
+  // ラウンド終了時のプレイエリア一掃（match.js resetForNextRound）はエコーの対象外とし、横向きのカードも
+  // トラッシュに置く（PROVISIONAL、ruleConfig.js bp05AcePolicy.echoAtRoundEnd）。
+
+  // Phases.runEndPhaseの代わりに呼ぶ。縦向きのエコーカードだけをプレイエリアに残して横向きにする。
+  function runEndPhaseWithEffects(state, handDiscardChooserFn) {
+    var player = state.players[state.turn.activePlayer];
+    var kept = player.playArea.filter(function (entry) {
+      return !entry.isTactics && !entry.echoHorizontal && CardEffectData.hasKeyword(entry.card.cardId, 'ECHO');
+    });
+    player.playArea = player.playArea.filter(function (entry) { return kept.indexOf(entry) < 0; });
+    var result = Phases.runEndPhase(state, handDiscardChooserFn);
+    kept.forEach(function (entry, i) {
+      entry.echoHorizontal = true;
+      entry.order = i;
+      player.playArea.push(entry);
+      Events.logEvent(state, 'ECHO_TURNED_HORIZONTAL', { playerId: state.turn.activePlayer, cardId: entry.card.cardId });
+    });
+    return result;
+  }
+
+  // Phases.runStartPhaseの代わりに呼ぶ。メインフェイズ開始時に、横向きのエコーカードをプレイし直し、
+  // その効果（プレイ時・アタック強化・次のアタックに紐づくアタック後）を処理する。プレイ時効果は
+  // 他の*WithEffects関数と同じくResolutionStackへ積むだけなので、呼び出し側が解決する。
+  // extraCtx: 選択コールバック（chooseTarget等）。省略時は各Actionの既定の選択になる。
+  function runStartPhaseWithEffects(state, cardIndex, extraCtx) {
+    var result = Phases.runStartPhase(state);
+    var playerId = state.turn.activePlayer;
+    state.players[playerId].playArea.forEach(function (entry) {
+      if (!entry.echoHorizontal) return;
+      Events.logEvent(state, 'ECHO_REPLAYED', { playerId: playerId, cardId: entry.card.cardId });
+      queueMemoriaPlayEffects(state, playerId, entry.card, cardIndex, extraCtx);
+    });
+    return result;
+  }
+
   function clearTempAtkModifiers(state, playerId) {
     state.players[playerId].leaders.forEach(function (l) { l.tempAtkModifier = 0; });
   }
@@ -492,6 +697,10 @@
     if (options.chooseTarget) extra.chooseTarget = options.chooseTarget;
     if (options.chooseDistributedHeal) extra.chooseDistributedHeal = options.chooseDistributedHeal;
     if (options.chooseMoveEquipment) extra.chooseMoveEquipment = options.chooseMoveEquipment;
+    if (options.chooseMultiTargets) extra.chooseMultiTargets = options.chooseMultiTargets;
+    if (options.chooseSelfDamage) extra.chooseSelfDamage = options.chooseSelfDamage;
+    if (options.chooseDeckLookAddToHand) extra.chooseDeckLookAddToHand = options.chooseDeckLookAddToHand;
+    if (options.chooseDiscard) extra.chooseDiscard = options.chooseDiscard;
     return extra;
   }
 
@@ -517,7 +726,14 @@
     var player = state.players[playerId];
     player.playArea.push({ card: cardInstance, order: player.playArea.length, pendingTriggers: [] });
     Events.logEvent(state, 'MEMORIA_PLAYED', { playerId: playerId, cardId: cardInstance.cardId });
+    return queueMemoriaPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
+  }
 
+  // メモリアを「プレイした」ときの効果処理（ON_PLAYをResolutionStackへ・ATTACK_BOOSTを次のアタックへ・
+  // AFTER_ATTACKを次のアタックに紐付け）。カード自体の移動は呼び出し側が行う
+  // （エコーの「プレイし直す」はプレイエリアに置いたまま、この処理だけを行う）。
+  function queueMemoriaPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx) {
+    var player = state.players[playerId];
     queueOnPlayEffects(state, playerId, cardInstance, cardIndex, extraCtx);
 
     player.pendingAfterAttackEffects = player.pendingAfterAttackEffects || [];
@@ -727,9 +943,11 @@
     if (attacks.length !== count) {
       throw new Error('MULTI_ATTACK（' + count + '回）に対してoptions.attacksの指定が' + attacks.length + '件です（' + count + '件必要）');
     }
-    var multiAttackCost = Phases.requireKnownCost(cardData);
-    if (!Phases.payPP(player, multiAttackCost)) {
-      throw new Error('PPが不足しています（必要:' + multiAttackCost + '）');
+    if (!options.freePlay) {
+      var multiAttackCost = Phases.requireKnownCost(cardData);
+      if (!Phases.payPP(player, multiAttackCost)) {
+        throw new Error('PPが不足しています（必要:' + multiAttackCost + '）');
+      }
     }
     var instance = player.hand.splice(idx, 1)[0];
     player.playArea.push({ card: instance, order: player.playArea.length, pendingTriggers: [] });
@@ -813,6 +1031,7 @@
       targetPlayerId: options.targetPlayerId,
       targetLeaderIndex: options.targetLeaderIndex,
       attackCardBaseDamage: baseDamage,
+      freePlay: !!options.freePlay,
     }, cardIndex);
 
     // ダウンした場合のみOverkillの概念が成立する（PROVISIONAL、ruleConfig.js参照）
@@ -827,6 +1046,11 @@
     ctx.chooseFreePlayFromHand = options.chooseFreePlayFromHand;
     ctx.chooseDeckLookPlay = options.chooseDeckLookPlay;
     ctx.chooseReplayFromPlayArea = options.chooseReplayFromPlayArea;
+    // 第5弾ACE（アブソリュートドミニオン／頂点捕食者）とシンクロトリニティ用
+    ctx.chooseDeckLookAddToHand = options.chooseDeckLookAddToHand;
+    ctx.chooseApexDiscard = options.chooseApexDiscard;
+    ctx.chooseDeckLookAttack = options.chooseDeckLookAttack;
+    ctx.chooseFreeAttackTarget = options.chooseFreeAttackTarget;
 
     // アタックカード自身のAFTER_ATTACK効果をResolutionStackへ
     attackCardEffects.filter(function (e) { return e.trigger === 'AFTER_ATTACK'; })
@@ -898,5 +1122,9 @@
     clearTempAtkModifiers: clearTempAtkModifiers,
     endTurnAndSwitchWithEffects: endTurnAndSwitchWithEffects,
     processRoundEndWithEffects: processRoundEndWithEffects,
+    // 第5弾ACE: エコー
+    runEndPhaseWithEffects: runEndPhaseWithEffects,
+    runStartPhaseWithEffects: runStartPhaseWithEffects,
+    makeUpToNOpponentLeadersTarget: EffectFactories.makeUpToNOpponentLeadersTarget,
   };
 }));

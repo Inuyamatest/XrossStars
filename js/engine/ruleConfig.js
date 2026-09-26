@@ -210,6 +210,36 @@
         status: 'PROVISIONAL',
         source: 'BP01-017 一騎当千 / BP01-044 リンク・アサルト / BP02-024 三銃士 のテキストからの類推。公式資料にFREE_PLAY/デッキルック/リプレイの一般ルールとしての明記は無い。',
       },
+      // 第5弾ACE（カード画像のみで確認。公式FAQ等は未確認）の実装で決めた解釈。
+      bp05AcePolicy: {
+        // DECK_LOOK_ADD_TO_HAND（アブソリュートドミニオン／シンクロトリニティ／討伐クエスト）：
+        // 選択コールバックが無いときは条件に合うカードを先頭から上限枚数まで手札に加える
+        // （手札に加えるだけで失うものが無いため。FREE_PLAY系の既定「辞退」とは意図的に変えている）。
+        deckLookAddToHandDefault: 'TAKE_FIRST_UP_TO_MAX',
+        deckLookAddToHandRestOrientation: 'FACE_DOWN',
+        // ヴァリアブルピック「対戦相手のリーダー最大2体」：選択が無いときは生存リーダーの先頭から2体
+        upToNTargetDefault: 'FIRST_N_ALIVE',
+        // 共に至る極致「自分の体力40以上のリーダー」：現在の残り体力（装備修正込み）で判定。選択が無いときは辞退
+        optionalSelfDamageHpBasis: 'CURRENT_REMAINING_HP',
+        optionalSelfDamageDefault: 'DECLINE',
+        // 頂点捕食者：手札を捨てる選択が無いときは辞退。捨てた後、デッキから選ぶ選択が無いときは先頭の候補をプレイ。
+        // プレイするアタックは「このアタックが終わってから」＝このアタックで積まれた他の効果がすべて解決した後。
+        // その時点で元のアタッカーがダウンしていれば生存している先頭のリーダー、アタックを受けるリーダーは
+        // 元の対象（ダウンしていれば生存している先頭）。アタッカー/対象がいなければプレイせずトラッシュへ裏向き。
+        apexDiscardDefault: 'DECLINE',
+        apexDeckLookPlayDefault: 'FIRST_CANDIDATE',
+        apexDiscardOrientation: 'FACE_DOWN',
+        // デュアルハザードの判定はアタック宣言時（ダメージ計算前）のアタッカーの状態で行う
+        dualHazardEvaluationTiming: 'AT_DECLARATION',
+        // エコー：ターン終了時に縦向きならプレイエリアに残して横向きに。次の自分のメインフェイズ開始時
+        // （スタートフェイズのPP回復・ドローの後）にプレイし直し、プレイ時・アタック強化・アタック後を再び処理する。
+        // ラウンド終了時のプレイエリア一掃では横向きのエコーカードもトラッシュに置く。
+        echoReplayTiming: 'AFTER_START_PHASE_BEFORE_MAIN_ACTIONS',
+        echoReplayTriggerScope: 'ON_PLAY_ATTACK_BOOST_AFTER_ATTACK',
+        echoAtRoundEnd: 'TRASHED_WITH_PLAY_AREA',
+        status: 'PROVISIONAL',
+        source: 'BP05-017/024/038/045/052/059/066 のカード画像のテキストからの解釈。公式ページ・FAQは未確認。',
+      },
     };
   }
 
