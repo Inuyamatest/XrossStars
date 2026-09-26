@@ -36,6 +36,10 @@
   //   playerB: { 同上 },
   //   ppTicketCardId: string,  // PPチケットのcardId（カードマスタ側の値。カードJSONは変更しない）
   //   ruleConfig?  // 省略時はデフォルト（すべてPROVISIONAL）
+  //   deferRoundSetup?: boolean
+  //     true: 各ラウンドの「タクティクスを置く→4枚ドロー」を行わず、turn.phase='ROUND_SETUP' で止める。
+  //           呼び出し側が runRoundSetup(state, chooseTactics) でプレイヤーに選ばせてから手札を配る（対戦画面用）。
+  //     省略/false: 従来どおりタクティクスをランダムに選んで、そのまま手札を配る（テスト・シミュレーション用）
   // }
   function createMatch(config) {
     var ruleConfig = config.ruleConfig || RuleConfig.createDefaultRuleConfig();
@@ -49,47 +53,80 @@
     });
 
     Events.logEvent(state, 'GAME_STARTED', { matchId: state.match.matchId, mode: state.match.mode });
+    if (!config.ppTicketCardId && state.match.mode !== 'QUICK') throw new Error('config.ppTicketCardId が指定されていません');
+    state.match.ppTicketCardId = config.ppTicketCardId || null;
+    state.match.deferRoundSetup = !!config.deferRoundSetup;
 
+    if (state.match.deferRoundSetup) {
+      Deck.shuffle(state.players.playerA.deck);
+      Deck.shuffle(state.players.playerB.deck);
+      state.turn.phase = 'ROUND_SETUP';
+      return state;
+    }
     ['playerA', 'playerB'].forEach(function (pid) {
-      var player = state.players[pid];
-      Deck.shuffle(player.deck);
-
-      // 自分のタクティクスデッキから1枚選び、タクティクスエリアに裏向きで置く（spec 4章⑥）
-      if (player.tacticsDeck.length > 0) {
-        var idx = Math.floor(Math.random() * player.tacticsDeck.length);
-        var card = player.tacticsDeck.splice(idx, 1)[0];
-        player.tacticsArea.push({ card: card, faceUp: false });
-      }
-
-      // 後攻プレイヤーの扱い（spec 4章⑦, 22章）：
-      //   STANDARD: PPチケットを表向きにタクティクスエリアへ
-      //   QUICK   : PPチケットの代わりに2枚目のタクティクスカードを置く（PPチケットは使用しない）
-      if (player.hasPpTicket) {
-        if (state.match.mode === 'QUICK') {
-          if (player.tacticsDeck.length > 0) {
-            var idx2 = Math.floor(Math.random() * player.tacticsDeck.length);
-            var secondCard = player.tacticsDeck.splice(idx2, 1)[0];
-            player.tacticsArea.push({ card: secondCard, faceUp: false });
-          }
-        } else {
-          if (!config.ppTicketCardId) throw new Error('config.ppTicketCardId が指定されていません');
-          var ticketInstance = GameState.createCardInstance(config.ppTicketCardId);
-          player.tacticsArea.push({ card: ticketInstance, faceUp: true });
-        }
-      }
+      Deck.shuffle(state.players[pid].deck);
+      placeRoundTactics(state, pid, randomTacticsChooser);
     });
+    dealRound(state);
+    return state;
+  }
 
-    Events.logEvent(state, 'ROUND_STARTED', { roundNumber: 1 });
+  function randomTacticsChooser(state, playerId, candidates) {
+    return Math.floor(Math.random() * candidates.length);
+  }
 
-    // お互い4枚ドロー（spec 4章⑧）
+  function takeTactics(state, playerId, chooseTactics) {
+    var player = state.players[playerId];
+    if (player.tacticsDeck.length === 0) return;
+    var idx = player.tacticsDeck.length === 1 ? 0 : chooseTactics(state, playerId, player.tacticsDeck.slice());
+    if (!(idx >= 0 && idx < player.tacticsDeck.length)) idx = 0;
+    var card = player.tacticsDeck.splice(idx, 1)[0];
+    player.tacticsArea.push({ card: card, faceUp: false });
+  }
+
+  // 自分のタクティクスデッキから1枚選び、タクティクスエリアに裏向きで置く（spec 4章⑥・2-3章）
+  // chooseTactics(state, playerId, candidates) => index（candidatesはタクティクスデッキの写し）
+  function placeRoundTactics(state, playerId, chooseTactics) {
+    var player = state.players[playerId];
+    takeTactics(state, playerId, chooseTactics);
+    if (state.match.roundNumber !== 1 || !player.hasPpTicket) return;
+    // 後攻プレイヤーの扱い（spec 4章⑦, 22章）：
+    //   STANDARD: 1ラウンド目のタクティクスカードを選択した後、PPチケットを表向きにタクティクスエリアへ
+    //   QUICK   : PPチケットの代わりに2枚目のタクティクスカードを置く（PPチケットは使用しない）
+    if (state.match.mode === 'QUICK') {
+      takeTactics(state, playerId, chooseTactics);
+    } else {
+      player.tacticsArea.push({ card: GameState.createCardInstance(state.match.ppTicketCardId), faceUp: true });
+    }
+  }
+
+  // タクティクスを置いた後：お互い4枚ドローして、そのラウンドの1ターン目を始められる状態にする（spec 4章⑧・2-3章）
+  function dealRound(state) {
+    var round = state.match.roundNumber;
+    if (round === 1) Events.logEvent(state, 'ROUND_STARTED', { roundNumber: 1 });
     Deck.drawCards(state, 'playerA', 4);
     Deck.drawCards(state, 'playerB', 4);
-
     state.turn.turnNumber = 1;
-    state.turn.activePlayer = config.firstPlayer;
+    state.turn.activePlayer = state.match.firstPlayerThisRound;
     state.turn.phase = 'START_PHASE'; // 呼び出し側が Phases.runStartPhase(state) を呼ぶ前提
-    Events.logEvent(state, 'MATCH_SETUP_COMPLETED', {});
-    return state;
+    if (round === 1) {
+      Events.logEvent(state, 'MATCH_SETUP_COMPLETED', {});
+    } else {
+      Events.logEvent(state, 'ROUND_SETUP_COMPLETED', { roundNumber: round });
+      Events.logEvent(state, 'ROUND_STARTED', { roundNumber: round });
+    }
+  }
+
+  // deferRoundSetup のとき、turn.phase==='ROUND_SETUP' の盤面で呼ぶ。
+  // 両プレイヤーがタクティクスを選んで置いてから（先攻→後攻の順に質問）、手札を配る。
+  // PROVISIONAL: 選ぶ順は ruleConfig.tacticsSetupPolicy 参照（お互い裏向きに置くので順番は結果に影響しない）
+  function runRoundSetup(state, chooseTactics) {
+    if (state.turn.phase !== 'ROUND_SETUP') throw new Error('タクティクスを置く場面ではありません');
+    var first = state.match.firstPlayerThisRound;
+    [first, GameState.getOpponentId(first)].forEach(function (pid) {
+      placeRoundTactics(state, pid, chooseTactics || randomTacticsChooser);
+    });
+    dealRound(state);
   }
 
   function allLeadersDown(player) {
@@ -141,23 +178,18 @@
     state.match.firstPlayerThisRound = state.match.previousRoundLoser;
 
     ['playerA', 'playerB'].forEach(function (pid) {
-      var player = state.players[pid];
-      if (player.tacticsDeck.length > 0) {
-        var idx = Math.floor(Math.random() * player.tacticsDeck.length);
-        var card = player.tacticsDeck.splice(idx, 1)[0];
-        player.tacticsArea.push({ card: card, faceUp: false });
-      }
-      player.ppCards.max += 1; // ラウンド2=4, ラウンド3=5（spec 9章）
+      state.players[pid].ppCards.max += 1; // ラウンド2=4, ラウンド3=5（spec 9章）
     });
 
-    Deck.drawCards(state, 'playerA', 4);
-    Deck.drawCards(state, 'playerB', 4);
-
-    state.turn.turnNumber = 1;
-    state.turn.activePlayer = state.match.firstPlayerThisRound;
-    state.turn.phase = 'START_PHASE';
-    Events.logEvent(state, 'ROUND_SETUP_COMPLETED', { roundNumber: state.match.roundNumber });
-    Events.logEvent(state, 'ROUND_STARTED', { roundNumber: state.match.roundNumber });
+    if (state.match.deferRoundSetup) {
+      // タクティクスの選択と手札の配布は runRoundSetup で（呼び出し側がプレイヤーに選ばせる）
+      state.turn.turnNumber = 0;
+      state.turn.activePlayer = state.match.firstPlayerThisRound;
+      state.turn.phase = 'ROUND_SETUP';
+      return;
+    }
+    ['playerA', 'playerB'].forEach(function (pid) { placeRoundTactics(state, pid, randomTacticsChooser); });
+    dealRound(state);
   }
 
   // ラウンド終了・マッチ終了までを一括で処理する。
@@ -215,6 +247,7 @@
     checkMatchWinner: checkMatchWinner,
     resetForNextRound: resetForNextRound,
     setupNextRound: setupNextRound,
+    runRoundSetup: runRoundSetup,
     processRoundEnd: processRoundEnd,
   };
 }));

@@ -250,6 +250,18 @@
     };
   }
 
+  // ラウンド開始時：タクティクスデッキからタクティクスエリアに置く1枚を選ぶ（match.js runRoundSetup の chooseTactics）
+  // 裏向きに置くカードなので、人どうしの対戦では端末を渡してから表示する（secret）
+  function makeTacticsChooser(ask) {
+    return function (state, playerId, candidates) {
+      var a = ask({ kind: 'SET_TACTICS', type: 'CARDS', chooser: playerId, source: null, preselect: [], secret: true,
+        secretNote: 'タクティクスエリアに置くタクティクスカードを選びます。', revealLabel: 'タクティクスデッキを表示する',
+        title: 'ラウンド' + state.match.roundNumber + '：タクティクスエリアに裏向きで置くタクティクスカードを1枚選んでください（選んだ後に手札が配られます）',
+        cards: candidates.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; }), min: 1, max: 1 });
+      return a[0];
+    };
+  }
+
   // 画面での選択内容が質問の条件を満たすか。cardIndex はコスト条件の判定に使う。
   function validateSelection(question, selection, cardIndex) {
     if (question.type === 'OPTIONS') return { ok: selection.length === 1 };
@@ -278,6 +290,7 @@
     runWithAnswers: runWithAnswers,
     makeCallbacks: makeCallbacks,
     makeHandLimitChooser: makeHandLimitChooser,
+    makeTacticsChooser: makeTacticsChooser,
     validateSelection: validateSelection,
   };
 }));

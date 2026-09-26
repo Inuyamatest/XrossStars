@@ -274,6 +274,13 @@
     // CARDS
     var cards = q.cards;
     switch (q.kind) {
+      case 'SET_TACTICS': {
+        // ラウンド開始時のタクティクス：このラウンドのPPで使える中で一番コストの高いもの（無ければ一番安いもの）
+        var ppMax = player.ppCards.max;
+        var tac = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return b.cost - a.cost; });
+        var usable = tac.filter(function (x) { return x.cost <= ppMax; });
+        return [(usable.length ? usable[0] : tac[tac.length - 1]).i];
+      }
       case 'DISCARD':
       case 'HAND_LIMIT':
         return cheapestIndexes(cards, q.min, cardIndex);
