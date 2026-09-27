@@ -254,6 +254,20 @@ test('強：ラウンドの終わりが近い盤面（相手の残り1体・体�
   assert.ok(act1 && act2);
   assert.strictEqual(act2.type, 'ATTACK'); // 倒せば勝ち：アタックする
 });
+test('ラウンド開始時のタクティクス：1ラウンド目は体力を増やす装備（サイバネアーマー等）を選ぶ', () => {
+  const s = makeState();
+  s.match.roundNumber = 1;
+  const cards = ['BP01-093', 'BP04-073', 'ST02-022'].map((id) => ({ instanceId: 'x' + id, cardId: id })); // ジャミングパルス・サイバネアーマー・特殊弾
+  const a = Cpu.answerQuestion({ type: 'CARDS', kind: 'SET_TACTICS', cards, min: 1, max: 1 }, s, 'playerA', cardIndex);
+  assert.strictEqual(cards[a[0]].cardId, 'BP04-073');
+});
+test('ラウンド開始時のタクティクス：復活ポータル（条件付き）は1ラウンド目に選ばない', () => {
+  const s = makeState();
+  s.match.roundNumber = 1;
+  const cards = ['BP01-094', 'ST02-022'].map((id) => ({ instanceId: 'x' + id, cardId: id }));
+  const a = Cpu.answerQuestion({ type: 'CARDS', kind: 'SET_TACTICS', cards, min: 1, max: 1 }, s, 'playerA', cardIndex);
+  assert.strictEqual(cards[a[0]].cardId, 'ST02-022');
+});
 test('強さの順：強は中に、中は弱に勝ち越す（同じデッキで席を入れ替えて各12試合）', () => {
   function series(strong, weak) {
     let wins = 0;
