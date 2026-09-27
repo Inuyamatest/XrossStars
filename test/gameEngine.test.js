@@ -326,7 +326,7 @@ test('通常ドロー：デッキから手札へ1枚移動する', () => {
   assert.strictEqual(state.players.playerA.hand.length, before + 1);
 });
 
-test('デッキ切れ：デッキが0枚だとトラッシュから再構築する', () => {
+test('デッキ切れ：デッキが0枚だとトラッシュから再構築し、タクティクスを1枚トラッシュに置く（FAQ Q1の実例）', () => {
   const state = Match.createMatch(makeMatchConfig());
   const player = state.players.playerA;
   player.deck = [];
@@ -334,9 +334,24 @@ test('デッキ切れ：デッキが0枚だとトラッシュから再構築す�
     { card: GameState.createCardInstance(RED_ATTACK), faceUp: false },
     { card: GameState.createCardInstance(RED_ATTACK), faceUp: false },
   ];
+  const tacticsBefore = player.tacticsDeck.length;
   const card = Deck.drawCard(state, 'playerA');
   assert.notStrictEqual(card, null);
-  assert.strictEqual(player.trash.length, 0);
+  assert.strictEqual(player.deck.length, 1);
+  assert.strictEqual(player.tacticsDeck.length, tacticsBefore - 1);
+  assert.strictEqual(player.trash.length, 1);
+  assert.strictEqual(player.trash[0].faceUp, true);
+});
+
+test('デッキ切れ：再構築でカードが足りても、置くタクティクスが無ければ試合に敗北する', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  const player = state.players.playerA;
+  player.deck = [];
+  player.trash = [{ card: GameState.createCardInstance(RED_ATTACK), faceUp: false }];
+  player.tacticsDeck = [];
+  assert.strictEqual(Deck.drawCard(state, 'playerA'), null);
+  assert.strictEqual(state.match.status, 'FINISHED');
+  assert.strictEqual(state.match.winner, 'playerB');
 });
 
 test('トラッシュ再構築後もデッキが0枚ならタクティクスデッキを消費する', () => {

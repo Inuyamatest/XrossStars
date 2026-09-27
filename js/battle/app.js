@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20260927f';
+  var APP_VERSION = '20260927g';
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -695,7 +695,7 @@
       case 'CARD_DISCARDED_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」を捨てた' };
       case 'END_PHASE_DRAW': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：残りPPで' + p.count + '枚ドロー' } : null;
       case 'HAND_DISCARDED_OVER_LIMIT': return { cls: '', text: pShort(p.playerId) + '：手札上限で' + p.count + '枚捨てた' };
-      case 'DECK_RESHUFFLED_FROM_TRASH': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：デッキが切れたので、トラッシュの裏向きのカード' + p.count + '枚を山札に戻した' } : null;
+      case 'DECK_RESHUFFLED_FROM_TRASH': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：デッキが足りないので、トラッシュの裏向きのカード' + p.count + '枚をシャッフルして山札の下に戻した' } : null;
       case 'TACTICS_CONSUMED': return { cls: 'down', text: pShort(p.playerId) + '：デッキ切れのため、タクティクス「' + cardOf(p.cardId).name + '」をトラッシュに置いた' + (p.chosenBy === 'OPPONENT' ? '（相手が裏向きのまま選択）' : '') };
       case 'ROUND_ENDED': return { cls: 'turn', text: p.simultaneous ? 'ラウンド終了（両者同時敗北）' : 'ラウンド終了：' + PLAYER_LABEL[p.winner] + 'の勝利' };
       case 'MATCH_ENDED': return { cls: 'turn', text: p.winner === 'DRAW' ? '試合終了（引き分け）' : '試合終了：' + PLAYER_LABEL[p.winner] + 'の勝利' };

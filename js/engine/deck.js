@@ -2,16 +2,11 @@
  *
  * 根拠: docs/xross-stars-game-spec.md 19章（FAQ Q1）、docs/game-engine-architecture.md 7章
  *
- * FAQ Q1 のフォールバック連鎖を、1つの巨大関数にせず責務ごとに分離する：
- *   drawCard() → 必要ならrebuildDeckFromTrash() → それでも足りなければconsumeTacticsDeck()
- *   → それも尽きていればcheckDeckOutLoss()で試合敗北
- *
- * 注意（設計判断・PROVISIONALではなく実装上の割り切り）:
- *   FAQ Q1の実例（アタックカード「リンクアサルト」）は、デッキ切れのフォールバックが
- *   個別カード効果の処理途中で発生する複雑なケースを示している。今回はカード効果自体を
- *   実装しないため、drawCard() は「山札が尽きた状態でタクティクスデッキを消費した場合、
- *   手札には何も加えられない（消費という事実だけが発生する）」という最小限の解釈で実装する。
- *   個別カード効果と組み合わせた挙動は Card Effect Engine 側の責務とする。
+ * FAQ Q1 のデッキ切れ処理を、責務ごとに分離する：
+ *   ensureDeckCards(n) → デッキがn枚未満ならrebuildDeckFromTrash() → consumeTacticsDeck()
+ *   → タクティクスも尽きていればdeckOutLoss()で試合敗北
+ * drawCard() と、デッキを見る・公開するカード効果（effectResolver）は、デッキのカードを取る前に
+ * ensureDeckCards() を呼ぶ。FAQ Q1の実例（リンクアサルト）のとおり、効果の処理途中でも同じ手順を行う。
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
@@ -75,9 +70,7 @@
   }
 
   // FAQ Q1 手順3：タクティクスデッキも尽きていたら試合に敗北する
-  function checkDeckOutLoss(state, playerId) {
-    var player = state.players[playerId];
-    if (player.deck.length > 0 || player.tacticsDeck.length > 0) return false;
+  function deckOutLoss(state, playerId) {
     var opponentId = playerId === 'playerA' ? 'playerB' : 'playerA';
     state.match.status = 'FINISHED';
     state.match.winner = opponentId;
@@ -86,40 +79,58 @@
     return true;
   }
 
-  // カードを1枚引く。FAQ Q1のフォールバック連鎖を内包する。
-  // 戻り値: 引けたCardInstance、または（デッキ・トラッシュ・タクティクスデッキすべて尽きて）
-  //         引けなかった場合はnull（この場合checkDeckOutLossにより敗北処理が実行済み）
-  function drawCard(state, playerId) {
+  // デッキ・タクティクスデッキがどちらも0枚なら敗北させる（互換用。デッキ切れ処理の本体は ensureDeckCards）
+  function checkDeckOutLoss(state, playerId) {
     var player = state.players[playerId];
+    if (player.deck.length > 0 || player.tacticsDeck.length > 0) return false;
+    return deckOutLoss(state, playerId);
+  }
 
-    if (player.deck.length === 0) {
-      Events.logEvent(state, 'DECK_EMPTY', { playerId: playerId });
-      rebuildDeckFromTrash(state, playerId);
+  // FAQ Q1：デッキのカードがn枚必要な場面（引く・見る・公開する）で、デッキがn枚未満のときの処理。
+  //   1. 残っているデッキはそのまま上に置いたまま、トラッシュの裏向きのカードをシャッフルしてその下に戻す
+  //   2. タクティクスデッキから1枚（相手が裏向きのまま選ぶ）を表向きでトラッシュに置く
+  //      ※再構築でカードが足りた場合も置く（FAQ Q1の実例「リンクアサルト」の処理順、ruleConfig.deckOutPolicy）
+  //   3. 置くタクティクスが無ければ、その試合に敗北する
+  // それでもn枚に届かなければ、呼び出し側はあるだけで処理する。
+  // 戻り値: 処理を続けてよいならtrue、デッキ切れで敗北した（またはすでに試合が終わっている）ならfalse
+  function ensureDeckCards(state, playerId, n) {
+    var player = state.players[playerId];
+    if (player.deck.length >= n) return true;
+    if (state.match.status === 'FINISHED') return false;
+    Events.logEvent(state, 'DECK_EMPTY', { playerId: playerId, needed: n, remaining: player.deck.length });
+    rebuildDeckFromTrash(state, playerId);
+    if (consumeTacticsDeck(state, playerId) === null) {
+      deckOutLoss(state, playerId);
+      return false;
     }
+    return true;
+  }
 
-    if (player.deck.length === 0) {
-      var consumed = consumeTacticsDeck(state, playerId);
-      if (consumed === null) {
-        checkDeckOutLoss(state, playerId);
-        return null;
-      }
-      // タクティクスデッキを消費しても手札には何も加わらない（上記コメント参照）
-      return null;
-    }
-
+  function drawTop(state, playerId) {
+    var player = state.players[playerId];
     var card = player.deck.shift();
     player.hand.push(card);
     Events.logEvent(state, 'CARD_DRAWN', { playerId: playerId, cardId: card.cardId });
     return card;
   }
 
+  // カードを1枚引く。FAQ Q1のデッキ切れ処理（ensureDeckCards）を内包する。
+  // 戻り値: 引けたCardInstance。引けなかった場合はnull（デッキ切れで敗北した場合も含む）
+  function drawCard(state, playerId) {
+    if (!ensureDeckCards(state, playerId, 1)) return null;
+    if (state.players[playerId].deck.length === 0) return null; // トラッシュにも裏向きのカードが無かった（タクティクスを1枚置いただけ）
+    return drawTop(state, playerId);
+  }
+
+  // カードをcount枚引く。デッキ切れ処理は「count枚が必要になった」1回として行う
+  // （FAQ Q1の実例で「3枚見る」を1回の処理にしているのに合わせる。ruleConfig.deckOutPolicy, PROVISIONAL）。
+  // それでも足りなければ、引けるだけ引く。
   function drawCards(state, playerId, count) {
     var drawn = [];
-    for (var i = 0; i < count; i++) {
-      if (state.match.status === 'FINISHED') break; // デッキ切れ敗北が発生したら止める
-      var card = drawCard(state, playerId);
-      if (card) drawn.push(card);
-    }
+    if (!(count > 0)) return drawn;
+    if (!ensureDeckCards(state, playerId, count)) return drawn;
+    var player = state.players[playerId];
+    for (var i = 0; i < count && player.deck.length > 0; i++) drawn.push(drawTop(state, playerId));
     return drawn;
   }
 
@@ -129,6 +140,7 @@
     consumeTacticsDeck: consumeTacticsDeck,
     setTacticsConsumeChooser: setTacticsConsumeChooser,
     checkDeckOutLoss: checkDeckOutLoss,
+    ensureDeckCards: ensureDeckCards,
     drawCard: drawCard,
     drawCards: drawCards,
   };

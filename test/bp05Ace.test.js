@@ -377,5 +377,87 @@ test('エコー無しのメモリアは通常どおりトラッシュ', () => {
   assert.strictEqual(state.players.playerB.playArea.length, 0);
 });
 
+// ============================================================
+console.log('=== デッキを見る・公開する効果のデッキ切れ（FAQ Q1） ===');
+// ============================================================
+const tacticsConsumed = (state, pid) => state.actionLog.filter((e) => e.type === 'TACTICS_CONSUMED' && e.payload.playerId === pid).length;
+test('頂点捕食者：デッキが0枚でも不発にならず、トラッシュ（捨てたカード込み）を戻してタクティクス1枚を置いてから4枚見る', () => {
+  const state = makeState();
+  const pb = state.players.playerB;
+  toHand(state, 'playerB', ATTACK_COST2);
+  pb.deck = [];
+  pb.trash = [FILLER_ATTACK, FILLER_ATTACK, FILLER_ATTACK].map((id) => ({ card: inst(id), faceUp: false }));
+  const tacticsBefore = pb.tacticsDeck.length;
+  attackWith(state, 'BP05-038', { chooseApexDiscard: (cands) => cands.map((c) => c.instanceId) });
+  assert.strictEqual(tacticsConsumed(state, 'playerB'), 1);
+  assert.strictEqual(pb.tacticsDeck.length, tacticsBefore - 1);
+  assert.strictEqual(pb.deck.length, 0, '戻した4枚（捨てたコスト2＋3枚）をすべて見た');
+  assert.ok(state.actionLog.some((e) => e.type === 'FREE_ATTACK_PLAYED_BY_EFFECT'), '見た中のアタックをプレイできる');
+  assert.strictEqual(state.match.status, 'IN_PROGRESS');
+});
+test('頂点捕食者：デッキが2枚なら、その2枚を上に残したまま下にトラッシュを戻し、タクティクス1枚を置いて4枚見る', () => {
+  const state = makeState();
+  const pb = state.players.playerB;
+  toHand(state, 'playerB', ATTACK_COST2);
+  pb.deck = [MEMORIA_COST0, MEMORIA_COST0].map(inst);
+  pb.trash = [FILLER_ATTACK, FILLER_ATTACK, FILLER_ATTACK].map((id) => ({ card: inst(id), faceUp: false }));
+  let seen = null;
+  attackWith(state, 'BP05-038', {
+    chooseApexDiscard: (cands) => cands.map((c) => c.instanceId),
+    chooseDeckLookAttack: (cands) => { seen = cands; return null; },
+  });
+  assert.strictEqual(tacticsConsumed(state, 'playerB'), 1);
+  assert.strictEqual(pb.deck.length, 2, '2枚＋戻した4枚−見た4枚');
+  assert.ok(seen && seen.length === 2, '上2枚はメモリアのまま、下から来たアタック2枚が候補');
+});
+test('頂点捕食者：デッキ切れで置くタクティクスが無ければ、その試合に敗北する', () => {
+  const state = makeState();
+  const pb = state.players.playerB;
+  toHand(state, 'playerB', ATTACK_COST2);
+  pb.deck = [];
+  pb.tacticsDeck = [];
+  attackWith(state, 'BP05-038', { chooseApexDiscard: (cands) => cands.map((c) => c.instanceId) });
+  assert.strictEqual(state.match.status, 'FINISHED');
+  assert.strictEqual(state.match.winner, 'playerA');
+});
+test('運命のルーレット：デッキが0枚でもトラッシュを戻してタクティクス1枚を置き、公開する', () => {
+  const state = makeState();
+  const pb = state.players.playerB;
+  pb.deck = [];
+  pb.trash = [{ card: inst(MEMORIA_COST0), faceUp: false }];
+  playMemoria(state, 'BP01-068', { chooseDeclareCardType: () => 'ATTACK' });
+  assert.strictEqual(tacticsConsumed(state, 'playerB'), 1);
+  assert.ok(state.actionLog.some((e) => e.type === 'CARD_REVEALED_BY_EFFECT'));
+});
+test('運命のルーレット：当たって4枚引くときにデッキが足りなければ、デッキ切れ処理は1回（引けるだけ引く）', () => {
+  const state = makeState();
+  const pb = state.players.playerB;
+  pb.deck = [inst(FILLER_ATTACK)];
+  pb.trash = [{ card: inst(FILLER_ATTACK), faceUp: false }];
+  playMemoria(state, 'BP01-068', { chooseDeclareCardType: () => 'ATTACK' });
+  assert.strictEqual(tacticsConsumed(state, 'playerB'), 1);
+  assert.strictEqual(pb.hand.length, 2);
+  assert.strictEqual(state.match.status, 'IN_PROGRESS');
+});
+test('神速フリック：対戦相手のデッキが0枚なら、対戦相手がデッキ切れ処理をする', () => {
+  const state = makeState();
+  const pa = state.players.playerA;
+  pa.deck = [];
+  pa.trash = [{ card: inst(FILLER_ATTACK), faceUp: false }];
+  attackWith(state, 'BP01-030');
+  assert.strictEqual(tacticsConsumed(state, 'playerA'), 1);
+  assert.strictEqual(tacticsConsumed(state, 'playerB'), 0);
+  assert.strictEqual(pa.deck.length, 0, '戻した1枚を公開してトラッシュに置いた');
+});
+test('テラーエンゲージ：デッキが足りなければデッキ切れ処理をしてから4枚公開する', () => {
+  const state = makeState();
+  const pb = state.players.playerB;
+  pb.deck = [inst(FILLER_ATTACK)];
+  pb.trash = [FILLER_ATTACK, FILLER_ATTACK, FILLER_ATTACK].map((id) => ({ card: inst(id), faceUp: false }));
+  attackWith(state, 'BP04-031');
+  assert.strictEqual(tacticsConsumed(state, 'playerB'), 1);
+  assert.strictEqual(pb.deck.length, 0);
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

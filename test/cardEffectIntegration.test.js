@@ -249,7 +249,7 @@ test('Test G: 危機一髪→ON_PLAY→2枚ドロー、カードプレイ処理�
   assert.strictEqual(state.players.playerA.hand.length, handBeforePlay - 1 + 2);
 });
 
-test('Test G: 危機一髪→デッキが尽きていても既存のFAQ Q1フォールバック連鎖に従う（トラッシュから再構築して2枚引ける）', () => {
+test('Test G: 危機一髪→デッキが尽きていても既存のFAQ Q1フォールバック連鎖に従う（トラッシュから再構築して2枚引ける・タクティクス1枚をトラッシュ）', () => {
   const state = Match.createMatch(makeMatchConfig());
   state.players.playerA.deck = []; // 山札を空にする
   state.players.playerA.trash = [
@@ -265,7 +265,9 @@ test('Test G: 危機一髪→デッキが尽きていても既存のFAQ Q1フォ
   });
   // Deck.drawCards（既存・無改修）のFAQ Q1フォールバック連鎖（トラッシュ再構築）を経て2枚引けているはず
   assert.strictEqual(state.players.playerA.hand.length, handBeforePlay - 1 + 2);
-  assert.strictEqual(state.players.playerA.trash.length, 0, '裏向きトラッシュはすべてデッキへ再構築され引かれたはず');
+  const trash = state.players.playerA.trash;
+  assert.ok(!trash.some((t) => !t.faceUp && t.card.cardId === FILLER_ATTACK), '裏向きトラッシュはすべてデッキへ再構築され引かれたはず');
+  assert.strictEqual(trash.filter((t) => t.faceUp && t.card.cardId !== 'BP01-058').length, 1, 'デッキ切れ処理でタクティクスを1枚表向きでトラッシュに置く（FAQ Q1の実例）');
 });
 
 // ============================================================

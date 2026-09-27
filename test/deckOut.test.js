@@ -98,15 +98,58 @@ test('残り1枚なら質問しない。0枚なら試合に敗北', () => {
   assert.strictEqual(s.match.winner, 'playerB');
 });
 
-test('トラッシュに裏向きのカードがあれば、先にそれを山札に戻す（タクティクスは減らない）', () => {
+test('トラッシュに裏向きのカードがあれば山札に戻して引く。そのうえでタクティクスも1枚置く（FAQ Q1の実例）', () => {
   const s = makeDeckOut();
   s.players.playerA.trash = [{ card: s.players.playerB.deck[0], faceUp: false }];
   let asked = 0;
   Deck.setTacticsConsumeChooser(() => { asked++; return 0; });
   const card = Deck.drawCard(s, 'playerA');
   assert.ok(card);
-  assert.strictEqual(asked, 0);
+  assert.strictEqual(asked, 1);
+  assert.strictEqual(s.players.playerA.tacticsDeck.length, 4);
+});
+
+test('デッキが足りていればデッキ切れ処理は起きない', () => {
+  const s = makeDeckOut();
+  s.players.playerA.deck = s.players.playerB.deck.splice(0, 3);
+  assert.strictEqual(Deck.ensureDeckCards(s, 'playerA', 3), true);
   assert.strictEqual(s.players.playerA.tacticsDeck.length, 5);
+  assert.strictEqual(consumedEvents(s).length, 0);
+});
+
+test('見る枚数に足りないとき：残りのデッキは上のまま、その下にトラッシュの裏向きカードを戻し、タクティクスを1枚置く', () => {
+  const s = makeDeckOut();
+  const p = s.players.playerA;
+  p.deck = s.players.playerB.deck.splice(0, 1);
+  const topId = p.deck[0].instanceId;
+  p.trash = s.players.playerB.deck.splice(0, 4).map((c) => ({ card: c, faceUp: false }));
+  assert.strictEqual(Deck.ensureDeckCards(s, 'playerA', 3), true);
+  assert.strictEqual(p.deck.length, 5);
+  assert.strictEqual(p.deck[0].instanceId, topId);
+  assert.strictEqual(p.tacticsDeck.length, 4);
+  assert.deepStrictEqual(p.trash.map((t) => t.faceUp), [true]);
+});
+
+test('見る枚数に足りず、置くタクティクスも無ければ敗北（falseを返す）', () => {
+  const s = makeDeckOut();
+  s.players.playerA.tacticsDeck = [];
+  assert.strictEqual(Deck.ensureDeckCards(s, 'playerA', 1), false);
+  assert.strictEqual(s.match.winner, 'playerB');
+});
+
+test('ruleConfig に解釈（PROVISIONAL）が記録されている', () => {
+  const policy = makeDeckOut().ruleConfig.deckOutPolicy;
+  assert.strictEqual(policy.alwaysConsumeTactics, true);
+  assert.strictEqual(policy.effectFizzlesOnEmptyDeck, false);
+  assert.strictEqual(policy.status, 'PROVISIONAL');
+});
+
+test('n枚引くときにデッキが足りなければ、デッキ切れ処理は1回だけ（引けるだけ引く）', () => {
+  const s = makeDeckOut();
+  s.players.playerA.trash = [{ card: s.players.playerB.deck[0], faceUp: false }];
+  const drawn = Deck.drawCards(s, 'playerA', 3);
+  assert.strictEqual(drawn.length, 1);
+  assert.strictEqual(consumedEvents(s).length, 1);
 });
 
 console.log('=== 対戦画面の質問・CPU ===');
