@@ -231,6 +231,29 @@ test('弱：何度選ばせても、手札・PPの範囲の手かターン終了
     if (act.type === 'ATTACK') assert.ok(act.options.targetLeaderIndex >= 0 && act.options.targetLeaderIndex < 4);
   }
 });
+test('強：デッキ・裏向きのトラッシュ・タクティクスデッキが尽きているなら、PPを残して終了フェイズのドローで負けるより、PPを使い切る', () => {
+  const s = makeState();
+  const p = s.players.playerA;
+  p.deck = [];
+  p.trash = [];
+  p.tacticsDeck = [];
+  p.ppCards.max = 2;
+  hand(s, 'ST02-007'); // インパクトショット（コスト2）
+  const act = Cpu.decideAction(s, 'playerA', cardIndex, { level: 'HARD' });
+  assert.strictEqual(act.type, 'ATTACK');
+});
+test('強：ラウンドの終わりが近い盤面（相手の残り1体・体力わずか）でも手を返し、倒せるならアタックする', () => {
+  const s = makeState();
+  const leaders = s.players.playerB.leaders;
+  const hpOf = (l) => GameState.getLeaderMaxHp(cardIndex, l);
+  const act1 = Cpu.decideAction(s, 'playerA', cardIndex, { level: 'HARD' });
+  // 相手のリーダーが残り1体・体力わずかな状況でも、正しく手を返す（例外にならない）
+  leaders.forEach((l, i) => { if (i > 0) { l.isDown = true; l.damage = hpOf(l); } else l.damage = hpOf(l) - 20; });
+  hand(s, 'ST02-007');
+  const act2 = Cpu.decideAction(s, 'playerA', cardIndex, { level: 'HARD' });
+  assert.ok(act1 && act2);
+  assert.strictEqual(act2.type, 'ATTACK'); // 倒せば勝ち：アタックする
+});
 test('強さの順：強は中に、中は弱に勝ち越す（同じデッキで席を入れ替えて各12試合）', () => {
   function series(strong, weak) {
     let wins = 0;
