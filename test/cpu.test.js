@@ -268,6 +268,14 @@ test('ラウンド開始時のタクティクス：復活ポータル（条件�
   const a = Cpu.answerQuestion({ type: 'CARDS', kind: 'SET_TACTICS', cards, min: 1, max: 1 }, s, 'playerA', cardIndex);
   assert.strictEqual(cards[a[0]].cardId, 'ST02-022');
 });
+test('1枚だけタダでプレイする選択（頂点捕食者の山札から等）では、コストの一番高いカードを選ぶ', () => {
+  const s = makeState();
+  const cards = ['BP01-046', 'ST02-007', 'AN01-005'].map((id) => ({ instanceId: 'x' + id, cardId: id }));
+  const a = Cpu.answerQuestion({ type: 'CARDS', kind: 'FREE_PLAY', cards, min: 0, max: 1, preselect: [0] }, s, 'playerA', cardIndex);
+  assert.strictEqual(a.length, 1);
+  const costs = cards.map((c) => cardIndex[c.cardId].cost);
+  assert.strictEqual(costs[a[0]], Math.max(...costs));
+});
 test('強さの順：強は中に、中は弱に勝ち越す（同じデッキで席を入れ替えて各12試合）', () => {
   function series(strong, weak) {
     let wins = 0;

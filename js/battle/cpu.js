@@ -533,6 +533,11 @@
           byCost.forEach(function (x) { if (chosen.length < q.max && total + x.cost <= q.costMax) { chosen.push(x.i); total += x.cost; } });
           return chosen;
         }
+        if (q.max === 1 && cards.length > 1) {
+          // 1枚だけタダでプレイする（頂点捕食者の山札から等）：コストの高いカードほど効果が大きいので、一番高いもの
+          var best = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return b.cost - a.cost; })[0];
+          return [best.i];
+        }
         return (q.preselect && q.preselect.length ? q.preselect : [0]).slice(0, q.max);
       }
       default:
