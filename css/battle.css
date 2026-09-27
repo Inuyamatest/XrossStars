@@ -493,3 +493,8 @@ img{display:block}
 .bt-net-url input{flex:1;min-width:0;min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--line2);background:var(--bg);color:var(--text);font-size:13px}
 .bt-net-banner{position:fixed;left:50%;top:56px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;padding:10px 16px;border-radius:12px;background:rgba(40,12,24,.95);border:1px solid rgba(255,69,142,.7);color:#ffd6e2;font-size:13px;max-width:calc(100vw - 32px);box-shadow:var(--shadow)}
 .bt-start-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+/* デッキ切れ：裏向きのタクティクスを選ぶ */
+.bt-choice-item.facedown .bt-choice-img{display:flex;align-items:center;justify-content:center}
+.bt-facedown-back{width:100%;aspect-ratio:88/63;border-radius:6px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#2c2834 0 8px,#23202a 8px 16px);border:1px solid var(--line2)}
+.bt-facedown-back span{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--sub);padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.45)}
+.bt-choice-note{margin:8px 0 0;font-size:12px;color:var(--sub);text-align:center}

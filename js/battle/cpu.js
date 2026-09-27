@@ -465,6 +465,9 @@
     // CARDS
     var cards = q.cards;
     switch (q.kind) {
+      case 'DECKOUT_TACTICS':
+        // 相手のタクティクスは裏向きなので、どれを選んでも同じ（ランダム）
+        return [Math.floor(Math.random() * cards.length)];
       case 'SET_TACTICS': {
         // ラウンド開始時のタクティクス：このラウンドのPPで使える中で一番コストの高いもの（無ければ一番安いもの）
         var ppMax = player.ppCards.max;

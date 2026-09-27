@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20260927e';
+  var APP_VERSION = '20260927f';
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -695,7 +695,8 @@
       case 'CARD_DISCARDED_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」を捨てた' };
       case 'END_PHASE_DRAW': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：残りPPで' + p.count + '枚ドロー' } : null;
       case 'HAND_DISCARDED_OVER_LIMIT': return { cls: '', text: pShort(p.playerId) + '：手札上限で' + p.count + '枚捨てた' };
-      case 'DECK_RESHUFFLED_FROM_TRASH': return { cls: '', text: pShort(p.playerId) + '：トラッシュを山札に戻した' };
+      case 'DECK_RESHUFFLED_FROM_TRASH': return p.count > 0 ? { cls: '', text: pShort(p.playerId) + '：デッキが切れたので、トラッシュの裏向きのカード' + p.count + '枚を山札に戻した' } : null;
+      case 'TACTICS_CONSUMED': return { cls: 'down', text: pShort(p.playerId) + '：デッキ切れのため、タクティクス「' + cardOf(p.cardId).name + '」をトラッシュに置いた' + (p.chosenBy === 'OPPONENT' ? '（相手が裏向きのまま選択）' : '') };
       case 'ROUND_ENDED': return { cls: 'turn', text: p.simultaneous ? 'ラウンド終了（両者同時敗北）' : 'ラウンド終了：' + PLAYER_LABEL[p.winner] + 'の勝利' };
       case 'MATCH_ENDED': return { cls: 'turn', text: p.winner === 'DRAW' ? '試合終了（引き分け）' : '試合終了：' + PLAYER_LABEL[p.winner] + 'の勝利' };
       case 'DECK_OUT_LOSS': return { cls: 'down', text: pShort(p.loserId) + '：デッキ切れで敗北' };
@@ -1046,6 +1047,12 @@
     stepChoice();
   }
 
+  // 行動の実行中だけ、デッキ切れ時のタクティクスを「裏向きのまま相手に選んでもらう」ようにする（FAQ Q1）
+  function withDeckOutChooser(ask, fn) {
+    Eng.Deck.setTacticsConsumeChooser(Choices.makeDeckOutTacticsChooser(ask));
+    try { return fn(); } finally { Eng.Deck.setTacticsConsumeChooser(null); }
+  }
+
   function stepChoice() {
     var pc = pendingChoice;
     var r;
@@ -1055,7 +1062,7 @@
           getActivePlayerId: function () { return state.turn.activePlayer; },
           getResolvingEffect: Eng.Resolver.getResolvingEffect,
         });
-        return pc.fn(state, callbacks, ask);
+        return withDeckOutChooser(ask, function () { return pc.fn(state, callbacks, ask); });
       });
     } catch (e) {
       pendingChoice = null;
@@ -1290,7 +1297,7 @@
     (history || []).forEach(function (h) {
       var r = Choices.runWithAnswers(game.state, h.seed, h.answers, function (st, ask) {
         var cb = Choices.makeCallbacks(ask, { getActivePlayerId: function () { return st.turn.activePlayer; }, getResolvingEffect: Eng.Resolver.getResolvingEffect });
-        return actionFn(h.desc)(st, cb, ask);
+        return withDeckOutChooser(ask, function () { return actionFn(h.desc)(st, cb, ask); });
       });
       if (r.done) game.state = r.state;
       game.online.history.push(h);
@@ -1649,6 +1656,15 @@
         '</div>';
         return renderChoiceLeader(state, ref, i, pc.selection[i] > 0, ctrl);
       }).join('') + '</div>';
+    } else if (qn.faceDown) {
+      // デッキ切れ：相手の残りのタクティクスを裏向きのまま選ぶ（中身は見せない。拡大・ホバー表示もしない）
+      body = '<div class="bt-choice-grid cards">' + qn.cards.map(function (c, i) {
+        return '<div class="bt-choice-item card landscape facedown' + (pc.selection.indexOf(i) >= 0 ? ' selected' : '') + '" data-act="choice-toggle" data-index="' + i + '" role="button" tabindex="0">' +
+          '<div class="bt-choice-img"><div class="bt-facedown-back"><span>TACTICS</span></div></div>' +
+          '<div class="bt-choice-cap"><span>' + (i + 1) + '枚目</span></div>' +
+        '</div>';
+      }).join('') + '</div>' +
+      '<p class="bt-choice-note">' + esc(PLAYER_LABEL[qn.deckOutPlayer]) + 'のタクティクスデッキ（残り' + qn.cards.length + '枚・シャッフル済み）です。選んだカードは表向きでトラッシュに置かれます。</p>';
     } else if (!pc.revealed) {
       body = '<div class="bt-choice-secret"><p>' + (qn.secretNote ? esc(PLAYER_LABEL[chooser]) + 'が' + esc(qn.secretNote) : esc(PLAYER_LABEL[chooser]) + 'の手札から選びます。') + esc(PLAYER_LABEL[chooser]) + 'に端末を渡してください。</p>' +
         '<button class="bt-btn primary" data-act="choice-reveal">' + esc(qn.revealLabel || '手札を表示する') + '</button></div>';
@@ -1960,6 +1976,11 @@
     var room = new URLSearchParams(location.search).get('room');
     if (room && /^[a-z0-9]{4,16}$/.test(room)) openOnlineRoom('guest', room);
   })();
+
+  // 動作確認用（URLに ?debug=1 を付けたときだけ）：自動テストから盤面を直接用意できるようにする
+  if (new URLSearchParams(location.search).get('debug') === '1') {
+    window.XS_BATTLE_DEBUG = { game: function () { return game; }, render: function () { render(); } };
+  }
 
   render();
 })();
