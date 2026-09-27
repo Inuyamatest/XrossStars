@@ -131,8 +131,9 @@
 
       case 'MILL_OWN_TOP': {
         // 慈悲の刃「自分のデッキの上から5枚を見る。それらのカードをトラッシュに置く。」
-        // デッキが足りなければあるだけ置く（トラッシュからの再構築はしない。ruleConfig.millOwnTopPolicy, PROVISIONAL）
+        // デッキが足りなければFAQ Q1のデッキ切れ処理をしてから、あるだけ置く（ruleConfig.millOwnTopPolicy / deckOutPolicy, PROVISIONAL）
         var millOwner = state.players[ctx.ownerPlayerId];
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, action.amount)) return state;
         var milled = millOwner.deck.splice(0, Math.min(action.amount, millOwner.deck.length));
         milled.forEach(function (c) {
           millOwner.trash.push({ card: c, faceUp: false });
@@ -246,6 +247,7 @@
         // に委ねる（省略時・null＝辞退）。見た残り（プレイした1枚以外）は裏向きでトラッシュへ置く
         // （ruleConfig.js deckLookTrashOrientation参照。公式資料に表裏の明記なし）。
         var deckLookPlayer = state.players[ctx.ownerPlayerId];
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, action.count)) return state; // FAQ Q1（デッキ切れ）
         var revealed = deckLookPlayer.deck.splice(0, Math.min(action.count, deckLookPlayer.deck.length));
         // コスト未確定（null）のカードは対象外にする（(cd.cost || 0)だと誤って0扱いになってしまう）。
         var deckLookCandidates = revealed.filter(function (c) {
@@ -302,6 +304,7 @@
         // （手札に加えるだけで失うものが無いため、FREE_PLAY系の「辞退」とは既定を変えている）。
         // minPick（「手札に加える」と義務になっている討伐クエスト）は、選択が足りなければ先頭から補う。
         var lookPlayer = state.players[ctx.ownerPlayerId];
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, action.count)) return state; // FAQ Q1（デッキ切れ）
         var looked = lookPlayer.deck.splice(0, Math.min(action.count, lookPlayer.deck.length));
         var filter = action.filter || {};
         var addCandidates = looked.filter(function (c) {
@@ -384,6 +387,7 @@
           Events.logEvent(state, 'CARD_DISCARDED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: discarded.cardId });
         });
 
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, action.count)) return state; // FAQ Q1（デッキ切れ）
         var apexLooked = apexPlayer.deck.splice(0, Math.min(action.count, apexPlayer.deck.length));
         var attackCandidates = apexLooked.filter(function (c) {
           var cd = ctx.cardIndex[c.cardId];
@@ -431,7 +435,8 @@
         // 宣言はctx.chooseDeclareCardType(['MEMORIA','ATTACK'], state)。省略時はアタックカードを宣言（PROVISIONAL）。
         var declared = ctx.chooseDeclareCardType ? ctx.chooseDeclareCardType(['MEMORIA', 'ATTACK'], state) : 'ATTACK';
         var rPlayer = state.players[ctx.ownerPlayerId];
-        if (rPlayer.deck.length === 0) return state;
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, 1)) return state; // FAQ Q1（デッキ切れ）
+        if (rPlayer.deck.length === 0) return state; // トラッシュにも裏向きのカードが無く、公開するカードが無い
         var revealedTop = rPlayer.deck[0];
         var revealedCard = ctx.cardIndex[revealedTop.cardId];
         Events.logEvent(state, 'CARD_REVEALED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: revealedTop.cardId, declared: declared });
@@ -495,6 +500,7 @@
         // 省略時は各先頭の候補を、メモリア→アタックの順でプレイする。選んだカードは「このカードの効果の後」に
         // 選んだ順でResolutionStackへ積み、1枚ずつ解決する（アタックは解決時にアタッカー/対象を選ぶ）。
         var meetPlayer = state.players[ctx.ownerPlayerId];
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, action.count)) return state; // FAQ Q1（デッキ切れ）
         var meetLooked = meetPlayer.deck.splice(0, Math.min(action.count, meetPlayer.deck.length));
         function meetCands(type) {
           return meetLooked.filter(function (c) {
@@ -1226,8 +1232,9 @@
           if (draws) effectDraw(state, playerId, draws, cardIndex);
         } else if (a.type === 'MILL_OPPONENT_TOP_FOR_BONUS') {
           // 神速フリック/天衣無縫「対戦相手のデッキの上から1枚を公開し、トラッシュに置く。そのカードが〇〇カードなら、ダメージ+20。」
-          // 対戦相手のデッキが0枚なら何もしない（トラッシュからの再構築はしない。PROVISIONAL）。
+          // 対戦相手のデッキが0枚なら、対戦相手がFAQ Q1のデッキ切れ処理を行う（ruleConfig.deckOutPolicy）。
           var opp = state.players[GameState.getOpponentId(playerId)];
+          if (!Deck.ensureDeckCards(state, GameState.getOpponentId(playerId), 1)) return;
           if (opp.deck.length === 0) return;
           var top = opp.deck.shift();
           opp.trash.push({ card: top, faceUp: false });
@@ -1238,6 +1245,7 @@
           // テラーエンゲージ「自分のデッキの上から4枚を公開する。公開したカードのコスト1種類につきダメージ+30。
           // 公開したカードのコストがすべて異なるなら、PPを1回復する。公開したカードすべてをトラッシュに置く。」
           var self = state.players[playerId];
+          if (!Deck.ensureDeckCards(state, playerId, a.count)) return; // FAQ Q1（デッキ切れ）
           var revealed = self.deck.splice(0, Math.min(a.count, self.deck.length));
           var kinds = {};
           revealed.forEach(function (c) {

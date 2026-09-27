@@ -181,17 +181,37 @@ test('BP04-017のプレイ時：自分のデッキの上から5枚をトラッ�
   assert.strictEqual(p.playArea.some((e) => e.card.cardId === 'BP04-017'), true); // 慈悲の刃自身はプレイエリア
 });
 
-test('BP04-017のプレイ時：デッキが5枚未満なら、あるだけトラッシュに置く（エラーにしない）', () => {
+test('BP04-017のプレイ時：デッキが5枚未満なら、FAQ Q1のデッキ切れ処理（トラッシュを戻してタクティクス1枚）をしてから5枚置く', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  const p = state.players.playerA;
+  const rest = p.deck.slice(3);
+  p.deck = p.deck.slice(0, 3);
+  p.trash = rest.slice(0, 4).map((c) => ({ card: c, faceUp: false }));
+  const tacticsBefore = p.tacticsDeck.length;
+  const instanceId = injectHand(state, 'playerA', 'BP04-017');
+  EffectResolver.playAttackCardWithEffects(state, 'playerA', instanceId, {
+    attackerLeaderIndex: 0, targetPlayerId: 'playerB', targetLeaderIndex: 0,
+  }, cardIndex);
+  ResolutionStack.resolveAll(state.resolutionStack, state);
+  assert.strictEqual(p.deck.length, 2); // 3枚＋戻した4枚 − 5枚
+  assert.strictEqual(p.tacticsDeck.length, tacticsBefore - 1);
+  assert.strictEqual(state.match.status, 'IN_PROGRESS');
+});
+
+test('BP04-017のプレイ時：デッキもトラッシュも足りなければ、あるだけ置く（タクティクス1枚を置いて続行）', () => {
   const state = Match.createMatch(makeMatchConfig());
   const p = state.players.playerA;
   p.deck = p.deck.slice(0, 3);
+  p.trash = [];
+  const tacticsBefore = p.tacticsDeck.length;
   const instanceId = injectHand(state, 'playerA', 'BP04-017');
   EffectResolver.playAttackCardWithEffects(state, 'playerA', instanceId, {
     attackerLeaderIndex: 0, targetPlayerId: 'playerB', targetLeaderIndex: 0,
   }, cardIndex);
   ResolutionStack.resolveAll(state.resolutionStack, state);
   assert.strictEqual(p.deck.length, 0);
-  assert.strictEqual(state.match.status, 'IN_PROGRESS'); // デッキが0枚になるだけでは負けにならない（引くときに判定）
+  assert.strictEqual(p.tacticsDeck.length, tacticsBefore - 1);
+  assert.strictEqual(state.match.status, 'IN_PROGRESS');
 });
 
 // ============================================================

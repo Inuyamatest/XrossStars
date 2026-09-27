@@ -256,7 +256,7 @@
     return function (state, playerId, candidates) {
       var a = ask({ kind: 'DECKOUT_TACTICS', type: 'CARDS', chooser: playerId === 'playerA' ? 'playerB' : 'playerA', source: null, preselect: [],
         faceDown: true, deckOutPlayer: playerId,
-        title: 'デッキが切れました（トラッシュにも裏向きのカードがありません）。残りのタクティクス（裏向き）から、トラッシュに置く1枚を選んでください',
+        title: 'デッキ切れです（トラッシュの裏向きのカードは山札に戻しました）。残りのタクティクス（裏向き）から、トラッシュに置く1枚を選んでください',
         cards: candidates.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; }), min: 1, max: 1 });
       return a[0];
     };

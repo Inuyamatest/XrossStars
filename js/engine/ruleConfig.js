@@ -311,12 +311,28 @@
       },
       // 慈悲の刃「自分のデッキの上から5枚を見る。それらのカードをトラッシュに置く。」（effectResolver MILL_OWN_TOP）
       millOwnTopPolicy: {
-        // デッキが5枚未満なら、あるだけトラッシュに置く（トラッシュをデッキに戻して引き直すことはしない）
-        insufficientDeck: 'MILL_AVAILABLE_ONLY',
+        // デッキが5枚未満なら、FAQ Q1のデッキ切れ処理（deckOutPolicy）をしてから、あるだけトラッシュに置く
+        insufficientDeck: 'DECK_OUT_PROCEDURE_THEN_AVAILABLE',
         // 「見る」だけなので相手には公開しない扱い（トラッシュには裏向き。ログにもカード名は出さない）
         revealedToOpponent: false,
         status: 'PROVISIONAL',
-        source: 'BP04-017 慈悲の刃のカードテキスト。テラーエンゲージ（デッキが足りないときはあるだけ）の扱いに合わせた。',
+        source: 'BP04-017 慈悲の刃のカードテキスト。「見る」なのでFAQ Q1（デッキを見る場面）のデッキ切れ処理の対象。',
+      },
+      // デッキ切れ（FAQ Q1、Deck.ensureDeckCards）。引く・見る・公開する・上から置く効果で、必要な枚数よりデッキが少ないとき
+      deckOutPolicy: {
+        // 残りのデッキは上に置いたまま、その下にトラッシュの裏向きカードをシャッフルして戻す（FAQ Q1の実例：1枚を脇に避けてから戻し、合わせて見る）
+        remainingDeckStaysOnTop: true,
+        // 再構築でカードが足りた場合も、タクティクスを1枚（相手が裏向きのまま選ぶ）表向きでトラッシュに置く。置くタクティクスが無ければ敗北
+        alwaysConsumeTactics: true,
+        // 効果が不発になることはない（頂点捕食者などでデッキが0枚でも、上の処理をしてから見る）
+        effectFizzlesOnEmptyDeck: false,
+        // 「n枚引く」「n枚見る」は1回の効果につき1回の処理（それでも足りなければ、あるだけで処理する）
+        oneProcedurePerEffect: true,
+        // 神速フリックなど対戦相手のデッキを使う効果は、対戦相手がこの処理を行う
+        opponentDeckEffectsTriggerOpponentDeckOut: true,
+        status: 'PROVISIONAL',
+        source: 'Playing Manual p.14 FAQ Q1の手順と実例（リンクアサルト：デッキ1枚→1枚を避ける→トラッシュを戻す→タクティクス1枚→3枚見る）。'
+          + '「再構築できてもタクティクスを1枚置く」「効果は不発にならない」はユーザー確認（2026-09-27）。「1回の効果につき1回」は実例からの推定。',
       },
       // 各ラウンド開始時のタクティクス（match.js runRoundSetup。対戦画面は deferRoundSetup で使う）
       tacticsSetupPolicy: {
