@@ -332,7 +332,8 @@
         opponentDeckEffectsTriggerOpponentDeckOut: true,
         status: 'PROVISIONAL',
         source: 'Playing Manual p.14 FAQ Q1の手順と実例（リンクアサルト：デッキ1枚→1枚を避ける→トラッシュを戻す→タクティクス1枚→3枚見る）。'
-          + '「再構築できてもタクティクスを1枚置く」「効果は不発にならない」はユーザー確認（2026-09-27）。「1回の効果につき1回」は実例からの推定。',
+          + '「再構築できてもタクティクスを1枚置く」「効果は不発にならない」「引くごとにタクティクスは置かない（1回の効果につき1回）」'
+          + '「トラッシュのデッキのカード（裏向き）はすべて山札に戻す」はユーザー確認（2026-09-27）。',
       },
       // 各ラウンド開始時のタクティクス（match.js runRoundSetup。対戦画面は deferRoundSetup で使う）
       tacticsSetupPolicy: {
