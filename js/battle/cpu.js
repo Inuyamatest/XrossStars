@@ -51,7 +51,7 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true };
+  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30 };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -346,10 +346,10 @@
   function aliveHpSum(player, cardIndex) {
     return player.leaders.reduce(function (sum, l) { return l.isDown ? sum : sum + GameState.getLeaderCurrentHp(cardIndex, l); }, 0);
   }
-  var HAND_TUNE = { base: 14, ref: 200, floor: 0.3, lowSupply: 0.6, over5: 0.5 };
+  var HAND_TUNE = { ref: 200, floor: 0.3, lowSupply: 0.6, over5: 0.5 };
   function handScore(me, opp, cardIndex) {
     var t = HAND_TUNE;
-    var per = t.base * Math.max(t.floor, Math.min(1, Math.min(aliveHpSum(me, cardIndex), aliveHpSum(opp, cardIndex)) / t.ref));
+    var per = TUNE.handBase * Math.max(t.floor, Math.min(1, Math.min(aliveHpSum(me, cardIndex), aliveHpSum(opp, cardIndex)) / t.ref));
     var supply = me.deck.length + me.trash.filter(function (x) { return !x.faceUp; }).length;
     var extra = 0;
     if (supply < 5) per *= t.lowSupply;
@@ -369,7 +369,7 @@
       if (l.isDown) { score += 420; return; }
       var max = GameState.getLeaderMaxHp(cardIndex, l);
       var hp = GameState.getLeaderCurrentHp(cardIndex, l);
-      score += (max - hp) * 1.0 + (hp <= 40 ? 25 : 0);
+      score += (max - hp) * TUNE.chipWeight + (hp <= 40 ? 25 : 0);
     });
     var me = s.players[playerId];
     me.leaders.forEach(function (l) {
