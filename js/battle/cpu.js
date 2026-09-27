@@ -50,6 +50,11 @@
         (e.trigger === 'AFTER_ATTACK');
     });
   }
+  // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
+  var TUNE = { hpEquipFirst: true };
+  function isHpEquipment(cardId) {
+    return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
+  }
   function isEquipmentByEffects(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && EQUIP_ACTION_TYPES.indexOf(e.action.type) >= 0; });
   }
@@ -489,11 +494,19 @@
         // 相手のタクティクスは裏向きなので、どれを選んでも同じ（ランダム）
         return [Math.floor(Math.random() * cards.length)];
       case 'SET_TACTICS': {
-        // ラウンド開始時のタクティクス：このラウンドのPPで使える中で一番コストの高いもの（無ければ一番安いもの）
+        // ラウンド開始時のタクティクス。装備は試合の終わりまで残るので、体力を増やす装備（ライトシールド・
+        // サイバネアーマー等）は1ラウンド目に置いて早く使う（体力を増やして、相手の倒しきりの計算をずらす）。
+        // それ以外は、このラウンドのPPで使える中で一番コストの高いもの（無ければ一番安いもの）
         var ppMax = player.ppCards.max;
-        var tac = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return b.cost - a.cost; });
-        var usable = tac.filter(function (x) { return x.cost <= ppMax; });
-        return [(usable.length ? usable[0] : tac[tac.length - 1]).i];
+        var round = state.match.roundNumber;
+        var scored = cards.map(function (c, i) {
+          var cost = cardCost(c, cardIndex);
+          var v = cost <= ppMax ? 30 + cost * 5 : 0;
+          if (TUNE.hpEquipFirst && isHpEquipment(c.cardId)) v = round === 1 ? 100 : 60;
+          if (TUNE.hpEquipFirst && CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(c.cardId)) v = Math.min(v, 20); // 復活ポータル等：条件を満たすまで使えない
+          return { i: i, v: v, cost: cost };
+        }).sort(function (a, b) { return (b.v - a.v) || (a.cost - b.cost); });
+        return [scored[0].i];
       }
       case 'DISCARD':
       case 'HAND_LIMIT':
@@ -533,6 +546,7 @@
     decideAction: decideAction,
     answerQuestion: answerQuestion,
     LEVELS: ['EASY', 'NORMAL', 'HARD'],
+    TUNE: TUNE,
     estimateAttack: estimateAttack,
   };
 }));
