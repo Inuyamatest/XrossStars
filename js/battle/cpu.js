@@ -334,6 +334,26 @@
   }
 
   // 盤面の点数（playerIdから見て。baseは考え始めた時点の盤面）
+  // 手札の価値（強）：
+  //  - ラウンドの終わりが近い（自分か相手の、生きているリーダーの残り体力の合計が少ない）ほど下げる（ラウンド終了で手札はトラッシュ）
+  //  - 6枚目以降は半分（手札上限7枚。持ちすぎても使い切れない）
+  //  - デッキとトラッシュの裏向きのカードが残り少ないときは下げる。尽きていれば次のドローでタクティクスを失う／負けるので減点
+  function aliveHpSum(player, cardIndex) {
+    return player.leaders.reduce(function (sum, l) { return l.isDown ? sum : sum + GameState.getLeaderCurrentHp(cardIndex, l); }, 0);
+  }
+  var HAND_TUNE = { base: 14, ref: 200, floor: 0.3, lowSupply: 0.6, over5: 0.5 };
+  function handScore(me, opp, cardIndex) {
+    var t = HAND_TUNE;
+    var per = t.base * Math.max(t.floor, Math.min(1, Math.min(aliveHpSum(me, cardIndex), aliveHpSum(opp, cardIndex)) / t.ref));
+    var supply = me.deck.length + me.trash.filter(function (x) { return !x.faceUp; }).length;
+    var extra = 0;
+    if (supply < 5) per *= t.lowSupply;
+    if (supply === 0) extra = me.tacticsDeck.length === 0 ? -5e4 : -25;
+    var score = 0;
+    for (var i = 0; i < me.hand.length; i++) score += i < 5 ? per : per * t.over5;
+    return score + extra;
+  }
+
   function evaluate(s, playerId, cardIndex, base) {
     var oppId = GameState.getOpponentId(playerId);
     if (s.match.status === 'FINISHED') return s.match.winner === playerId ? 1e6 : (s.match.winner === 'DRAW' ? 0 : -1e6);
@@ -355,7 +375,7 @@
       if (l.awakened) score += 30;
       score += (l.equipment || []).length * 18;
     });
-    score += me.hand.length * 14;
+    score += handScore(me, s.players[oppId], cardIndex);
     score += (me.pendingAttackBoost || 0) * 0.5;
     score += me.tacticsArea.length * 4;
     return score;
