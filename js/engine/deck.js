@@ -43,15 +43,34 @@
     return state;
   }
 
-  // FAQ Q1 手順2：タクティクスデッキからランダムに1枚選び、表向きにトラッシュへ置く
+  // FAQ Q1 手順2の「1枚の選び方」。FAQは「自分でランダムに選ぶ、またはシャッフルして裏向きのまま相手に選んでもらう、
+  // などの方法」としている。対戦画面は setTacticsConsumeChooser(fn) で「裏向きのまま相手に選んでもらう」を使う
+  // （fn(state, playerId, candidates) => index。candidatesはシャッフル済みの並び）。未設定ならランダム。
+  var tacticsConsumeChooser = null;
+  function setTacticsConsumeChooser(fn) { tacticsConsumeChooser = fn || null; }
+
+  // FAQ Q1 手順2：タクティクスデッキから1枚選び、表向きにトラッシュへ置く
   // 戻り値: 消費したCardInstance、またはタクティクスデッキが0枚ならnull
   function consumeTacticsDeck(state, playerId) {
     var player = state.players[playerId];
-    if (player.tacticsDeck.length === 0) return null;
-    var index = Math.floor(Math.random() * player.tacticsDeck.length);
+    var n = player.tacticsDeck.length;
+    if (n === 0) return null;
+    var index;
+    var chosenBy = 'RANDOM';
+    if (tacticsConsumeChooser && n > 1) {
+      // 裏向きのままシャッフルしてから相手に1枚選んでもらう（並び順から中身が分からないように）
+      var order = [];
+      for (var i = 0; i < n; i++) order.push(i);
+      shuffle(order);
+      var pick = tacticsConsumeChooser(state, playerId, order.map(function (k) { return player.tacticsDeck[k]; }));
+      index = order[(pick >= 0 && pick < n) ? pick : 0];
+      chosenBy = 'OPPONENT';
+    } else {
+      index = Math.floor(Math.random() * n);
+    }
     var card = player.tacticsDeck.splice(index, 1)[0];
     player.trash.push({ card: card, faceUp: true });
-    Events.logEvent(state, 'TACTICS_CONSUMED', { playerId: playerId, cardId: card.cardId });
+    Events.logEvent(state, 'TACTICS_CONSUMED', { playerId: playerId, cardId: card.cardId, chosenBy: chosenBy });
     return card;
   }
 
@@ -108,6 +127,7 @@
     shuffle: shuffle,
     rebuildDeckFromTrash: rebuildDeckFromTrash,
     consumeTacticsDeck: consumeTacticsDeck,
+    setTacticsConsumeChooser: setTacticsConsumeChooser,
     checkDeckOutLoss: checkDeckOutLoss,
     drawCard: drawCard,
     drawCards: drawCards,

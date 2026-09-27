@@ -250,6 +250,18 @@
     };
   }
 
+  // デッキ切れ（FAQ Q1）：デッキが切れたプレイヤーの残りのタクティクスを裏向きのまま並べ、対戦相手が1枚選ぶ（deck.js）。
+  // faceDown: 画面はカードの裏面だけを見せる（candidatesはシャッフル済み）
+  function makeDeckOutTacticsChooser(ask) {
+    return function (state, playerId, candidates) {
+      var a = ask({ kind: 'DECKOUT_TACTICS', type: 'CARDS', chooser: playerId === 'playerA' ? 'playerB' : 'playerA', source: null, preselect: [],
+        faceDown: true, deckOutPlayer: playerId,
+        title: 'デッキが切れました（トラッシュにも裏向きのカードがありません）。残りのタクティクス（裏向き）から、トラッシュに置く1枚を選んでください',
+        cards: candidates.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; }), min: 1, max: 1 });
+      return a[0];
+    };
+  }
+
   // ラウンド開始時：タクティクスデッキからタクティクスエリアに置く1枚を選ぶ（match.js runRoundSetup の chooseTactics）
   // 裏向きに置くカードなので、人どうしの対戦では端末を渡してから表示する（secret）
   function makeTacticsChooser(ask) {
@@ -291,6 +303,7 @@
     makeCallbacks: makeCallbacks,
     makeHandLimitChooser: makeHandLimitChooser,
     makeTacticsChooser: makeTacticsChooser,
+    makeDeckOutTacticsChooser: makeDeckOutTacticsChooser,
     validateSelection: validateSelection,
   };
 }));
