@@ -73,6 +73,7 @@ img{display:block}
 .bt-deck-warnings{font-size:11px;color:var(--yellow);line-height:1.6}
 .bt-setup-options{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:center}
 .bt-opt{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}
+.bt-opt-note{flex-basis:100%;justify-content:center;color:var(--accent)}
 .bt-seg{display:inline-flex;background:var(--bg);border:1px solid var(--line2);border-radius:999px;padding:3px}
 .bt-seg button{border:0;background:transparent;color:var(--sub);font-size:12px;font-weight:600;padding:6px 14px;border-radius:999px;cursor:pointer}
 .bt-seg button.on{background:var(--panel2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line2)}
@@ -227,6 +228,13 @@ img{display:block}
 .bt-dock{position:fixed;left:0;right:0;bottom:0;z-index:25;background:linear-gradient(180deg,rgba(20,18,24,.72),rgba(20,18,24,.97) 30%);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
 .bt-dock-inner{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .bt-prompt{display:flex;align-items:center;gap:10px;min-height:40px;flex-wrap:wrap}
+/* CPUの速度・一時停止（CPU対戦・観戦のとき手札の上に出す） */
+.bt-cpuspeed{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:11px;color:var(--sub)}
+.bt-cpuspeed-label{margin-right:4px;letter-spacing:.06em}
+.bt-cpuspeed button{min-height:28px;min-width:40px;padding:0 8px;border-radius:999px;border:1px solid var(--line2);background:var(--panel2);color:var(--text);font-size:11px;font-weight:700;cursor:pointer}
+.bt-cpuspeed button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bt-cpuspeed .bt-cpuspeed-pause{margin-left:6px}
+.bt-cpuspeed .bt-cpuspeed-pause.on{background:var(--yellow);border-color:var(--yellow);color:#1a1612}
 .bt-prompt-text{font-size:13px;color:var(--sub);flex:1;min-width:180px;line-height:1.5}
 .bt-prompt-text b{color:var(--text)}
 .bt-prompt-text .bt-ctext{display:block;font-size:11px;color:var(--sub);margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
