@@ -180,6 +180,30 @@ test('手札を捨てる質問では、コストの低いカードから指定�
   const a = Cpu.answerQuestion(q, s, 'playerA', cardIndex);
   assert.deepStrictEqual(a.sort(), [1, 2]);
 });
+// 頂点捕食者の捨て札：BP04-053 穏やかな一時(0) / BP04-063 気合十分(1) / BP01-019 インパクトショット(2) / BP04-108 アナイアレーション(2, ACE)
+const apexQ = (ids) => ({ type: 'CARDS', kind: 'APEX_DISCARD', min: 0, max: ids.length, costMin: 2, cards: ids.map((cardId) => ({ cardId })) });
+function apexHand(s, ids) { s.players.playerA.hand = []; ids.forEach((id) => hand(s, id)); return apexQ(ids); }
+test('頂点捕食者の捨て札：コスト2のカードがあれば、それ1枚だけ捨てる（安いカードを何枚も捨てない）', () => {
+  const s = makeState();
+  const q = apexHand(s, ['BP04-053', 'BP04-063', 'BP04-063', 'BP01-019']);
+  assert.deepStrictEqual(Cpu.answerQuestion(q, s, 'playerA', cardIndex), [3]);
+});
+test('頂点捕食者の捨て札：手札がコスト2の1枚だけでも捨てる（1枚捨てて1枚プレイ）', () => {
+  const s = makeState();
+  const q = apexHand(s, ['BP01-019']);
+  assert.deepStrictEqual(Cpu.answerQuestion(q, s, 'playerA', cardIndex), [0]);
+});
+test('頂点捕食者の捨て札：エースより普通のカードを捨てる', () => {
+  const s = makeState();
+  const q = apexHand(s, ['BP04-108', 'BP04-063', 'BP01-019']);
+  assert.deepStrictEqual(Cpu.answerQuestion(q, s, 'playerA', cardIndex), [2]);
+});
+test('頂点捕食者の捨て札：コスト1を2枚捨てるのは手札が3枚以上のときだけ。コスト0は捨てない', () => {
+  const s = makeState();
+  assert.deepStrictEqual(Cpu.answerQuestion(apexHand(s, ['BP04-063', 'BP04-063']), s, 'playerA', cardIndex), []);
+  const a = Cpu.answerQuestion(apexHand(s, ['BP04-053', 'BP04-063', 'BP04-063']), s, 'playerA', cardIndex);
+  assert.deepStrictEqual(a.sort(), [1, 2]);
+});
 test('運命のルーレットの宣言は、自分のデッキに多い方のカードタイプ', () => {
   const s = makeState(); // デッキは全部アタックカード
   const q = { type: 'OPTIONS', kind: 'DECLARE_TYPE', options: [{ label: 'メモリアカード', value: 'MEMORIA' }, { label: 'アタックカード', value: 'ATTACK' }] };

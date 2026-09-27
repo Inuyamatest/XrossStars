@@ -515,8 +515,15 @@
         if (q.max >= 2) return cheapestIndexes(cards, Math.min(q.max, cards.length), cardIndex); // オーバードライブ：捨てるほど得
         return player.hand.length >= 3 ? cheapestIndexes(cards, 1, cardIndex) : [];
       case 'APEX_DISCARD': {
+        // 頂点捕食者：できるだけ少ない枚数で払う（手札を減らさない）。
+        // 1枚で足りるカード（コスト2など）があれば、エース以外・コストの低いものを1枚だけ捨てる（1枚捨てて1枚プレイ＝枚数は減らない）。
+        // 2枚以上が必要なら、手札が3枚以上あるときだけ、コストの高い順（コスト0は払いの足しにならないので使わない）に捨てる。
+        var items = cards.map(function (c, i) { var cd = cardIndex[c.cardId]; return { i: i, cost: cardCost(c, cardIndex), ace: !!(cd && cd.ace) }; });
+        var singles = items.filter(function (x) { return x.cost >= q.costMin; })
+          .sort(function (a, b) { return (a.ace - b.ace) || (a.cost - b.cost); });
+        if (singles.length && (!singles[0].ace || player.hand.length >= 3)) return [singles[0].i];
         if (player.hand.length < 3) return [];
-        var sorted = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return a.cost - b.cost; });
+        var sorted = items.filter(function (x) { return x.cost > 0 && !x.ace; }).sort(function (a, b) { return b.cost - a.cost; });
         var picked = [];
         var sum = 0;
         for (var k = 0; k < sorted.length && sum < q.costMin; k++) { picked.push(sorted[k].i); sum += sorted[k].cost; }
