@@ -129,6 +129,18 @@
         }
         return state;
 
+      case 'MILL_OWN_TOP': {
+        // 慈悲の刃「自分のデッキの上から5枚を見る。それらのカードをトラッシュに置く。」
+        // デッキが足りなければあるだけ置く（トラッシュからの再構築はしない。ruleConfig.millOwnTopPolicy, PROVISIONAL）
+        var millOwner = state.players[ctx.ownerPlayerId];
+        var milled = millOwner.deck.splice(0, Math.min(action.amount, millOwner.deck.length));
+        milled.forEach(function (c) {
+          millOwner.trash.push({ card: c, faceUp: false });
+          Events.logEvent(state, 'CARD_MILLED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: c.cardId });
+        });
+        return state;
+      }
+
       case 'RECOVER_PP': {
         var player = state.players[ctx.ownerPlayerId];
         var recover = Math.min(action.amount, player.ppCards.tapped); // FAQ Q9: 乗っている分以上は回復しない

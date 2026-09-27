@@ -309,6 +309,15 @@
         status: 'PROVISIONAL',
         source: 'プレイングマニュアル p.09「アタック強化は次に行う1回のアタックのみ」、p.12 ダメージは「このアタックを強化しているメモリア・タクティクスカードのアタック強化効果」、p.09/p.11 プレイエリアのカードは終了フェイズ・ラウンド終了時にトラッシュへ。持ち越しについての明記は無い。',
       },
+      // 慈悲の刃「自分のデッキの上から5枚を見る。それらのカードをトラッシュに置く。」（effectResolver MILL_OWN_TOP）
+      millOwnTopPolicy: {
+        // デッキが5枚未満なら、あるだけトラッシュに置く（トラッシュをデッキに戻して引き直すことはしない）
+        insufficientDeck: 'MILL_AVAILABLE_ONLY',
+        // 「見る」だけなので相手には公開しない扱い（トラッシュには裏向き。ログにもカード名は出さない）
+        revealedToOpponent: false,
+        status: 'PROVISIONAL',
+        source: 'BP04-017 慈悲の刃のカードテキスト。テラーエンゲージ（デッキが足りないときはあるだけ）の扱いに合わせた。',
+      },
       // 各ラウンド開始時のタクティクス（match.js runRoundSetup。対戦画面は deferRoundSetup で使う）
       tacticsSetupPolicy: {
         // タクティクスはプレイヤーが選ぶ（ランダムではない）。選び終えてから手札4枚を配る

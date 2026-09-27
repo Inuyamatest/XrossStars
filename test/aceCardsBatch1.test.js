@@ -139,7 +139,7 @@ test('AN01-012はBP01-053と同じ効果（アタック強化+30、アタック�
 });
 
 // ============================================================
-console.log('=== BP04-017 慈悲の刃（ON_ATTACKのダメージ+120のみ登録。プレイ時のデッキルック/トラッシュは未実装） ===');
+console.log('=== BP04-017 慈悲の刃（〖アタックする〗ダメージ+120 と〖プレイ時〗デッキの上から5枚をトラッシュ） ===');
 // ============================================================
 
 test('BP04-017のON_ATTACK効果でアタックダメージに+120が加算される', () => {
@@ -163,15 +163,35 @@ test('BP04-017のON_ATTACK+120が無ければ素のATKだけではダウンし�
   assert.strictEqual(state.players.playerB.leaders[0].isDown, false, '素のATK30だけでは100HPの相手はダウンしない前提が崩れている');
 });
 
-test('BP04-017のプレイ時「デッキ上から5枚見てトラッシュ」は未実装のため、プレイしてもデッキ枚数は変化しない', () => {
+test('BP04-017のプレイ時：自分のデッキの上から5枚をトラッシュに置く（その5枚が上から順に、裏向きで）', () => {
   const state = Match.createMatch(makeMatchConfig());
-  const deckBefore = state.players.playerA.deck.length;
+  const p = state.players.playerA;
+  const deckBefore = p.deck.length;
+  const top5 = p.deck.slice(0, 5).map((c) => c.instanceId);
+  const trashBefore = p.trash.length;
   const instanceId = injectHand(state, 'playerA', 'BP04-017');
   EffectResolver.playAttackCardWithEffects(state, 'playerA', instanceId, {
     attackerLeaderIndex: 0, targetPlayerId: 'playerB', targetLeaderIndex: 0,
   }, cardIndex);
   ResolutionStack.resolveAll(state.resolutionStack, state);
-  assert.strictEqual(state.players.playerA.deck.length, deckBefore, 'プレイ時のデッキルック/トラッシュ効果は未実装のはず（意図的な仕様）');
+  assert.strictEqual(p.deck.length, deckBefore - 5);
+  const milled = p.trash.slice(trashBefore).filter((t) => top5.includes(t.card.instanceId));
+  assert.strictEqual(milled.length, 5);
+  assert.ok(milled.every((t) => t.faceUp === false));
+  assert.strictEqual(p.playArea.some((e) => e.card.cardId === 'BP04-017'), true); // 慈悲の刃自身はプレイエリア
+});
+
+test('BP04-017のプレイ時：デッキが5枚未満なら、あるだけトラッシュに置く（エラーにしない）', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  const p = state.players.playerA;
+  p.deck = p.deck.slice(0, 3);
+  const instanceId = injectHand(state, 'playerA', 'BP04-017');
+  EffectResolver.playAttackCardWithEffects(state, 'playerA', instanceId, {
+    attackerLeaderIndex: 0, targetPlayerId: 'playerB', targetLeaderIndex: 0,
+  }, cardIndex);
+  ResolutionStack.resolveAll(state.resolutionStack, state);
+  assert.strictEqual(p.deck.length, 0);
+  assert.strictEqual(state.match.status, 'IN_PROGRESS'); // デッキが0枚になるだけでは負けにならない（引くときに判定）
 });
 
 // ============================================================
