@@ -132,16 +132,26 @@
     playerB: { source: 'NONE', savedIndex: null, generatedDeck: null },
     mode: 'STANDARD',
     firstPlayer: 'playerA',
-    opponent: 'HUMAN', // 'HUMAN'（2人で交互に操作） | 'CPU'（プレイヤーBをCPUが操作）
-    cpuLevel: loadCpuLevel(), // 'EASY'（弱） | 'NORMAL'（中） | 'HARD'（強）
+    opponent: 'HUMAN', // プレイヤーB：'HUMAN'（2人で交互に操作） | 'CPU'
+    aSide: 'HUMAN',    // プレイヤーA：'HUMAN' | 'CPU'（両方CPUならCPU同士の対戦を観戦）
+    cpuLevel: loadPref('xs-battle-cpu-level', ['EASY', 'NORMAL', 'HARD'], 'NORMAL'),   // プレイヤーBのCPUの強さ
+    cpuLevelA: loadPref('xs-battle-cpu-level-a', ['EASY', 'NORMAL', 'HARD'], 'NORMAL'), // プレイヤーAのCPUの強さ
   };
   var CPU_LEVEL_JA = { EASY: '弱', NORMAL: '中', HARD: '強' };
-  function loadCpuLevel() {
-    try { var v = localStorage.getItem('xs-battle-cpu-level'); if (v === 'EASY' || v === 'NORMAL' || v === 'HARD') return v; } catch (e) { /* 保存できない環境 */ }
-    return 'NORMAL';
+  function loadPref(key, allowed, def) {
+    try { var v = localStorage.getItem(key); if (allowed.indexOf(v) >= 0) return v; } catch (e) { /* 保存できない環境 */ }
+    return def;
   }
-  function saveCpuLevel(v) { try { localStorage.setItem('xs-battle-cpu-level', v); } catch (e) { /* 保存できない環境 */ } }
-  function cpuLabel() { return 'CPU（' + CPU_LEVEL_JA[setup.cpuLevel] + '）'; }
+  function savePref(key, v) { try { localStorage.setItem(key, v); } catch (e) { /* 保存できない環境 */ } }
+  function cpuLabelFor(side) {
+    var both = setup.aSide === 'CPU' && setup.opponent === 'CPU';
+    var lv = side === 'playerA' ? setup.cpuLevelA : setup.cpuLevel;
+    return 'CPU' + (both ? (side === 'playerA' ? ' A' : ' B') : '') + '（' + CPU_LEVEL_JA[lv] + '）';
+  }
+  function refreshPlayerLabels() {
+    PLAYER_LABEL.playerA = setup.aSide === 'CPU' ? cpuLabelFor('playerA') : 'プレイヤーA';
+    PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabelFor('playerB') : 'プレイヤーB';
+  }
   var game = null; // { state }
   var sel = null;  // 手番プレイヤーの操作中の選択状態
   var logOpen = false;
@@ -156,17 +166,20 @@
   var PLAYER_LABEL = { playerA: 'プレイヤーA', playerB: 'プレイヤーB' };
 
   // ---------- CPU対戦 ----------
-  // game.cpu: CPUが操作するプレイヤー（'playerB'）。人どうしの対戦ではnull。
-  function isCpu(pid) { return !!(game && game.cpu && game.cpu === pid); }
-  function cpuTurnActive() { return !!(game && game.cpu && game.state.turn.activePlayer === game.cpu && game.state.match.status !== 'FINISHED' && game.state.turn.phase !== 'ROUND_SETUP'); }
-  // この端末で操作するプレイヤー（CPU対戦では人の側、オンライン対戦では自分の側。人どうしの対戦ではnull）
+  // game.cpus: { playerA: 強さ|null, playerB: 強さ|null }。CPUが操作する側に強さ（'EASY'|'NORMAL'|'HARD'）が入る。
+  // 両方CPUならCPU同士の対戦（観戦）。人どうしの対戦・オンライン対戦では両方null。
+  function isCpu(pid) { return !!(game && game.cpus && game.cpus[pid]); }
+  function hasCpu() { return isCpu('playerA') || isCpu('playerB'); }
+  function isSpectate() { return isCpu('playerA') && isCpu('playerB'); }
+  function cpuTurnActive() { return !!(game && isCpu(game.state.turn.activePlayer) && game.state.match.status !== 'FINISHED' && game.state.turn.phase !== 'ROUND_SETUP'); }
+  // この端末で操作するプレイヤー（CPU対戦では人の側、オンライン対戦では自分の側。人どうしの対戦・観戦ではnull）
   function humanId() {
-    if (game && game.cpu) return game.cpu === 'playerA' ? 'playerB' : 'playerA';
+    if (hasCpu() && !isSpectate()) return isCpu('playerA') ? 'playerB' : 'playerA';
     if (game && game.online) return game.online.local;
     return null;
   }
   // この端末からは操作しない側（CPU、またはオンライン対戦の相手）
-  function isRemoteSide(pid) { return !!(game && ((game.cpu && game.cpu === pid) || (game.online && game.online.local !== pid))); }
+  function isRemoteSide(pid) { return !!(game && (isCpu(pid) || (game.online && game.online.local !== pid))); }
   function opponentTurnActive() { return !!(game && game.state.match.status !== 'FINISHED' && isRemoteSide(game.state.turn.activePlayer)); }
   function pShort(pid) { return pid === 'playerA' ? 'A' : 'B'; }
   function pBadge(pid) { return '<span class="bt-pbadge' + (pid === 'playerB' ? ' pB' : '') + '">' + pShort(pid) + '</span>'; }
@@ -186,6 +199,7 @@
     playNewEffects();
     scheduleCpu();
     scheduleRoundSetup();
+    scheduleSpectateBanner();
   }
 
   // 手札ドック（固定表示）の実際の高さに合わせて盤面の下余白を取り、最下段が隠れないようにする
@@ -228,33 +242,43 @@
             '<button data-act="set-mode" data-value="STANDARD" class="' + (setup.mode === 'STANDARD' ? 'on' : '') + '">スタンダード（2本先取）</button>' +
             '<button data-act="set-mode" data-value="QUICK" class="' + (setup.mode === 'QUICK' ? 'on' : '') + '">クイック（1本先取）</button>' +
           '</span></div>' +
+          '<div class="bt-opt">プレイヤーA <span class="bt-seg">' +
+            '<button data-act="set-a-side" data-value="HUMAN" class="' + (setup.aSide === 'HUMAN' ? 'on' : '') + '">人</button>' +
+            '<button data-act="set-a-side" data-value="CPU" class="' + (setup.aSide === 'CPU' ? 'on' : '') + '">CPU</button>' +
+          '</span></div>' +
+          (setup.aSide === 'CPU' ? renderLevelPicker('set-cpu-level-a', setup.cpuLevelA, setup.opponent === 'CPU' ? 'CPU Aの強さ' : 'CPUの強さ') : '') +
           '<div class="bt-opt">プレイヤーB <span class="bt-seg">' +
-            '<button data-act="set-opponent" data-value="HUMAN" class="' + (setup.opponent === 'HUMAN' ? 'on' : '') + '">人（交互に操作）</button>' +
+            '<button data-act="set-opponent" data-value="HUMAN" class="' + (setup.opponent === 'HUMAN' ? 'on' : '') + '">人' + (setup.aSide === 'HUMAN' ? '（交互に操作）' : '') + '</button>' +
             '<button data-act="set-opponent" data-value="CPU" class="' + (setup.opponent === 'CPU' ? 'on' : '') + '">CPU</button>' +
           '</span></div>' +
-          (setup.opponent === 'CPU' ? '<div class="bt-opt">CPUの強さ <span class="bt-seg">' +
-            ['EASY', 'NORMAL', 'HARD'].map(function (lv) {
-              return '<button data-act="set-cpu-level" data-value="' + lv + '" class="' + (setup.cpuLevel === lv ? 'on' : '') + '">' + CPU_LEVEL_JA[lv] + '</button>';
-            }).join('') +
-          '</span></div>' : '') +
+          (setup.opponent === 'CPU' ? renderLevelPicker('set-cpu-level', setup.cpuLevel, setup.aSide === 'CPU' ? 'CPU Bの強さ' : 'CPUの強さ') : '') +
+          (setup.aSide === 'CPU' && setup.opponent === 'CPU' ? '<div class="bt-opt bt-opt-note">CPU同士の対戦を観戦します（対戦中にCPUの速度を変えたり、一時停止したりできます）</div>' : '') +
           '<div class="bt-opt">先攻 <span class="bt-seg">' +
             '<button data-act="set-first" data-value="playerA" class="' + (setup.firstPlayer === 'playerA' ? 'on' : '') + '">A</button>' +
             '<button data-act="set-first" data-value="playerB" class="' + (setup.firstPlayer === 'playerB' ? 'on' : '') + '">B</button>' +
           '</span></div>' +
           '<button class="bt-btn ghost" data-act="coinflip">ランダムで決める</button>' +
         '</div>' +
-        '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">対戦開始</button>' +
+        '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">' + (setup.aSide === 'CPU' && setup.opponent === 'CPU' ? '観戦開始' : '対戦開始') + '</button>' +
           '<button class="bt-btn big" data-act="online-host">オンライン対戦（URLを送って対戦）</button></div>' +
         '<details class="bt-notes"><summary>この対戦画面について</summary>' +
           '対象や「してもよい」を選ぶ効果は、選択画面で選びます。' +
           'カード効果はエンジンに登録済みのカードのみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。' +
           '2人で遊ぶときは、手札は自分の手番のときだけ表示され、手番交代時は確認画面を挟みます。' +
-          'プレイヤーBを「CPU」にすると、CPUが自動で手番を進めます。強さは3段階です。' +
+          'プレイヤーA・Bを「CPU」にすると、CPUが自動で手番を進めます（両方CPUにするとCPU同士の対戦を観戦できます。対戦画面の下でCPUの速度を変えたり、一時停止したりできます）。強さは3段階です。' +
           '弱：ときどきランダムな手を選んだり、途中でターンを終えたりします。' +
           '中：倒せる相手を優先して狙う、シンプルな思考です。' +
           '強：使える手をすべて試して、ターンの終わりまで先読みして一番よい手を選びます（相手の手札・山札は見ません）。' +
         '</details>' +
       '</div>';
+  }
+
+  function renderLevelPicker(act, current, label) {
+    return '<div class="bt-opt">' + esc(label) + ' <span class="bt-seg">' +
+      ['EASY', 'NORMAL', 'HARD'].map(function (lv) {
+        return '<button data-act="' + act + '" data-value="' + lv + '" class="' + (current === lv ? 'on' : '') + '">' + CPU_LEVEL_JA[lv] + '</button>';
+      }).join('') +
+    '</span></div>';
   }
 
   function renderSetupPanel(side) {
@@ -341,10 +365,13 @@
       return;
     }
 
-    game = { state: state, cpu: setup.opponent === 'CPU' ? 'playerB' : null, fxSeen: state.actionLog.length };
-    PLAYER_LABEL.playerA = 'プレイヤーA';
-    game.cpuLevel = setup.cpuLevel;
-    PLAYER_LABEL.playerB = game.cpu ? cpuLabel() : 'プレイヤーB';
+    game = {
+      state: state,
+      cpus: { playerA: setup.aSide === 'CPU' ? setup.cpuLevelA : null, playerB: setup.opponent === 'CPU' ? setup.cpuLevel : null },
+      fxSeen: state.actionLog.length,
+    };
+    cpuPaused = false;
+    refreshPlayerLabels();
     cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
     sel = null;
     lastRoundBanner = null;
@@ -376,7 +403,7 @@
     var finished = state.match.status === 'FINISHED';
     // CPU対戦では手番交代の確認画面は不要（人のプレイヤーは常に自分の側を見ている）
     var settingUp = state.turn.phase === 'ROUND_SETUP';
-    var handoffPending = !game.cpu && !game.online && !finished && !lastRoundBanner && !settingUp && state.turn.activePlayer !== seenActive;
+    var handoffPending = !hasCpu() && !game.online && !finished && !lastRoundBanner && !settingUp && state.turn.activePlayer !== seenActive;
     var html = renderBattleBoard(state, finished, handoffPending);
 
     if (finished) html += renderMatchEndOverlay(state);
@@ -435,9 +462,9 @@
     return '' +
       '<div class="bt-battle">' +
         renderScore(state) +
-        renderSide(state, top, readOnly, deltas, false, true) +
+        renderSide(state, top, readOnly, deltas, false, !isSpectate()) +
         renderCenter(state) +
-        renderSide(state, bottom, readOnly, deltas, true, !!hideHand && !humanId()) +
+        renderSide(state, bottom, readOnly, deltas, true, !!hideHand && !humanId() && !isSpectate()) +
       '</div>' +
       (readOnly ? '' : renderDock(state, bottom, hideHand));
   }
@@ -708,7 +735,7 @@
         var reason = effCost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
         var isSel = sel && sel.cardInstanceId === c.instanceId;
         return '' +
-          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable && !opponentTurnActive() ? '' : ' unplayable') + '"' + (opponentTurnActive() ? '' : ' data-act="select-hand"') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
+          '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable && (!opponentTurnActive() || isSpectate()) ? '' : ' unplayable') + '"' + (opponentTurnActive() ? '' : ' data-act="select-hand"') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
             '<span class="bt-cost' + (effCost != null && effCost < card.cost ? ' free' : '') + '">' + (effCost != null ? effCost : '?') + '</span>' +
             '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
             '<div class="bt-hname">' + esc(card.name) + '</div>' +
@@ -719,6 +746,7 @@
     return '' +
       '<div class="bt-dock"><div class="bt-dock-inner">' +
         '<div class="bt-prompt">' + renderPrompt(state) + '</div>' +
+        (hasCpu() ? renderCpuSpeed() : '') +
         handHtml +
       '</div></div>';
   }
@@ -731,8 +759,8 @@
     if (game.online && opponentTurnActive()) {
       return '<div class="bt-prompt-text bt-cpu-thinking"><span class="bt-cpu-dot"></span><b>相手のターン</b><span class="bt-ctext">相手の操作を待っています…</span></div>';
     }
-    if (cpuTurnActive()) {
-      return '<div class="bt-prompt-text bt-cpu-thinking"><span class="bt-cpu-dot"></span><b>CPUのターン</b>' +
+    if (cpuTurnActive() || isSpectate()) {
+      return '<div class="bt-prompt-text bt-cpu-thinking"><span class="bt-cpu-dot"></span><b>' + esc(PLAYER_LABEL[state.turn.activePlayer]) + 'のターン</b>' + (cpuPaused ? '<span class="bt-ctext">一時停止中</span>' : '') +
         (cpuTurn.last ? '<span class="bt-ctext">' + esc(cpuTurn.last) + '</span>' : '<span class="bt-ctext">考え中…</span>') + '</div>';
     }
     var endBtn = '<button class="bt-btn danger" data-act="end-turn">ターン終了</button>';
@@ -1055,7 +1083,7 @@
     // オンライン対戦で相手が選ぶ質問は、相手の答えが届くまで待つ
     pc.waitingRemote = !!(game.online && chooser !== game.online.local);
     pc.selection = r.question.type === 'ALLOCATE' ? r.question.candidates.map(function () { return 0; }) : (r.question.preselect || []).slice();
-    pc.revealed = !r.question.secret || !!game.cpu || !!game.online; // CPU・オンライン対戦では端末を渡す必要が無い
+    pc.revealed = !r.question.secret || hasCpu() || !!game.online; // CPU・オンライン対戦では端末を渡す必要が無い
     if (!pc.waitingRemote) Fx.sound('choice');
     render();
   }
@@ -1182,8 +1210,7 @@
   function closeOnline() {
     if (net && net.conn) net.conn.close();
     net = null;
-    PLAYER_LABEL.playerA = 'プレイヤーA';
-    PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabel() : 'プレイヤーB';
+    refreshPlayerLabels();
   }
 
   // 試合中に相手がつながり直したら、試合の設定と全行動を送り直して同じ盤面に戻す（ホスト）
@@ -1256,7 +1283,7 @@
       return;
     }
     var local = net.role === 'host' ? 'playerA' : 'playerB';
-    game = { state: state, cpu: null, online: { local: local, seq: 0, history: [], hashes: {}, config: config, seed: seed, desync: false }, fxSeen: 0 };
+    game = { state: state, cpus: null, online: { local: local, seq: 0, history: [], hashes: {}, config: config, seed: seed, desync: false }, fxSeen: 0 };
     PLAYER_LABEL[local] = 'あなた';
     PLAYER_LABEL[local === 'playerA' ? 'playerB' : 'playerA'] = '相手';
     // 再接続時：これまでの行動をすべて再生して同じ盤面に戻す（演出は出さない）
@@ -1452,7 +1479,7 @@
     if (healSoundPending) { healSoundPending = false; Fx.sound('heal'); }
     if (game.hold && !game.hold.timer) {
       var h = game.hold;
-      h.timer = setTimeout(function () { if (game && game.hold === h) releaseHold(); }, (timing ? timing.total : 0) + HOLD_AFTER_FX_MS);
+      h.timer = setTimeout(function () { if (game && game.hold === h) releaseHold(); }, spectateScale((timing ? timing.total : 0) + HOLD_AFTER_FX_MS));
     }
   }
 
@@ -1461,7 +1488,7 @@
   // オンライン対戦ではホストだけが始め、ゲストは届いた行動を再生する（自分のタクティクスは自分の端末で選ぶ）。
   var setupTimer = null;
   function roundSetupReady() {
-    return screen === 'battle' && game && game.state.turn.phase === 'ROUND_SETUP' && game.state.match.status !== 'FINISHED' &&
+    return screen === 'battle' && !(cpuPaused && isSpectate()) && game && game.state.turn.phase === 'ROUND_SETUP' && game.state.match.status !== 'FINISHED' &&
       !pendingChoice && !game.hold && !lastRoundBanner && !(game.online && (!net || net.role !== 'host'));
   }
   function scheduleRoundSetup() {
@@ -1469,7 +1496,7 @@
     setupTimer = setTimeout(function () {
       setupTimer = null;
       if (roundSetupReady()) performAction({ t: 'SETUP' });
-    }, 400); // 盤面が表示されてから選択画面を出す
+    }, spectateScale(400)); // 盤面が表示されてから選択画面を出す
   }
 
   // ---------- CPUの手番 ----------
@@ -1477,20 +1504,50 @@
   var cpuTimer = null;
   var cpuTurn = { key: null, excluded: {}, steps: 0, last: null };
   var CPU_DELAY_MS = 900;
+  // CPUの速度（×1＝これまでどおり）。待ち時間（次の1手までの間・演出の待ち）をこの倍率で割る。一時停止中はCPUが動かない
+  var CPU_SPEEDS = [0.5, 1, 2, 4];
+  var cpuSpeed = +loadPref('xs-battle-cpu-speed', CPU_SPEEDS.map(String), '1');
+  var cpuPaused = false;
+  // 観戦（CPU同士）のときだけ、決着の演出・ラウンド開始・ラウンド終了のお知らせの待ち時間も速度に合わせる
+  function spectateScale(ms) { return isSpectate() ? ms / cpuSpeed : ms; }
 
   function scheduleCpu() {
-    if (cpuTimer || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || detailCardId || game.hold) return;
-    cpuTimer = setTimeout(function () { cpuTimer = null; cpuStep(); }, Math.max(CPU_DELAY_MS, Fx.remainingMs() + 300)); // 演出が終わってから次の1手
+    if (cpuTimer || cpuPaused || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || detailCardId || game.hold) return;
+    cpuTimer = setTimeout(function () { cpuTimer = null; cpuStep(); }, Math.max(CPU_DELAY_MS, Fx.remainingMs() + 300) / cpuSpeed); // 演出が終わってから次の1手
+  }
+  function restartCpuTimer() {
+    if (cpuTimer) { clearTimeout(cpuTimer); cpuTimer = null; }
+    if (bannerTimer) { clearTimeout(bannerTimer); bannerTimer = null; }
+  }
+
+  // 観戦中は、ラウンド終了のお知らせを少し見せてから自動で閉じる
+  var bannerTimer = null;
+  function scheduleSpectateBanner() {
+    if (bannerTimer || cpuPaused || screen !== 'battle' || !isSpectate() || !lastRoundBanner) return;
+    bannerTimer = setTimeout(function () {
+      bannerTimer = null;
+      if (!cpuPaused && isSpectate() && lastRoundBanner) { lastRoundBanner = null; render(); }
+    }, 1800 / cpuSpeed);
+  }
+
+  function renderCpuSpeed() {
+    return '<div class="bt-cpuspeed" title="CPUの速度">' +
+      '<span class="bt-cpuspeed-label">CPU速度</span>' +
+      CPU_SPEEDS.map(function (v) {
+        return '<button class="' + (v === cpuSpeed ? 'on' : '') + '" data-act="cpu-speed" data-value="' + v + '">×' + v + '</button>';
+      }).join('') +
+      '<button class="bt-cpuspeed-pause' + (cpuPaused ? ' on' : '') + '" data-act="cpu-pause">' + (cpuPaused ? '▶ 再開' : '⏸ 一時停止') + '</button>' +
+    '</div>';
   }
 
   function cpuStep() {
-    if (screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || game.hold) return;
+    if (cpuPaused || screen !== 'battle' || !cpuTurnActive() || pendingChoice || lastRoundBanner || game.hold) return;
     var state = game.state;
-    var pid = game.cpu;
+    var pid = state.turn.activePlayer;
     var key = state.match.roundNumber + ':' + state.turn.turnNumber;
     if (cpuTurn.key !== key) cpuTurn = { key: key, excluded: {}, steps: 0, last: null };
     cpuTurn.steps += 1;
-    var act = cpuTurn.steps > 30 ? { type: 'END' } : Cpu.decideAction(state, pid, cardIndex, { isEquipment: isEquipmentCard, level: game.cpuLevel || 'NORMAL' }, cpuTurn.excluded);
+    var act = cpuTurn.steps > 30 ? { type: 'END' } : Cpu.decideAction(state, pid, cardIndex, { isEquipment: isEquipmentCard, level: game.cpus[pid] || 'NORMAL' }, cpuTurn.excluded);
     var failed = function () { cpuTurn.excluded[act.instanceId] = true; render(); };
     if (act.type === 'END') {
       cpuTurn.last = 'ターン終了';
@@ -1705,8 +1762,10 @@
     }
     if (act === 'set-mode') { setup.mode = el.getAttribute('data-value'); render(); return; }
     if (act === 'set-first') { setup.firstPlayer = el.getAttribute('data-value'); render(); return; }
-    if (act === 'set-opponent') { setup.opponent = el.getAttribute('data-value'); PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabel() : 'プレイヤーB'; render(); return; }
-    if (act === 'set-cpu-level') { setup.cpuLevel = el.getAttribute('data-value'); saveCpuLevel(setup.cpuLevel); PLAYER_LABEL.playerB = setup.opponent === 'CPU' ? cpuLabel() : 'プレイヤーB'; render(); return; }
+    if (act === 'set-opponent') { setup.opponent = el.getAttribute('data-value'); refreshPlayerLabels(); render(); return; }
+    if (act === 'set-a-side') { setup.aSide = el.getAttribute('data-value'); refreshPlayerLabels(); render(); return; }
+    if (act === 'set-cpu-level') { setup.cpuLevel = el.getAttribute('data-value'); savePref('xs-battle-cpu-level', setup.cpuLevel); refreshPlayerLabels(); render(); return; }
+    if (act === 'set-cpu-level-a') { setup.cpuLevelA = el.getAttribute('data-value'); savePref('xs-battle-cpu-level-a', setup.cpuLevelA); refreshPlayerLabels(); render(); return; }
     if (act === 'coinflip') {
       setup.firstPlayer = Math.random() < 0.5 ? 'playerA' : 'playerB';
       render();
@@ -1724,11 +1783,14 @@
 
     if (act === 'toggle-log') { logOpen = !logOpen; render(); return; }
     if (act === 'toggle-sound') { Fx.setSoundOn(!Fx.isSoundOn()); render(); return; }
+    if (act === 'cpu-speed') { cpuSpeed = +el.getAttribute('data-value'); savePref('xs-battle-cpu-speed', String(cpuSpeed)); restartCpuTimer(); render(); return; }
+    if (act === 'cpu-pause') { cpuPaused = !cpuPaused; restartCpuTimer(); render(); return; }
     if (act === 'show-detail') { detailCardId = el.getAttribute('data-card'); render(); return; }
     if (act === 'close-detail') { detailCardId = null; render(); return; }
     if (act === 'dismiss-handoff') { seenActive = game.state.turn.activePlayer; render(); return; }
     if (act === 'back-to-setup') {
-      if (cpuTimer) { clearTimeout(cpuTimer); cpuTimer = null; }
+      restartCpuTimer();
+      cpuPaused = false;
       if (game && game.online && net) netSend({ type: 'LEFT_MATCH' });
       game = null; sel = null; lastRoundBanner = null; detailCardId = null; logOpen = false;
       setup.savedDecks = loadSavedDecks();
