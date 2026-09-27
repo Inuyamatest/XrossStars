@@ -721,7 +721,7 @@
   "cardType": "アタックカード",
   "color": "緑",
   "rarity": "SRP",
-  "ace": false,
+  "ace": true,
   "officialUrl": null,
   "baseCardNumber": "BP04-038",
   "note": "カード画像でBP04-108/SRPとして確認。通常版BP04-038と同名のレアリティ違い（パラレル/プロモ）。",
