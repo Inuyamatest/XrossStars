@@ -514,6 +514,13 @@
       case 'ATTACK_DISCARD':
         if (q.max >= 2) return cheapestIndexes(cards, Math.min(q.max, cards.length), cardIndex); // オーバードライブ：捨てるほど得
         return player.hand.length >= 3 ? cheapestIndexes(cards, 1, cardIndex) : [];
+      case 'LOOK_TOP_TRASH': {
+        // 運もミスもない：エースは残す。同じ種類のカードが手札に十分あれば（アタック3枚以上／メモリア2枚以上）トラッシュに置いて引き直す
+        var top = cardIndex[cards[0].cardId];
+        if (!top || top.ace) return [];
+        var sameType = player.hand.filter(function (c) { var cd = cardIndex[c.cardId]; return cd && cd.cardType === top.cardType; }).length;
+        return sameType >= (top.cardType === 'ATTACK' ? 3 : 2) ? [0] : [];
+      }
       case 'APEX_DISCARD': {
         // 頂点捕食者：できるだけ少ない枚数で払う（手札を減らさない）。
         // 1枚で足りるカード（コスト2など）があれば、エース以外・コストの低いものを1枚だけ捨てる（1枚捨てて1枚プレイ＝枚数は減らない）。
@@ -532,6 +539,19 @@
       case 'MOVE_EQUIP':
         return [];
       case 'FREE_PLAY': {
+        if (q.replay) {
+          // 三銃士「プレイし直す」：もう一度起きるのはプレイ時効果だけ（effectResolver REPLAY_SELECTED_FROM_PLAY_AREA）。
+          // ダメージを与えるもの→その他のプレイ時効果の順に選び、プレイ時効果の無いカードは選ばない
+          var replayScore = function (c) {
+            var on = effectsOf(c.cardId).filter(function (e) { return e.trigger === 'ON_PLAY'; });
+            if (!on.length) return 0;
+            return on.some(function (e) { return e.action && e.action.type === 'DAMAGE'; }) ? 2 : 1;
+          };
+          return cards.map(function (c, i) { return { i: i, v: replayScore(c) }; })
+            .filter(function (x) { return x.v > 0; })
+            .sort(function (a, b) { return b.v - a.v; })
+            .slice(0, q.max).map(function (x) { return x.i; });
+        }
         if (q.costMax != null) {
           // コスト合計の上限まで、コストの高い順に
           var byCost = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return b.cost - a.cost; });

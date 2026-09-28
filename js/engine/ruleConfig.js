@@ -318,6 +318,14 @@
         status: 'PROVISIONAL',
         source: 'BP04-017 慈悲の刃のカードテキスト。「見る」なのでFAQ Q1（デッキを見る場面）のデッキ切れ処理の対象。',
       },
+      // 運もミスもない「自分のデッキの上から1枚を見る。そのカードをトラッシュに置いてもよい。」（effectResolver LOOK_TOP_MAY_TRASH）
+      lookTopMayTrashPolicy: {
+        // 「見る」だけなので相手には公開しない扱い。トラッシュに置く場合は裏向き（慈悲の刃・デッキを見る効果と同じ）
+        revealedToOpponent: false,
+        trashOrientation: 'FACE_DOWN',
+        status: 'PROVISIONAL',
+        source: 'BP01-069 運もミスもないのカードテキスト（画像で確認）。表裏の明記なし。',
+      },
       // デッキ切れ（FAQ Q1、Deck.ensureDeckCards）。引く・見る・公開する・上から置く効果で、必要な枚数よりデッキが少ないとき
       deckOutPolicy: {
         // 残りのデッキは上に置いたまま、その下にトラッシュの裏向きカードをシャッフルして戻す（FAQ Q1の実例：1枚を脇に避けてから戻し、合わせて見る）

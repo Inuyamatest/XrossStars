@@ -204,6 +204,23 @@ test('頂点捕食者の捨て札：コスト1を2枚捨てるのは手札が3�
   const a = Cpu.answerQuestion(apexHand(s, ['BP04-053', 'BP04-063', 'BP04-063']), s, 'playerA', cardIndex);
   assert.deepStrictEqual(a.sort(), [1, 2]);
 });
+test('三銃士でプレイし直すメモリアは、プレイ時にダメージを与えるものを優先し、プレイ時効果の無いものは選ばない', () => {
+  const s = makeState();
+  // 美味しいよね（アタック強化のみ）／穏やかな一時（プレイ時：回復）／BEAUTY SALON（プレイ時：20ダメージ）
+  const q = { type: 'CARDS', kind: 'FREE_PLAY', replay: true, min: 0, max: 2, cards: [{ cardId: 'BP02-056' }, { cardId: 'BP04-053' }, { cardId: 'BP01-070' }] };
+  assert.deepStrictEqual(Cpu.answerQuestion(q, s, 'playerA', cardIndex), [2, 1]);
+  const q2 = { type: 'CARDS', kind: 'FREE_PLAY', replay: true, min: 0, max: 2, cards: [{ cardId: 'BP02-056' }] };
+  assert.deepStrictEqual(Cpu.answerQuestion(q2, s, 'playerA', cardIndex), []);
+});
+test('運もミスもない：エースは残す。同じ種類が手札に十分あればトラッシュに置く', () => {
+  const s = makeState();
+  const q = (id) => ({ type: 'CARDS', kind: 'LOOK_TOP_TRASH', min: 0, max: 1, cards: [{ cardId: id }] });
+  assert.deepStrictEqual(Cpu.answerQuestion(q('BP05-024'), s, 'playerA', cardIndex), []); // エース
+  s.players.playerA.hand = [];
+  ['BP04-063', 'BP04-063'].forEach((id) => hand(s, id)); // メモリア2枚
+  assert.deepStrictEqual(Cpu.answerQuestion(q('BP02-053'), s, 'playerA', cardIndex), [0]); // メモリアは置く
+  assert.deepStrictEqual(Cpu.answerQuestion(q('BP01-028'), s, 'playerA', cardIndex), []); // アタックは残す
+});
 test('運命のルーレットの宣言は、自分のデッキに多い方のカードタイプ', () => {
   const s = makeState(); // デッキは全部アタックカード
   const q = { type: 'OPTIONS', kind: 'DECLARE_TYPE', options: [{ label: 'メモリアカード', value: 'MEMORIA' }, { label: 'アタックカード', value: 'ATTACK' }] };
