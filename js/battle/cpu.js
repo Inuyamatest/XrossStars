@@ -532,6 +532,19 @@
       case 'MOVE_EQUIP':
         return [];
       case 'FREE_PLAY': {
+        if (q.replay) {
+          // 三銃士「プレイし直す」：もう一度起きるのはプレイ時効果だけ（effectResolver REPLAY_SELECTED_FROM_PLAY_AREA）。
+          // ダメージを与えるもの→その他のプレイ時効果の順に選び、プレイ時効果の無いカードは選ばない
+          var replayScore = function (c) {
+            var on = effectsOf(c.cardId).filter(function (e) { return e.trigger === 'ON_PLAY'; });
+            if (!on.length) return 0;
+            return on.some(function (e) { return e.action && e.action.type === 'DAMAGE'; }) ? 2 : 1;
+          };
+          return cards.map(function (c, i) { return { i: i, v: replayScore(c) }; })
+            .filter(function (x) { return x.v > 0; })
+            .sort(function (a, b) { return b.v - a.v; })
+            .slice(0, q.max).map(function (x) { return x.i; });
+        }
         if (q.costMax != null) {
           // コスト合計の上限まで、コストの高い順に
           var byCost = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return b.cost - a.cost; });

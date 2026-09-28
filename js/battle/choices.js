@@ -186,7 +186,7 @@
 
       chooseReplayFromPlayArea: function (cands, maxCount) {
         if (!cands.length) return [];
-        var a = ask(q({ kind: 'FREE_PLAY', type: 'CARDS', title: 'プレイし直すメモリアを選んでください（最大' + maxCount + '枚）', cards: cardList(cands), min: 0, max: maxCount, preselect: firstN(maxCount, cands.length), declineLabel: 'しない' }));
+        var a = ask(q({ kind: 'FREE_PLAY', type: 'CARDS', title: 'プレイし直すメモリアを選んでください（最大' + maxCount + '枚）', cards: cardList(cands), min: 0, max: maxCount, preselect: firstN(maxCount, cands.length), replay: true, declineLabel: 'しない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 

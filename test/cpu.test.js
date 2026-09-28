@@ -204,6 +204,14 @@ test('頂点捕食者の捨て札：コスト1を2枚捨てるのは手札が3�
   const a = Cpu.answerQuestion(apexHand(s, ['BP04-053', 'BP04-063', 'BP04-063']), s, 'playerA', cardIndex);
   assert.deepStrictEqual(a.sort(), [1, 2]);
 });
+test('三銃士でプレイし直すメモリアは、プレイ時にダメージを与えるものを優先し、プレイ時効果の無いものは選ばない', () => {
+  const s = makeState();
+  // 美味しいよね（アタック強化のみ）／穏やかな一時（プレイ時：回復）／BEAUTY SALON（プレイ時：20ダメージ）
+  const q = { type: 'CARDS', kind: 'FREE_PLAY', replay: true, min: 0, max: 2, cards: [{ cardId: 'BP02-056' }, { cardId: 'BP04-053' }, { cardId: 'BP01-070' }] };
+  assert.deepStrictEqual(Cpu.answerQuestion(q, s, 'playerA', cardIndex), [2, 1]);
+  const q2 = { type: 'CARDS', kind: 'FREE_PLAY', replay: true, min: 0, max: 2, cards: [{ cardId: 'BP02-056' }] };
+  assert.deepStrictEqual(Cpu.answerQuestion(q2, s, 'playerA', cardIndex), []);
+});
 test('運命のルーレットの宣言は、自分のデッキに多い方のカードタイプ', () => {
   const s = makeState(); // デッキは全部アタックカード
   const q = { type: 'OPTIONS', kind: 'DECLARE_TYPE', options: [{ label: 'メモリアカード', value: 'MEMORIA' }, { label: 'アタックカード', value: 'ATTACK' }] };
