@@ -227,6 +227,12 @@
         return a[0] === 0;
       },
 
+      // デッキの上から1枚を見て、トラッシュに置くか（運もミスもない）。選ぶ＝トラッシュ、「しない」＝デッキの上に残す
+      chooseLookTopTrash: function (card) {
+        var a = ask(q({ kind: 'LOOK_TOP_TRASH', type: 'CARDS', title: 'デッキの一番上のカードです。トラッシュに置く場合は選んでください（置かない場合は「デッキの上に残す」）', cards: cardList([card]), min: 0, max: 1, declineLabel: 'デッキの上に残す' }));
+        return a.length > 0;
+      },
+
       // カードタイプの宣言（運命のルーレット）
       chooseDeclareCardType: function (types) {
         var label = { MEMORIA: 'メモリアカード', ATTACK: 'アタックカード' };

@@ -133,20 +133,39 @@ test('BP04-058：プレイすると次のアタックに+60が乗る', () => {
   assert.strictEqual(state.players.playerB.leaders[0].damage, 60 + atk);
 });
 
-// BP01-069 運もミスもない：ATTACK_BOOST+10のみ登録（ON_PLAYのデッキ確認・任意トラッシュは未実装）
-test('BP01-069：プレイ時効果は無いが、ATTACK_BOOST+10は乗る', () => {
+// BP01-069 運もミスもない：〖プレイ時〗デッキの上から1枚を見て、トラッシュに置いてもよい／〖アタック強化〗+10
+test('BP01-069：選択が無ければ（置かない）デッキの上はそのまま。ATTACK_BOOST+10は乗る', () => {
   const state = Match.createMatch(makeMatchConfig());
   const memoriaId = injectHand(state, 'playerA', 'BP01-069');
   const handBefore = state.players.playerA.hand.length - 1;
+  const topBefore = state.players.playerA.deck[0].instanceId;
+  const deckBefore = state.players.playerA.deck.length;
   EffectResolver.playMemoriaCardWithEffects(state, 'playerA', memoriaId, {}, cardIndex);
   ResolutionStack.resolveAll(state.resolutionStack, state);
-  assert.strictEqual(state.players.playerA.hand.length, handBefore, 'デッキ確認によるドロー等は発生しない（未実装）');
+  assert.strictEqual(state.players.playerA.hand.length, handBefore, '引くわけではない');
+  assert.strictEqual(state.players.playerA.deck.length, deckBefore);
+  assert.strictEqual(state.players.playerA.deck[0].instanceId, topBefore);
   const atk = GameState.getLeaderCurrentAtk(cardIndex, state.players.playerA.leaders[0]);
   const attackId = injectHand(state, 'playerA', FILLER_ATTACK);
   EffectResolver.playAttackCardWithEffects(state, 'playerA', attackId, {
     attackerLeaderIndex: 0, targetPlayerId: 'playerB', targetLeaderIndex: 0,
   }, cardIndex);
   assert.strictEqual(state.players.playerB.leaders[0].damage, 10 + atk);
+});
+
+test('BP01-069：見たカードをトラッシュに置くと、裏向きでトラッシュへ（次の1枚が上になる）', () => {
+  const state = Match.createMatch(makeMatchConfig());
+  const p = state.players.playerA;
+  const memoriaId = injectHand(state, 'playerA', 'BP01-069');
+  const top = p.deck[0];
+  const second = p.deck[1].instanceId;
+  let seen = null;
+  EffectResolver.playMemoriaCardWithEffects(state, 'playerA', memoriaId, { chooseLookTopTrash: (c) => { seen = c; return true; } }, cardIndex);
+  ResolutionStack.resolveAll(state.resolutionStack, state);
+  assert.strictEqual(seen.instanceId, top.instanceId, '選択にはデッキの一番上のカードが渡る');
+  assert.strictEqual(p.deck[0].instanceId, second);
+  const t = p.trash.find((x) => x.card.instanceId === top.instanceId);
+  assert.ok(t && t.faceUp === false);
 });
 
 // ============================================================

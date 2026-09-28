@@ -129,6 +129,23 @@
         }
         return state;
 
+      case 'LOOK_TOP_MAY_TRASH': {
+        // 運もミスもない「自分のデッキの上から1枚を見る。そのカードをトラッシュに置いてもよい。」
+        // 選択はctx.chooseLookTopTrash(card, state) => true（トラッシュに置く）/false（デッキの上に残す）。
+        // 省略時は置かない。見るだけなので相手には公開しない（トラッシュには裏向き。ruleConfig.lookTopMayTrashPolicy, PROVISIONAL）
+        var ltPlayer = state.players[ctx.ownerPlayerId];
+        if (!Deck.ensureDeckCards(state, ctx.ownerPlayerId, 1)) return state; // FAQ Q1（デッキ切れ）
+        if (ltPlayer.deck.length === 0) return state;
+        var ltTop = ltPlayer.deck[0];
+        var ltTrash = ctx.chooseLookTopTrash ? !!ctx.chooseLookTopTrash({ instanceId: ltTop.instanceId, cardId: ltTop.cardId }, state) : false;
+        if (ltTrash) {
+          ltPlayer.deck.shift();
+          ltPlayer.trash.push({ card: ltTop, faceUp: false });
+          Events.logEvent(state, 'CARD_MILLED_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: ltTop.cardId });
+        }
+        return state;
+      }
+
       case 'MILL_OWN_TOP': {
         // 慈悲の刃「自分のデッキの上から5枚を見る。それらのカードをトラッシュに置く。」
         // デッキが足りなければFAQ Q1のデッキ切れ処理をしてから、あるだけ置く（ruleConfig.millOwnTopPolicy / deckOutPolicy, PROVISIONAL）
@@ -983,7 +1000,7 @@
     'chooseSelfDamage', 'chooseDeckLookAddToHand', 'chooseDiscard', 'chooseFreePlayFromHand', 'chooseDeckLookPlay',
     'chooseReplayFromPlayArea', 'chooseApexDiscard', 'chooseDeckLookAttack', 'chooseFreeAttackTarget',
     'chooseAttackDiscard', 'chooseConfirm', 'chooseDeclareCardType',
-    'chooseDistributedDamage', 'chooseMeetTwo', 'chooseFreeAttackAttacker',
+    'chooseDistributedDamage', 'chooseMeetTwo', 'chooseFreeAttackAttacker', 'chooseLookTopTrash',
   ];
   function pickChoiceCallbacks(source) {
     var extra = {};

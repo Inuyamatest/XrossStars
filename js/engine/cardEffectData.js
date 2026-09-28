@@ -859,10 +859,9 @@
     // BP01-069 運もミスもない（メモリア, 青, cost0, buildRule: リーダー：白雪レイド）
     // カードテキスト（画像で確認）: "〖プレイ時〗自分のデッキの上から1枚を見る。そのカードをトラッシュに
     //  置いてもよい。〖アタック強化〗次のアタックのダメージ+10。"
-    // プレイ時の「デッキの上から1枚を見て、任意でトラッシュに置く」は既存のMILL/DECK_LOOK系Actionが
-    // 対象外としてきた「山札を覗いて選択する」機構であり、現行のFREE_PLAY/DECK_LOOK_FREE_PLAY系とも
-    // 形が異なる（引く/プレイするのではなく「捨てるか残すか」の二択）ため未実装。ATTACK_BOOSTのみ登録する。
+    // プレイ時の「デッキの上から1枚を見て、任意でトラッシュに置く」は LOOK_TOP_MAY_TRASH（選択は ctx.chooseLookTopTrash）。
     'BP01-069': [
+      E({ trigger: 'ON_PLAY', action: { type: 'LOOK_TOP_MAY_TRASH' } }),
       E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 10 } }),
     ],
 
