@@ -85,8 +85,26 @@
     return { damage: dmg, hp: hp, kill: dmg >= hp };
   }
 
-  function scoreAttack(est, cost, cardId, attacker) {
+  // アタック後に「アタックを受けたリーダーと同じ色の他のリーダーすべて」へ入るダメージ（ポイズンボム・バッドカンパニー）。
+  // 対象の選び方で当たる数が変わるので、アタックする相手を選ぶときに数える（強の試算はアタック後効果まで実行するので不要）
+  function afterAttackSplash(state, playerId, cardId, attackerIndex, targetIndex, cardIndex) {
+    var oppId = GameState.getOpponentId(playerId);
+    var ctx = { ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: targetIndex, cardIndex: cardIndex };
+    var total = 0;
+    effectsOf(cardId).forEach(function (e) {
+      if (e.trigger !== 'AFTER_ATTACK' || !e.action || e.action.type !== 'DAMAGE' || e.condition) return;
+      if (!e.target || e.target.targetKind !== 'SAME_COLOR_AS_ATTACKED') return;
+      (e.target(state, ctx) || []).forEach(function (ref) {
+        var l = state.players[ref.playerId].leaders[ref.leaderIndex];
+        total += Math.min(e.action.amount, GameState.getLeaderCurrentHp(cardIndex, l));
+      });
+    });
+    return total;
+  }
+
+  function scoreAttack(est, cost, cardId, attacker, splash) {
     var s = est.kill ? 500 + est.hp : est.damage + (120 - est.hp) * 0.3;
+    s += (splash || 0) * TUNE.chipWeight;
     if (est.kill && !attacker.awakened) s += 40; // ダウンを取ると覚醒できる
     if (effectsOf(cardId).some(function (e) { return e.trigger === 'AFTER_ATTACK'; })) s += 15;
     return s - cost * 4;
@@ -106,7 +124,7 @@
       aliveIndexes(player).forEach(function (ai) {
         Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
           var est = estimateAttack(state, playerId, c.cardId, ai, ti, cardIndex);
-          var score = scoreAttack(est, cost, c.cardId, player.leaders[ai]);
+          var score = scoreAttack(est, cost, c.cardId, player.leaders[ai], afterAttackSplash(state, playerId, c.cardId, ai, ti, cardIndex));
           if (!best || score > best.score) best = { score: score, instanceId: c.instanceId, cardId: c.cardId, cost: cost, attacker: ai, target: ti };
         });
       });
