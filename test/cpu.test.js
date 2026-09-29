@@ -221,6 +221,20 @@ test('運もミスもない：エースは残す。同じ種類が手札に十�
   assert.deepStrictEqual(Cpu.answerQuestion(q('BP02-053'), s, 'playerA', cardIndex), [0]); // メモリアは置く
   assert.deepStrictEqual(Cpu.answerQuestion(q('BP01-028'), s, 'playerA', cardIndex), []); // アタックは残す
 });
+test('ポイズンボム（同じ色の他のリーダーすべてに40）は、同じ色の仲間が多いリーダーを狙う（中）', () => {
+  // 相手：かずのこ(青・体力100) と kinako・わいわい・甘結もか(黄・体力110)。これまでは残り体力の少ない青を狙っていた
+  const s = Match.createMatch({
+    matchId: 't', mode: 'STANDARD', firstPlayer: 'playerA', ppTicketCardId: 'ST01-024',
+    playerA: { leaderCardIds: SELF, deckCardIds: new Array(50).fill('BP01-046'), tacticsDeckCardIds: [] },
+    playerB: { leaderCardIds: ['BP02-006', 'BP02-011', 'BP02-012', 'BP02-009'], deckCardIds: new Array(50).fill('BP01-046'), tacticsDeckCardIds: [] },
+  });
+  const p = s.players.playerA;
+  p.hand = []; p.ppCards.max = 2; p.ppCards.tapped = 0;
+  hand(s, 'BP02-039');
+  const act = Cpu.decideAction(s, 'playerA', cardIndex, { level: 'NORMAL' }, {});
+  assert.strictEqual(act.type, 'ATTACK');
+  assert.notStrictEqual(act.options.targetLeaderIndex, 0, '青（同じ色の仲間がいない）は狙わない');
+});
 test('運命のルーレットの宣言は、自分のデッキに多い方のカードタイプ', () => {
   const s = makeState(); // デッキは全部アタックカード
   const q = { type: 'OPTIONS', kind: 'DECLARE_TYPE', options: [{ label: 'メモリアカード', value: 'MEMORIA' }, { label: 'アタックカード', value: 'ATTACK' }] };

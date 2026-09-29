@@ -70,7 +70,7 @@
   // 色はdata/cards.jsonの実フィールド color をそのまま使用。
   // 基準が取得できない・cardIndexが無い場合は安全にNo-op（[]）にする。
   function makeSameColorAsAttackedLeaderTarget() {
-    return function (state, ctx) {
+    var fn = function (state, ctx) {
       if (!ctx.cardIndex) return [];
       var opponent = state.players[ctx.targetPlayerId];
       if (!opponent) return [];
@@ -88,6 +88,8 @@
       });
       return results;
     };
+    fn.targetKind = 'SAME_COLOR_AS_ATTACKED'; // 選択の無い決まった対象（CPUの見積もり用。cpu.js afterAttackSplash）
+    return fn;
   }
 
   // ---- OVERKILL_AMOUNT ----
