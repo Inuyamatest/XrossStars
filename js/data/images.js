@@ -71,7 +71,7 @@
     '紫宮るな': 'cards/imgi_63_image.webp',
     '緋月ゆい': 'cards/lrpp_hizuki-yui.webp',
     'rion': 'cards/imgi_65_image.webp',
-    '空澄セナ': 'cards/imgi_65_image_1.webp',
+    '空澄セナ': 'cards/BP05-102_asumi-sena.webp', // 第5弾LRPP（BP05-102）の絵。第1弾の絵は cards/imgi_65_image_1.webp
     'ズズ': 'cards/imgi_66_image.webp',
     'ありさか': 'cards/imgi_66_image_1.webp',
     '紡木こかげ': 'cards/imgi_67_image.webp',
@@ -117,6 +117,9 @@
     'Arya Kuroha': 'cards/BP05-L13_awakened.webp',
     'Zeder': 'cards/BP05-L15_awakened.webp',
     'ハセシン': 'cards/BP05-L16_awakened.webp',
+    'LEO': 'cards/BP05-L04_awakened.webp',
+    '神成きゅぴ (IGV)': 'cards/BP05-L09_awakened.webp',
+    '空澄セナ': 'cards/BP05-102_asumi-sena_awakened.webp',
     '一ノ瀬うるは': 'cards/BP01-115_ichinose-uruha_awakened.webp',
     'nqrse': 'cards/BP01-130_nqrse_awakened.webp',
     '千燈ゆうひ': 'cards/BP04-098_sendou-yuuhi_awakened.png',

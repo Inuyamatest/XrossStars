@@ -367,8 +367,8 @@
   "confirmStatus": "公式カードページ確認済（アプリ既存データ）",
   "confirmed": true,
   "parallelGroupId": "BP01-013",
-  "imageUrl": "cards/imgi_65_image_1.webp",
-  "imageUrlAwakened": "cards/imgi_65_image_1.webp"
+  "imageUrl": "cards/BP05-102_asumi-sena.webp",
+  "imageUrlAwakened": "cards/BP05-102_asumi-sena_awakened.webp"
  },
  {
   "cardNumber": "BP01-014",
@@ -2261,7 +2261,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L04",
   "imageUrl": "cards/BP05-L04.webp",
-  "imageUrlAwakened": "cards/BP05-L04.webp"
+  "imageUrlAwakened": "cards/BP05-L04_awakened.webp"
  },
  {
   "cardNumber": "BP05-L05",
@@ -2396,7 +2396,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L09",
   "imageUrl": "cards/BP05-L09.webp",
-  "imageUrlAwakened": "cards/BP05-L09.webp"
+  "imageUrlAwakened": "cards/BP05-L09_awakened.webp"
  },
  {
   "cardNumber": "BP05-L10",
