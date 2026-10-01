@@ -37,6 +37,12 @@
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
   var APP_VERSION = '20260928a';
+  // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
+  var ASSET_QUERY = (function () {
+    var src = document.currentScript && document.currentScript.src;
+    var i = src ? src.indexOf('?') : -1;
+    return i >= 0 ? src.slice(i) : '';
+  })();
 
   var COLOR_JA = { red: '赤', blue: '青', green: '緑', yellow: '黄', colorless: '無色' };
   var TYPE_JA = { LEADER: 'リーダー', ATTACK: 'アタック', MEMORIA: 'メモリア', TACTICS: 'タクティクス', PP: 'PP', PP_TICKET: 'PPチケット' };
@@ -128,14 +134,16 @@
   var screen = 'setup'; // 'setup' | 'battle'
   var setup = {
     savedDecks: loadSavedDecks(),
-    playerA: { source: 'NONE', savedIndex: null, generatedDeck: null },
-    playerB: { source: 'NONE', savedIndex: null, generatedDeck: null },
+    playerA: { source: 'NONE', savedIndex: null, generatedDeck: null, codeDeck: null },
+    playerB: { source: 'NONE', savedIndex: null, generatedDeck: null, codeDeck: null },
     mode: 'STANDARD',
     firstPlayer: 'playerA',
     opponent: 'HUMAN', // プレイヤーB：'HUMAN'（2人で交互に操作） | 'CPU'
     aSide: 'HUMAN',    // プレイヤーA：'HUMAN' | 'CPU'（両方CPUならCPU同士の対戦を観戦）
     cpuLevel: loadPref('xs-battle-cpu-level', ['EASY', 'NORMAL', 'HARD'], 'NORMAL'),   // プレイヤーBのCPUの強さ
     cpuLevelA: loadPref('xs-battle-cpu-level-a', ['EASY', 'NORMAL', 'HARD'], 'NORMAL'), // プレイヤーAのCPUの強さ
+    // デッキ検証（CPU同士の連続対戦。js/battle/simulate.js・simworker.js）
+    sim: { level: loadPref('xs-battle-sim-level', ['EASY', 'NORMAL', 'HARD'], 'HARD'), games: 50, running: false, summary: null, error: null, startedAt: 0, total: 0 },
   };
   var CPU_LEVEL_JA = { EASY: '弱', NORMAL: '中', HARD: '強' };
   function loadPref(key, allowed, def) {
@@ -188,6 +196,7 @@
     var s = setup[side];
     if (s.source === 'SAVED' && s.savedIndex != null) return setup.savedDecks[s.savedIndex];
     if (s.source === 'RANDOM') return s.generatedDeck;
+    if (s.source === 'CODE') return s.codeDeck;
     return null;
   }
 
@@ -261,6 +270,7 @@
         '</div>' +
         '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">' + (setup.aSide === 'CPU' && setup.opponent === 'CPU' ? '観戦開始' : '対戦開始') + '</button>' +
           '<button class="bt-btn big" data-act="online-host">オンライン対戦（URLを送って対戦）</button></div>' +
+        '<div class="bt-sim" id="bt-sim">' + renderSimPanel() + '</div>' +
         '<details class="bt-notes"><summary>この対戦画面について</summary>' +
           '対象や「してもよい」を選ぶ効果は、選択画面で選びます。' +
           'カード効果はエンジンに登録済みのカードのみ再現されており、未登録カードはアタックカードなら上乗せダメージ0、それ以外はプレイ時効果なしとして扱われます。' +
@@ -269,8 +279,166 @@
           '弱：ときどきランダムな手を選んだり、途中でターンを終えたりします。' +
           '中：倒せる相手を優先して狙う、シンプルな思考です。' +
           '強：使える手をすべて試して、ターンの終わりまで先読みして一番よい手を選びます（相手の手札・山札は見ません）。' +
+          '「デッキ検証」では、AとBのデッキをCPU同士で何十戦も戦わせて勝率を出せます（デッキコードやデッキビルダーのURLを貼り付けて読み込めます）。' +
         '</details>' +
       '</div>';
+  }
+
+  // ---------- デッキ検証（CPU同士の連続対戦） ----------
+  var SIM_GAME_CHOICES = [20, 50, 100, 200];
+  function pct(x) { return (100 * x).toFixed(1) + '%'; }
+  function renderSimPanel() {
+    var sim = setup.sim;
+    // (結果は renderSimOut)
+    var deckA = deckFor('playerA');
+    var deckB = deckFor('playerB');
+    var html = '<div class="bt-sim-head"><h3>デッキ検証<span>CPU同士で連続対戦して勝率を出す</span></h3></div>' +
+      '<p class="bt-sim-note">上で選んだプレイヤーAとBのデッキを、CPU同士で何戦も戦わせます。先攻・後攻は1戦ごとに入れ替えます。' +
+      '強は時間がかかります（端末によって100戦で1〜数分）。</p>' +
+      '<div class="bt-sim-opts">' +
+        '<div class="bt-opt">CPUの強さ <span class="bt-seg">' +
+          ['EASY', 'NORMAL', 'HARD'].map(function (lv) {
+            return '<button data-act="sim-level" data-value="' + lv + '" class="' + (sim.level === lv ? 'on' : '') + '"' + (sim.running ? ' disabled' : '') + '>' + CPU_LEVEL_JA[lv] + '</button>';
+          }).join('') + '</span></div>' +
+        '<div class="bt-opt">試合数 <span class="bt-seg">' +
+          SIM_GAME_CHOICES.map(function (n) {
+            return '<button data-act="sim-games" data-value="' + n + '" class="' + (sim.games === n ? 'on' : '') + '"' + (sim.running ? ' disabled' : '') + '>' + n + '</button>';
+          }).join('') + '</span></div>' +
+        (sim.running
+          ? '<button class="bt-btn" data-act="sim-stop">中止</button>'
+          : '<button class="bt-btn primary" data-act="sim-start"' + (deckA && deckB ? '' : ' disabled') + '>検証開始</button>') +
+      '</div>';
+    if (sim.error) html += '<div class="bt-sim-error">' + esc(sim.error) + '</div>';
+    return html + '<div id="bt-sim-out">' + renderSimOut() + '</div>';
+  }
+  // 途中経過・結果（検証中は1戦ごとにここだけを書き換え、ボタンは作り直さない）
+  function renderSimOut() {
+    var sim = setup.sim;
+    var sum = sim.summary;
+    var html = '';
+    if (sum && sum.games) {
+      var n = sum.games;
+      var rateA = (sum.winsA + sum.draws * 0.5) / n;
+      var margin = 1.96 * Math.sqrt(Math.max(rateA * (1 - rateA), 0.0001) / n);
+      var nameA = (sim.names && sim.names.a) || 'A';
+      var nameB = (sim.names && sim.names.b) || 'B';
+      var elapsed = (Date.now() - sim.startedAt) / 1000;
+      var eta = sim.running && n > 0 ? Math.round(elapsed / n * (sim.total - n)) : 0;
+      html += '<div class="bt-sim-progress"><div class="bt-sim-bar"><i style="width:' + (100 * n / sim.total).toFixed(1) + '%"></i></div>' +
+        '<span>' + n + ' / ' + sim.total + ' 戦' + (sim.running ? '（残り約' + (eta >= 60 ? Math.round(eta / 60) + '分' : eta + '秒') + '）' : '（完了）') + '</span></div>' +
+        '<div class="bt-sim-result">' +
+          '<div class="bt-sim-main"><span class="bt-sim-name">' + pBadge('playerA') + esc(nameA) + '</span>' +
+            '<b>' + pct(rateA) + '</b><span class="bt-sim-margin">±' + (100 * margin).toFixed(1) + '</span>' +
+            '<span class="bt-sim-vs">vs</span><span class="bt-sim-name">' + pBadge('playerB') + esc(nameB) + '</span><b>' + pct(1 - rateA) + '</b></div>' +
+          '<div class="bt-sim-sub">' +
+            '<span>' + sum.winsA + '勝 ' + sum.winsB + '敗' + (sum.draws ? ' ' + sum.draws + '分' : '') + '</span>' +
+            (sum.firstA.games ? '<span>Aが先攻：A勝率 ' + pct(sum.firstA.winsA / sum.firstA.games) + '</span>' : '') +
+            (sum.firstB.games ? '<span>Bが先攻：A勝率 ' + pct(sum.firstB.winsA / sum.firstB.games) + '</span>' : '') +
+            '<span>平均 ' + (sum.turns / n).toFixed(1) + 'ターン</span>' +
+          '</div>' +
+          '<p class="bt-sim-note">±は95%の目安の幅です（試合数が少ないほど広くなります）。数ポイントの差を見分けるには、100〜200戦が目安です。' +
+          'CPUの判断の癖も結果に入るので、人が使う場合とは差が出ることがあります。</p>' +
+        '</div>';
+    }
+    return html;
+  }
+  function refreshSimPanel() {
+    var el = document.getElementById('bt-sim');
+    if (!el) return;
+    el.innerHTML = renderSimPanel();
+    el.querySelectorAll('[data-act]').forEach(function (b) {
+      b.addEventListener('click', function (ev) { ev.stopPropagation(); handleAction(b.getAttribute('data-act'), b); });
+    });
+  }
+  var simWorker = null;
+  var simTimer = null;
+  function stopSim() {
+    if (simWorker) { simWorker.terminate(); simWorker = null; }
+    if (simTimer) { clearTimeout(simTimer); simTimer = null; }
+    setup.sim.running = false;
+  }
+  function startSim() {
+    var deckA = deckFor('playerA');
+    var deckB = deckFor('playerB');
+    var sim = setup.sim;
+    sim.error = null;
+    if (!deckA || !deckB) { sim.error = 'プレイヤーAとBのデッキを選んでください。'; refreshSimPanel(); return; }
+    var bad = [['A', deckA], ['B', deckB]].filter(function (x) { return !window.XS_DECK_RULES.validateDeck(x[1], CARD_INDEX).valid; });
+    if (bad.length) { sim.error = 'デッキ構築ルールを満たしていないデッキがあります（' + bad.map(function (x) { return x[0]; }).join('・') + '）。'; refreshSimPanel(); return; }
+    stopSim();
+    var plain = function (d) { return { leaders: d.leaders.slice(0, 4), cards: d.cards.map(function (e) { return { cardNumber: e.cardNumber, count: e.count }; }), tactics: (d.tactics || []).slice() }; };
+    var job = { type: 'run', deckA: plain(deckA), deckB: plain(deckB), levelA: sim.level, levelB: sim.level, mode: setup.mode, games: sim.games, seed: (Date.now() & 0x7fffffff) };
+    sim.running = true;
+    sim.total = sim.games;
+    sim.startedAt = Date.now();
+    sim.summary = window.XS_BATTLE_SIMULATE.newSummary();
+    sim.names = { a: deckA.name || 'A', b: deckB.name || 'B' };
+    refreshSimPanel();
+    var onSummary = function (summary, done) {
+      sim.summary = summary;
+      if (done) { sim.running = false; simWorker = null; refreshSimPanel(); return; }
+      var out = document.getElementById('bt-sim-out');
+      if (out) out.innerHTML = renderSimOut();
+    };
+    var runInPage = function () {
+      // Web Workerが使えない環境（file://で開いたとき等）：画面側で1戦ずつ回す（1戦ごとに画面へ制御を返す）
+      var Sim = window.XS_BATTLE_SIMULATE;
+      var summary = Sim.newSummary();
+      var i = 0;
+      var step = function () {
+        if (!setup.sim.running) return;
+        try {
+          Sim.addResult(summary, Sim.playMatch({ seed: (job.seed + i * 7919) >>> 0, deckA: job.deckA, deckB: job.deckB, levelA: job.levelA, levelB: job.levelB, mode: job.mode, firstPlayer: i % 2 === 0 ? 'playerA' : 'playerB', cardIndex: cardIndex }));
+        } catch (e) {
+          sim.error = '検証中にエラーが起きました: ' + e.message; stopSim(); refreshSimPanel(); return;
+        }
+        i++;
+        onSummary(JSON.parse(JSON.stringify(summary)), i >= job.games);
+        if (i < job.games) simTimer = setTimeout(step, 0);
+      };
+      simTimer = setTimeout(step, 0);
+    };
+    try {
+      simWorker = new Worker('js/battle/simworker.js' + ASSET_QUERY);
+    } catch (e) {
+      simWorker = null;
+    }
+    if (!simWorker) { runInPage(); return; }
+    var gotMessage = false;
+    simWorker.onmessage = function (e) {
+      gotMessage = true;
+      var m = e.data;
+      if (m.type === 'progress') onSummary(m.summary, false);
+      else if (m.type === 'done') onSummary(m.summary, true);
+      else if (m.type === 'error') { sim.error = '検証中にエラーが起きました: ' + m.message; stopSim(); refreshSimPanel(); }
+    };
+    simWorker.onerror = function (e) {
+      if (e && e.preventDefault) e.preventDefault();
+      if (simWorker) { simWorker.terminate(); simWorker = null; }
+      if (!gotMessage && setup.sim.running) { runInPage(); return; } // Workerを読み込めなかった：画面側で回す
+      sim.error = '検証中にエラーが起きました'; stopSim(); refreshSimPanel();
+    };
+    simWorker.postMessage(job);
+  }
+
+  function loadDeckCode(side) {
+    var input = root.querySelector('[data-code-input="' + side + '"]');
+    var code = ((input && input.value) || '').trim();
+    var m = code.match(/[#&]d=([^&\s]+)/);
+    if (m) code = m[1];
+    setup[side].codeError = null;
+    if (!code) { setup[side].codeError = 'デッキコードを貼り付けてください'; render(); return; }
+    try {
+      var deck = window.XS_DECK_CODE.decode(code);
+      if (!deck.leaders.length || !deck.cards.length) throw new Error('empty');
+      deck.name = deck.name || (side === 'playerA' ? 'プレイヤーA' : 'プレイヤーB') + '・コード';
+      setup[side].source = 'CODE';
+      setup[side].codeDeck = deck;
+      setup[side].savedIndex = null;
+    } catch (e) {
+      setup[side].codeError = 'デッキコードを読み込めませんでした';
+    }
+    render();
   }
 
   function renderLevelPicker(act, current, label) {
@@ -323,6 +491,11 @@
           '</select>' +
           '<button class="bt-btn" data-act="pick-random" data-side="' + side + '">ランダムデッキ</button>' +
         '</div>' +
+        '<div class="bt-setup-row">' +
+          '<input class="bt-input" type="text" data-code-input="' + side + '" placeholder="デッキコード／デッキビルダーのURLを貼り付け" autocomplete="off" spellcheck="false">' +
+          '<button class="bt-btn" data-act="load-code" data-side="' + side + '">コード読込</button>' +
+        '</div>' +
+        (s.codeError ? '<div class="bt-deck-violations">' + esc(s.codeError) + '</div>' : '') +
         summary +
       '</div>';
   }
@@ -1787,7 +1960,12 @@
       render();
       return;
     }
-    if (act === 'start') { startMatch(); return; }
+    if (act === 'start') { stopSim(); startMatch(); return; }
+    if (act === 'load-code') { loadDeckCode(el.getAttribute('data-side')); return; }
+    if (act === 'sim-level') { setup.sim.level = el.getAttribute('data-value'); savePref('xs-battle-sim-level', setup.sim.level); refreshSimPanel(); return; }
+    if (act === 'sim-games') { setup.sim.games = Number(el.getAttribute('data-value')); refreshSimPanel(); return; }
+    if (act === 'sim-start') { startSim(); return; }
+    if (act === 'sim-stop') { stopSim(); refreshSimPanel(); return; }
     if (act === 'online-host') { openOnlineRoom('host'); return; }
     if (act === 'online-leave') { closeOnline(); render(); return; }
     if (act === 'online-copy') { copyRoomUrl(); return; }
