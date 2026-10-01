@@ -1200,8 +1200,8 @@
   "confirmStatus": "公式カードページ確認済（アプリ既存データ）",
   "confirmed": true,
   "parallelGroupId": "BP03-002",
-  "imageUrl": "cards/imgi_63_image.webp",
-  "imageUrlAwakened": "cards/imgi_63_image.webp"
+  "imageUrl": "cards/BP05-087_shinomiya-runa.webp",
+  "imageUrlAwakened": "cards/BP05-087_shinomiya-runa_awakened.webp"
  },
  {
   "cardNumber": "BP03-003",
@@ -1700,8 +1700,8 @@
   "confirmStatus": "公式カードページ確認済（アプリ既存データ）",
   "confirmed": true,
   "parallelGroupId": "BP04-004",
-  "imageUrl": "cards/imgi_49_image.webp",
-  "imageUrlAwakened": "cards/imgi_49_image.webp"
+  "imageUrl": "cards/BP05-088_raijin.webp",
+  "imageUrlAwakened": "cards/BP05-088_raijin_awakened.webp"
  },
  {
   "cardNumber": "BP04-005",

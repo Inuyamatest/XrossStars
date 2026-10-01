@@ -46,7 +46,7 @@
     'うるか': 'cards/imgi_47_image_1.webp',
     '夢野あかり': 'cards/imgi_48_image.webp',
     '小森めと': 'cards/lrpp_komori-meto.webp',
-    'らいじん': 'cards/imgi_49_image.webp',
+    'らいじん': 'cards/BP05-088_raijin.webp', // 第5弾LRPP（BP05-088）の絵。第4弾の絵は cards/imgi_49_image.webp
     'Selly': 'cards/imgi_49_image_1.webp',
     '神楽めあ': 'cards/imgi_50_image.webp',
     '橘ひなの': 'cards/lrpp_tachibana-hinano.webp',
@@ -68,7 +68,7 @@
     '天帝フォルテ': 'cards/imgi_61_image.webp',
     'Cpt': 'cards/imgi_61_image_1.webp',
     '天月': 'cards/imgi_62_image.webp',
-    '紫宮るな': 'cards/imgi_63_image.webp',
+    '紫宮るな': 'cards/BP05-087_shinomiya-runa.webp', // 第5弾LRPP（BP05-087）の絵。第3弾の絵は cards/imgi_63_image.webp
     '緋月ゆい': 'cards/lrpp_hizuki-yui.webp',
     'rion': 'cards/imgi_65_image.webp',
     '空澄セナ': 'cards/BP05-102_asumi-sena.webp', // 第5弾LRPP（BP05-102）の絵。第1弾の絵は cards/imgi_65_image_1.webp
@@ -120,6 +120,8 @@
     'LEO': 'cards/BP05-L04_awakened.webp',
     '神成きゅぴ (IGV)': 'cards/BP05-L09_awakened.webp',
     '空澄セナ': 'cards/BP05-102_asumi-sena_awakened.webp',
+    '紫宮るな': 'cards/BP05-087_shinomiya-runa_awakened.webp',
+    'らいじん': 'cards/BP05-088_raijin_awakened.webp',
     '一ノ瀬うるは': 'cards/BP01-115_ichinose-uruha_awakened.webp',
     'nqrse': 'cards/BP01-130_nqrse_awakened.webp',
     '千燈ゆうひ': 'cards/BP04-098_sendou-yuuhi_awakened.png',
