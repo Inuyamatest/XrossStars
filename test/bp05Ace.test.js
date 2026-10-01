@@ -459,5 +459,80 @@ test('テラーエンゲージ：デッキが足りなければデッキ切れ�
   assert.strictEqual(pb.deck.length, 0);
 });
 
+// ============================================================
+console.log('=== 第5弾（ACE以外）：ナイスキャッチ！・デアデビルラッシュ・忍び寄る影・ショッピングスプリー ===');
+// ============================================================
+test('4枚が名称・種類・色・コスト・ビルドルール・画像つきで登録され、効果がある', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const expect = {
+    'BP05-021': ['ナイスキャッチ！', 'ATTACK', 'Selly (IGV)'],
+    'BP05-023': ['デアデビルラッシュ', 'ATTACK', 'LEO'],
+    'BP05-049': ['忍び寄る影', 'MEMORIA', 'Selly (IGV)'],
+    'BP05-051': ['ショッピングスプリー', 'MEMORIA', 'LEO'],
+  };
+  Object.entries(expect).forEach(([id, [name, type, leader]]) => {
+    const c = cardIndex[id];
+    assert.ok(c, id);
+    assert.strictEqual(c.name, name);
+    assert.strictEqual(c.cardType, type);
+    assert.strictEqual(c.color, 'red');
+    assert.strictEqual(c.cost, 1);
+    assert.strictEqual(c.ace, false);
+    assert.strictEqual(c.buildRuleParsed.leaderName, leader);
+    assert.ok(fs.existsSync(path.join(__dirname, '..', c.imageUrl)), id + ' image');
+    assert.ok(CardEffectData.hasEffects(id), id + ' effects');
+  });
+});
+test('ショッピングスプリー：次のアタックのダメージ+60', () => {
+  const state = makeState();
+  playMemoria(state, 'BP05-051');
+  const atk = atkOf(state, 'playerB', 0);
+  attackWith(state, FILLER_ATTACK);
+  assert.strictEqual(damages(state, 'playerA')[0], atk + 60);
+});
+test('忍び寄る影：+50。プレイエリアにメモリアが3枚以上なら、アタック後に他のリーダー1体に20', () => {
+  const state = makeState();
+  playMemoria(state, MEMORIA_COST0);
+  playMemoria(state, MEMORIA_COST0);
+  playMemoria(state, 'BP05-049');
+  const atk = atkOf(state, 'playerB', 0);
+  attackWith(state, FILLER_ATTACK);
+  const d = damages(state, 'playerA');
+  assert.strictEqual(d[0], atk + 50);
+  assert.strictEqual(d.slice(1).reduce((a, b) => a + b, 0), 20);
+});
+test('忍び寄る影：メモリアが2枚以下なら、アタック後の20ダメージは無い', () => {
+  const state = makeState();
+  playMemoria(state, 'BP05-049');
+  attackWith(state, FILLER_ATTACK);
+  assert.strictEqual(damages(state, 'playerA').slice(1).reduce((a, b) => a + b, 0), 0);
+});
+test('ナイスキャッチ！：アタックを受けたリーダーがダウンしたら1枚引く。ダウンしなければ引かない', () => {
+  const s1 = makeState();
+  setDeckTop(s1, 'playerB', [FILLER_ATTACK]);
+  s1.players.playerA.leaders[0].damage = 95;
+  attackWith(s1, 'BP05-021');
+  assert.ok(s1.players.playerA.leaders[0].isDown);
+  assert.strictEqual(s1.players.playerB.hand.length, 1);
+  const s2 = makeState();
+  attackWith(s2, 'BP05-021');
+  assert.ok(!s2.players.playerA.leaders[0].isDown);
+  assert.strictEqual(s2.players.playerB.hand.length, 0);
+});
+test('デアデビルラッシュ：プレイエリアに他のカードが無ければPPを1回復し、ダメージは-10', () => {
+  const state = makeState();
+  const atk = atkOf(state, 'playerB', 0);
+  attackWith(state, 'BP05-023');
+  assert.strictEqual(state.players.playerB.ppCards.tapped, 0, 'コスト1を払って1回復');
+  assert.strictEqual(damages(state, 'playerA')[0], atk - 10);
+});
+test('デアデビルラッシュ：プレイエリアに他のカードがあればPPは回復しない', () => {
+  const state = makeState();
+  playMemoria(state, MEMORIA_COST0);
+  attackWith(state, 'BP05-023');
+  assert.strictEqual(state.players.playerB.ppCards.tapped, 1);
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);

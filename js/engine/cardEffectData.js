@@ -1807,6 +1807,31 @@
       E({ trigger: 'AFTER_ATTACK', target: F.makeAllOtherOpponentLeadersTarget(), action: { type: 'DAMAGE', amount: 10 } }),
     ],
 
+    // ---- 第5弾（ACE以外。カード画像で確認） ----
+    // BP05-021 ナイスキャッチ！（アタック, 赤, cost1, ビルドルール：リーダー：Selly (IGV)）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗このアタックを受けたリーダーがダウンしているなら、カードを1枚引く。"（船上の乱戦と同じ）
+    'BP05-021': [
+      E({ trigger: 'AFTER_ATTACK', condition: F.makeTargetDownedCondition(), action: { type: 'DRAW', amount: 1 } })
+    ],
+
+    // BP05-023 デアデビルラッシュ（アタック, 赤, cost1, ビルドルール：リーダー：LEO）
+    // カードテキスト: "〖プレイ時〗プレイエリアに他のカードがないなら、PPを1回復する。 〖アタックする〗ダメージ-10。"（カウンターブローと同じ）
+    'BP05-023': [
+      E({ trigger: 'ON_PLAY', condition: F.makeNoOtherCardsInPlayAreaCondition(), action: { type: 'RECOVER_PP', amount: 1 } }),
+      E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: -10 } })
+    ],
+
+    // BP05-049 忍び寄る影（メモリア, 赤, cost1, ビルドルール：リーダー：Selly (IGV)）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。 〖アタック後〗プレイエリアにメモリアカードが3枚以上あるなら、対戦相手の他のリーダー1体に20ダメージ。"（メンターの教えと同じ）
+    'BP05-049': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }),
+      E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 3 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })
+    ],
+
+    // BP05-051 ショッピングスプリー（メモリア, 赤, cost1, ビルドルール：リーダー：LEO）
+    // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
+    'BP05-051': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })],
+
     // ============================================================
     // リーダー覚醒時効果：6種の定型文すべて（未登録だった既存62名＋第5弾16名）
     // 覚醒時効果の文言は全リーダーでこの6種のいずれかに完全一致することを確認済み。
