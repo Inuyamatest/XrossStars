@@ -2180,7 +2180,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L01",
   "imageUrl": "cards/BP05-L01.webp",
-  "imageUrlAwakened": "cards/BP05-L01.webp"
+  "imageUrlAwakened": "cards/BP05-L01_awakened.webp"
  },
  {
   "cardNumber": "BP05-L02",
@@ -2207,7 +2207,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L02",
   "imageUrl": "cards/BP05-L02.webp",
-  "imageUrlAwakened": "cards/BP05-L02.webp"
+  "imageUrlAwakened": "cards/BP05-L02_awakened.webp"
  },
  {
   "cardNumber": "BP05-L03",
@@ -2288,7 +2288,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L05",
   "imageUrl": "cards/BP05-L05.webp",
-  "imageUrlAwakened": "cards/BP05-L05.webp"
+  "imageUrlAwakened": "cards/BP05-L05_awakened.webp"
  },
  {
   "cardNumber": "BP05-L06",
@@ -2315,7 +2315,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L06",
   "imageUrl": "cards/BP05-L06.webp",
-  "imageUrlAwakened": "cards/BP05-L06.webp"
+  "imageUrlAwakened": "cards/BP05-L06_awakened.webp"
  },
  {
   "cardNumber": "BP05-L07",
@@ -2423,7 +2423,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L10",
   "imageUrl": "cards/BP05-L10.webp",
-  "imageUrlAwakened": "cards/BP05-L10.webp"
+  "imageUrlAwakened": "cards/BP05-L10_awakened.webp"
  },
  {
   "cardNumber": "BP05-L11",
@@ -2450,7 +2450,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L11",
   "imageUrl": "cards/BP05-L11.webp",
-  "imageUrlAwakened": "cards/BP05-L11.webp"
+  "imageUrlAwakened": "cards/BP05-L11_awakened.webp"
  },
  {
   "cardNumber": "BP05-L12",
@@ -2504,7 +2504,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L13",
   "imageUrl": "cards/BP05-L13.webp",
-  "imageUrlAwakened": "cards/BP05-L13.webp"
+  "imageUrlAwakened": "cards/BP05-L13_awakened.webp"
  },
  {
   "cardNumber": "BP05-L14",
@@ -2558,7 +2558,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L15",
   "imageUrl": "cards/BP05-L15.webp",
-  "imageUrlAwakened": "cards/BP05-L15.webp"
+  "imageUrlAwakened": "cards/BP05-L15_awakened.webp"
  },
  {
   "cardNumber": "BP05-L16",
@@ -2585,7 +2585,7 @@
   "confirmed": false,
   "parallelGroupId": "BP05-L16",
   "imageUrl": "cards/BP05-L16.webp",
-  "imageUrlAwakened": "cards/BP05-L16.webp"
+  "imageUrlAwakened": "cards/BP05-L16_awakened.webp"
  },
  {
   "cardNumber": "BP01-017",
