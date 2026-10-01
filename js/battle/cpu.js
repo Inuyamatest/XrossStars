@@ -85,26 +85,71 @@
     return { damage: dmg, hp: hp, kill: dmg >= hp };
   }
 
-  // アタック後に「アタックを受けたリーダーと同じ色の他のリーダーすべて」へ入るダメージ（ポイズンボム・バッドカンパニー）。
-  // 対象の選び方で当たる数が変わるので、アタックする相手を選ぶときに数える（強の試算はアタック後効果まで実行するので不要）
-  function afterAttackSplash(state, playerId, cardId, attackerIndex, targetIndex, cardIndex) {
-    var oppId = GameState.getOpponentId(playerId);
-    var ctx = { ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: targetIndex, cardIndex: cardIndex };
-    var total = 0;
-    effectsOf(cardId).forEach(function (e) {
-      if (e.trigger !== 'AFTER_ATTACK' || !e.action || e.action.type !== 'DAMAGE' || e.condition) return;
-      if (!e.target || e.target.targetKind !== 'SAME_COLOR_AS_ATTACKED') return;
-      (e.target(state, ctx) || []).forEach(function (ref) {
-        var l = state.players[ref.playerId].leaders[ref.leaderIndex];
-        total += Math.min(e.action.amount, GameState.getLeaderCurrentHp(cardIndex, l));
-      });
+  // アタック後効果の見積もり（中の判断と、強のターンの残りの見積もりで使う。強の1手目は盤面のコピーで実行して比べる）。
+  // アタック後の盤面を一時的に作り（このカードを手札から除く・倒せるなら対象をダウン・オーバーキル量）、
+  // 各効果の条件と対象をエンジンの関数そのもので判定する。これで「手札が2枚以下なら」（カウンタースナイプ）、
+  // 「ダウンしているなら」（船上の乱戦）、「オーバーキル」（スタンプキル）、「同じ色」（ポイズンボム）なども数えられる。
+  // 判定に使った盤面はすぐ元に戻す（「ターンに1回」の使用記録も戻す）。
+  function afterAttackValue(state, playerId, instanceId, cardId, attackerIndex, targetIndex, est, cardIndex) {
+    var effs = effectsOf(cardId).filter(function (e) {
+      return e.trigger === 'AFTER_ATTACK' && e.action && (e.action.type === 'DAMAGE' || e.action.type === 'DRAW' || e.action.type === 'RECOVER_PP');
     });
-    return total;
+    if (!effs.length) return 0;
+    var player = state.players[playerId];
+    var oppId = GameState.getOpponentId(playerId);
+    var opp = state.players[oppId];
+    var target = opp.leaders[targetIndex];
+    var handIdx = player.hand.findIndex(function (c) { return c.instanceId === instanceId; });
+    var removed = handIdx >= 0 ? player.hand.splice(handIdx, 1)[0] : null;
+    var wasDown = target.isDown;
+    if (est.kill) target.isDown = true;
+    var usage = state.turn.effectUsage;
+    state.turn.effectUsage = usage ? Object.assign({}, usage) : usage;
+    var hpOf = function (l) { return GameState.getLeaderCurrentHp(cardIndex, l); };
+    var ctx = {
+      ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: attackerIndex,
+      targetPlayerId: oppId, targetLeaderIndex: targetIndex, cardIndex: cardIndex,
+      overkillAmount: est.kill ? est.damage - est.hp : null, attackTrace: { afterAttackDamage: false },
+      // 対象を1体選ぶ効果：CPUの答えと同じく、残り体力が一番少ないリーダー
+      chooseTarget: function (cands) {
+        var best = 0;
+        cands.forEach(function (c, i) { if (hpOf(state.players[c.playerId].leaders[c.leaderIndex]) < hpOf(state.players[cands[best].playerId].leaders[cands[best].leaderIndex])) best = i; });
+        return best;
+      },
+    };
+    var value = 0;
+    try {
+      effs.forEach(function (e) {
+        if (e.condition && !e.condition(state, ctx)) return;
+        var a = e.action;
+        if (a.type === 'DAMAGE') {
+          if (typeof a.amount !== 'number' || !e.target) return;
+          (e.target(state, ctx) || []).forEach(function (ref) {
+            if (ref.playerId !== oppId) return;
+            var l = opp.leaders[ref.leaderIndex];
+            if (!l || l.isDown) return;
+            var hp = hpOf(l);
+            value += Math.min(a.amount, hp) * TUNE.chipWeight + (a.amount >= hp ? 150 : 0);
+          });
+        } else if (a.type === 'DRAW') {
+          value += (typeof a.amount === 'number' ? a.amount : 1) * 8;
+        } else if (a.type === 'RECOVER_PP') {
+          value += (typeof a.amount === 'number' ? a.amount : 1) * 15;
+        }
+      });
+    } catch (err) {
+      // 見積もりなので、判定できない効果は数えない
+    } finally {
+      state.turn.effectUsage = usage;
+      target.isDown = wasDown;
+      if (removed) player.hand.splice(handIdx, 0, removed);
+    }
+    return value;
   }
 
-  function scoreAttack(est, cost, cardId, attacker, splash) {
+  function scoreAttack(est, cost, cardId, attacker, afterValue) {
     var s = est.kill ? 500 + est.hp : est.damage + (120 - est.hp) * 0.3;
-    s += (splash || 0) * TUNE.chipWeight;
+    s += afterValue || 0;
     if (est.kill && !attacker.awakened) s += 40; // ダウンを取ると覚醒できる
     if (effectsOf(cardId).some(function (e) { return e.trigger === 'AFTER_ATTACK'; })) s += 15;
     return s - cost * 4;
@@ -124,7 +169,7 @@
       aliveIndexes(player).forEach(function (ai) {
         Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
           var est = estimateAttack(state, playerId, c.cardId, ai, ti, cardIndex);
-          var score = scoreAttack(est, cost, c.cardId, player.leaders[ai], afterAttackSplash(state, playerId, c.cardId, ai, ti, cardIndex));
+          var score = scoreAttack(est, cost, c.cardId, player.leaders[ai], afterAttackValue(state, playerId, c.instanceId, c.cardId, ai, ti, est, cardIndex));
           if (!best || score > best.score) best = { score: score, instanceId: c.instanceId, cardId: c.cardId, cost: cost, attacker: ai, target: ti };
         });
       });
@@ -598,5 +643,6 @@
     LEVELS: ['EASY', 'NORMAL', 'HARD'],
     TUNE: TUNE,
     estimateAttack: estimateAttack,
+    afterAttackValue: afterAttackValue,
   };
 }));

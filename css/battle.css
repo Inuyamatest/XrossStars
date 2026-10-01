@@ -61,6 +61,25 @@ img{display:block}
 .bt-setup-panel h3{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
 .bt-setup-panel h3 .bt-pbadge{width:26px;height:26px}
 .bt-setup-row{display:flex;flex-wrap:wrap;gap:8px}
+.bt-input{flex:1;min-width:0;min-height:40px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px}
+/* デッキ検証（CPU同士の連続対戦） */
+.bt-sim{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.bt-sim-head h3{margin:0;font-size:15px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.bt-sim-head h3 span{font-size:12px;font-weight:500;color:var(--sub)}
+.bt-sim-note{margin:0;font-size:12px;color:var(--sub);line-height:1.6}
+.bt-sim-opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.bt-sim-opts .bt-seg button[disabled]{opacity:.5;cursor:default}
+.bt-sim-error{font-size:13px;color:#ffb3c7}
+.bt-sim-progress{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}
+.bt-sim-bar{flex:1;height:6px;border-radius:3px;background:var(--bg2);overflow:hidden}
+.bt-sim-bar i{display:block;height:100%;background:var(--accent,#4fc3f7);transition:width .2s}
+.bt-sim-result{display:flex;flex-direction:column;gap:6px}
+.bt-sim-main{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;font-size:14px}
+.bt-sim-main b{font-size:22px;font-variant-numeric:tabular-nums}
+.bt-sim-name{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.bt-sim-margin{font-size:12px;color:var(--sub)}
+.bt-sim-vs{color:var(--sub);margin:0 4px}
+.bt-sim-sub{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--sub)}
 .bt-select{flex:1;min-width:0;min-height:40px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px}
 .bt-deck-leaders{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .bt-deck-leaders .bt-thumb{aspect-ratio:63/88;border-radius:6px;overflow:hidden;background:var(--panel2);border:1px solid var(--line)}

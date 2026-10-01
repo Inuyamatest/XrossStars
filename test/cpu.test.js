@@ -235,6 +235,34 @@ test('ポイズンボム（同じ色の他のリーダーすべてに40）は、
   assert.strictEqual(act.type, 'ATTACK');
   assert.notStrictEqual(act.options.targetLeaderIndex, 0, '青（同じ色の仲間がいない）は狙わない');
 });
+// アタック後効果の見積もり（条件はアタック後の盤面で判定する）
+function afterValue(s, cardId, extraHand, targetIndex, est) {
+  s.players.playerA.hand = [];
+  const id = hand(s, cardId);
+  for (let i = 0; i < extraHand; i++) hand(s, 'BP04-063');
+  return Cpu.afterAttackValue(s, 'playerA', id, cardId, 0, targetIndex || 0, est || { damage: 30, hp: 100, kill: false }, cardIndex);
+}
+test('アタック後効果の見積もり：カウンタースナイプは、撃った後の手札が2枚以下のときだけ数える', () => {
+  const s = makeState();
+  assert.strictEqual(afterValue(s, 'ST02-010', 3), 0, '撃った後の手札3枚：条件を満たさない');
+  assert.ok(afterValue(s, 'ST02-010', 2) > 0, '撃った後の手札2枚：20ダメージを数える');
+});
+test('アタック後効果の見積もり：船上の乱戦（倒したら1枚引く）は、倒せるときだけ数える', () => {
+  const s = makeState();
+  assert.strictEqual(afterValue(s, 'BP03-035', 0, 0, { damage: 30, hp: 100, kill: false }), 0);
+  assert.ok(afterValue(s, 'BP03-035', 0, 0, { damage: 30, hp: 30, kill: true }) > 0);
+});
+test('アタック後効果の見積もり：判定に使った盤面（手札・ダウン・ターンに1回の記録）は元に戻る', () => {
+  const s = makeState();
+  s.turn.effectUsage = { x: 'keep' };
+  const before = JSON.stringify({ hand: s.players.playerA.hand, leaders: s.players.playerB.leaders, usage: s.turn.effectUsage });
+  s.players.playerA.hand = [];
+  const id = hand(s, 'BP03-035');
+  const snap = JSON.stringify({ hand: s.players.playerA.hand, leaders: s.players.playerB.leaders, usage: s.turn.effectUsage });
+  Cpu.afterAttackValue(s, 'playerA', id, 'BP03-035', 0, 0, { damage: 200, hp: 100, kill: true }, cardIndex);
+  assert.strictEqual(JSON.stringify({ hand: s.players.playerA.hand, leaders: s.players.playerB.leaders, usage: s.turn.effectUsage }), snap);
+  assert.ok(before);
+});
 test('運命のルーレットの宣言は、自分のデッキに多い方のカードタイプ', () => {
   const s = makeState(); // デッキは全部アタックカード
   const q = { type: 'OPTIONS', kind: 'DECLARE_TYPE', options: [{ label: 'メモリアカード', value: 'MEMORIA' }, { label: 'アタックカード', value: 'ATTACK' }] };
