@@ -118,6 +118,7 @@
     'Zeder': 'cards/BP05-L15_awakened.webp',
     'ハセシン': 'cards/BP05-L16_awakened.webp',
     '花芽すみれ (IGV)': 'cards/BP05-L14_awakened.webp',
+    'dtto.': 'cards/BP05-L03_awakened.webp',
     'LEO': 'cards/BP05-L04_awakened.webp',
     '神成きゅぴ (IGV)': 'cards/BP05-L09_awakened.webp',
     '空澄セナ': 'cards/BP05-102_asumi-sena_awakened.webp',
