@@ -534,5 +534,88 @@ test('デアデビルラッシュ：プレイエリアに他のカードがあ�
   assert.strictEqual(state.players.playerB.ppCards.tapped, 1);
 });
 
+// ============================================================
+console.log('=== 第5弾（ACE以外・リーダー専用カード20枚） ===');
+// ============================================================
+// [番号, 名前, 種類, 色, コスト, レアリティ, リーダー, テキストが同じ既存カード（null＝組み合わせ）]
+const BP05_BATCH2 = [
+  ['BP05-020', '対空射撃', 'ATTACK', 'red', 1, 'C', '秋雪こはく', 'BP03-030'],
+  ['BP05-022', 'ワンマガジンワンキル', 'ATTACK', 'red', 1, 'C', 'dtto.', 'BP01-034'],
+  ['BP05-027', '撃破確認', 'ATTACK', 'blue', 1, 'UC', '碧依さくら', 'BP01-031'],
+  ['BP05-028', 'エクスキューショナー', 'ATTACK', 'blue', 1, 'R', 'Kamito (IGV)', 'BP01-034'],
+  ['BP05-029', '火力は十分', 'ATTACK', 'blue', 1, 'C', '渋谷ハル (IGV)', 'BP01-047'],
+  ['BP05-030', 'ダークリープ', 'ATTACK', 'blue', 1, 'C', 'tttcheekyttt', 'BP01-033'],
+  ['BP05-034', 'ジャンプスケア', 'ATTACK', 'yellow', 1, 'UC', '神成きゅぴ (IGV)', 'BP04-029'],
+  ['BP05-037', 'バックワードショット', 'ATTACK', 'yellow', 1, 'C', 'Ras (IGV)', 'BP01-029'],
+  ['BP05-041', 'コールドスモーカー', 'ATTACK', 'green', 1, 'UC', 'Arya Kuroha', 'BP01-034'],
+  ['BP05-043', '二天一流', 'ATTACK', 'green', 1, 'C', 'Zeder', 'BP01-025'],
+  ['BP05-048', '超大型新人', 'MEMORIA', 'red', 0, 'R', '秋雪こはく', 'BP01-070'],
+  ['BP05-050', '労働は義務です', 'MEMORIA', 'red', 1, 'UC', 'dtto.', 'BP01-085'],
+  ['BP05-055', '閉会の挨拶', 'MEMORIA', 'blue', 1, 'UC', '碧依さくら', 'BP01-085'],
+  ['BP05-056', '稀代の軍師', 'MEMORIA', 'blue', 1, 'C', 'Kamito (IGV)', null],
+  ['BP05-057', '臆病な戦略', 'MEMORIA', 'blue', 1, 'C', '渋谷ハル (IGV)', 'BP03-056'],
+  ['BP05-058', 'トレンドリーダー', 'MEMORIA', 'blue', 0, 'R', 'tttcheekyttt', 'BP01-070'],
+  ['BP05-062', '起死回生', 'MEMORIA', 'yellow', 1, 'R', '神成きゅぴ (IGV)', 'BP01-065'],
+  ['BP05-065', 'ハイプライン', 'MEMORIA', 'yellow', 1, 'UC', 'Ras (IGV)', 'BP01-066'],
+  ['BP05-069', '伝えたい想い', 'MEMORIA', 'green', 1, 'C', 'Arya Kuroha', 'BP01-065'],
+  ['BP05-071', '異文化交流', 'MEMORIA', 'green', 1, 'R', 'Zeder', 'BP03-051'],
+];
+// 効果の形（関数は「条件あり」等の目印にする）を比べるための文字列
+const effectShape = (id) => JSON.stringify(CardEffectData.getEffectsForCard(id).map((e) => ({
+  trigger: e.trigger, action: e.action || null, modifier: e.modifier || null, cond: typeof e.condition === 'function', target: typeof e.target === 'function',
+})));
+test('20枚が名称・種類・色・コスト・レアリティ・ビルドルール・画像つきで登録され、効果がある', () => {
+  const fs = require('fs');
+  const path = require('path');
+  BP05_BATCH2.forEach(([id, name, type, color, cost, rarity, leader]) => {
+    const c = cardIndex[id];
+    assert.ok(c, id);
+    assert.deepStrictEqual([c.name, c.cardType, c.color, c.cost, c.rarity, c.ace], [name, type, color, cost, rarity, false], id);
+    assert.strictEqual(c.buildRuleParsed.leaderName, leader, id);
+    assert.ok(cardIndex[Object.keys(cardIndex).find((k) => cardIndex[k].cardType === 'LEADER' && cardIndex[k].name === leader)], id + ' leader exists');
+    assert.ok(fs.existsSync(path.join(__dirname, '..', c.imageUrl)), id + ' image');
+    assert.ok(CardEffectData.hasEffects(id), id + ' effects');
+  });
+});
+test('テキストが同じ既存カードと、同じ形の効果が登録されている（テキストも一致）', () => {
+  const norm = (t) => (t || '').replace(/\s+/g, '');
+  BP05_BATCH2.filter((r) => r[7]).forEach(([id, , , , , , , same]) => {
+    assert.strictEqual(norm(cardIndex[id].text), norm(cardIndex[same].text), id + ' text vs ' + same);
+    assert.strictEqual(effectShape(id), effectShape(same), id + ' effects vs ' + same);
+  });
+});
+test('稀代の軍師：プレイ時に対戦相手は手札を1枚捨て、次のアタックのダメージ+30', () => {
+  const state = makeState();
+  state.players.playerA.hand = [inst(FILLER_ATTACK), inst(FILLER_ATTACK)];
+  playMemoria(state, 'BP05-056');
+  assert.strictEqual(state.players.playerA.hand.length, 1);
+  const atk = atkOf(state, 'playerB', 0);
+  attackWith(state, FILLER_ATTACK);
+  assert.strictEqual(damages(state, 'playerA')[0], atk + 30);
+});
+test('異文化交流：+30、アタック後に他のリーダー1体に30', () => {
+  const state = makeState();
+  playMemoria(state, 'BP05-071');
+  const atk = atkOf(state, 'playerB', 0);
+  attackWith(state, FILLER_ATTACK);
+  const d = damages(state, 'playerA');
+  assert.strictEqual(d[0], atk + 30);
+  assert.strictEqual(d.slice(1).reduce((a, b) => a + b, 0), 30);
+});
+test('トレンドリーダー（コスト0）：プレイ時に対戦相手のリーダー1体に20', () => {
+  const state = makeState();
+  playMemoria(state, 'BP05-058');
+  assert.strictEqual(damages(state, 'playerA').reduce((a, b) => a + b, 0), 20);
+  assert.strictEqual(state.players.playerB.ppCards.tapped, 0);
+});
+test('ダークリープ：アタックを受けたリーダーがダウンしたら、対戦相手は手札を1枚捨てる', () => {
+  const state = makeState();
+  state.players.playerA.hand = [inst(FILLER_ATTACK), inst(FILLER_ATTACK)];
+  state.players.playerA.leaders[0].damage = 95;
+  attackWith(state, 'BP05-030');
+  assert.ok(state.players.playerA.leaders[0].isDown);
+  assert.strictEqual(state.players.playerA.hand.length, 1);
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);
