@@ -1832,6 +1832,48 @@
     // カードテキスト: "〖アタック強化〗次のアタックのダメージ+60。"
     'BP05-051': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })],
 
+    // ---- 第5弾（ACE以外・リーダー専用カード。カード画像で確認。テキストが同じ既存カードと同じ処理） ----
+    // BP05-020 対空射撃（アタック, 赤, cost1, リーダー：秋雪こはく） … セルフ実況と同じ
+    'BP05-020': [E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 20, filterCost: 0, draw: 1 } })],
+    // BP05-022 ワンマガジンワンキル（アタック, 赤, cost1, リーダー：dtto.） … 巧みな裏取りと同じ
+    'BP05-022': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    // BP05-027 撃破確認（アタック, 青, cost1, リーダー：碧依さくら） … 勝利の一撃と同じ
+    'BP05-027': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DRAW', amount: 1 } })],
+    // BP05-028 エクスキューショナー（アタック, 青, cost1, リーダー：Kamito (IGV)） … 巧みな裏取りと同じ
+    'BP05-028': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    // BP05-029 火力は十分（アタック, 青, cost1, リーダー：渋谷ハル (IGV)） … いたずらドローンと同じ
+    'BP05-029': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
+    // BP05-030 ダークリープ（アタック, 青, cost1, リーダー：tttcheekyttt） … ブリッツブラストと同じ
+    'BP05-030': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 1 } })],
+    // BP05-034 ジャンプスケア（アタック, 黄, cost1, リーダー：神成きゅぴ (IGV)） … 一斧両断と同じ
+    'BP05-034': [E({ trigger: 'AFTER_ATTACK', condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 10 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })],
+    // BP05-037 バックワードショット（アタック, 黄, cost1, リーダー：Ras (IGV)） … うるパーンチッ！と同じ
+    'BP05-037': [E({ trigger: 'AFTER_ATTACK', condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 30 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 50 } })],
+    // BP05-041 コールドスモーカー（アタック, 緑, cost1, リーダー：Arya Kuroha） … 巧みな裏取りと同じ
+    'BP05-041': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    // BP05-043 二天一流（アタック, 緑, cost1, リーダー：Zeder） … キリングスプリーと同じ
+    'BP05-043': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
+    // BP05-048 超大型新人（メモリア, 赤, cost0, リーダー：秋雪こはく） … BEAUTY SALON -HANABUSA-と同じ
+    'BP05-048': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
+    // BP05-050 労働は義務です（メモリア, 赤, cost1, リーダー：dtto.） … 風紀チェックと同じ
+    'BP05-050': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })],
+    // BP05-055 閉会の挨拶（メモリア, 青, cost1, リーダー：碧依さくら） … 風紀チェックと同じ
+    'BP05-055': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })],
+    // BP05-056 稀代の軍師（メモリア, 青, cost1, リーダー：Kamito (IGV)） … セレブリティーエレガンス＋アタック強化+30と同じ
+    'BP05-056': [E({ trigger: 'ON_PLAY', action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })],
+    // BP05-057 臆病な戦略（メモリア, 青, cost1, リーダー：渋谷ハル (IGV)） … シャンパンコール！と同じ
+    'BP05-057': [E({ trigger: 'ON_PLAY', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 1 }), action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+    // BP05-058 トレンドリーダー（メモリア, 青, cost0, リーダー：tttcheekyttt） … BEAUTY SALON -HANABUSA-と同じ
+    'BP05-058': [E({ trigger: 'ON_PLAY', target: F.makeAnyOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
+    // BP05-062 起死回生（メモリア, 黄, cost1, リーダー：神成きゅぴ (IGV)） … 汚部屋の住人と同じ
+    'BP05-062': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })],
+    // BP05-065 ハイプライン（メモリア, 黄, cost1, リーダー：Ras (IGV)） … 博聞強記と同じ
+    'BP05-065': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })],
+    // BP05-069 伝えたい想い（メモリア, 緑, cost1, リーダー：Arya Kuroha） … 汚部屋の住人と同じ
+    'BP05-069': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 60 } })],
+    // BP05-071 異文化交流（メモリア, 緑, cost1, リーダー：Zeder） … 露骨な挑発と同じ
+    'BP05-071': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })],
+
     // ============================================================
     // リーダー覚醒時効果：6種の定型文すべて（未登録だった既存62名＋第5弾16名）
     // 覚醒時効果の文言は全リーダーでこの6種のいずれかに完全一致することを確認済み。
