@@ -43,15 +43,18 @@
       return (e.trigger === 'ATTACK_BOOST' && e.modifier) ? s + (e.modifier.amount || 0) : s;
     }, 0);
   }
-  // 強化以外の「使うだけで得をする」効果（ドロー・回復・ダメージ等）を持つか
-  function hasUtilityEffect(cardId) {
+  // 強化以外の「使うだけで得をする」効果（ドロー・回復・ダメージ等）を持つか。
+  // 相手の手札が0枚なら、相手に捨てさせる効果（ハンデス）は得にならないので数えない
+  function hasUtilityNow(state, playerId, cardId) {
+    var oppHand = state.players[GameState.getOpponentId(playerId)].hand.length;
     return effectsOf(cardId).some(function (e) {
-      return (e.trigger === 'ON_PLAY' && !(e.action && EQUIP_ACTION_TYPES.indexOf(e.action.type) >= 0)) ||
-        (e.trigger === 'AFTER_ATTACK');
+      var a = e.action;
+      if (a && a.type === 'DISCARD_HAND' && (a.who === 'OPPONENT' || a.who === 'ALL') && oppHand === 0) return false;
+      return (e.trigger === 'ON_PLAY' && !(a && EQUIP_ACTION_TYPES.indexOf(a.type) >= 0)) || (e.trigger === 'AFTER_ATTACK');
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30 };
+  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8 };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -225,7 +228,7 @@
       if (!card || card.cardType !== 'MEMORIA') return;
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
-      plays.push({ kind: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId, cost: cost, boost: boostAmountOf(c.cardId), utility: hasUtilityEffect(c.cardId) });
+      plays.push({ kind: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId, cost: cost, boost: boostAmountOf(c.cardId), utility: hasUtilityNow(state, playerId, c.cardId) });
     });
     if (Phases.canPlayTactics(state)) {
       player.tacticsArea.forEach(function (t) {
@@ -235,7 +238,7 @@
         if (!CardEffectData.hasEffects(t.card.cardId)) return; // 効果が未登録のタクティクスは使っても意味が無い
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return; // プレイ条件（復活ポータル）
         var equip = isEquipment(t.card.cardId);
-        plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: card.cost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityEffect(t.card.cardId) || equip });
+        plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: card.cost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityNow(state, playerId, t.card.cardId) || equip });
       });
     }
     function toAction(p) {
@@ -421,6 +424,18 @@
     for (var i = 0; i < me.hand.length; i++) score += i < 5 ? per : per * t.over5;
     return score + extra;
   }
+  // 相手の手札の価値（強）：相手の手札も相手にとっては同じように価値がある。
+  // これを数えないと、ハンデス（対戦相手は手札を捨てる）の得を評価できず、相手の手札が0枚でも撃ってしまう。
+  // 1枚あたりの価値は考え始めた時点の盤面（base）で決めて固定する（与えたダメージで値が動くと、アタックの評価まで変わってしまうため）。
+  // 自分のカードは確実に使えるが、相手のカードは相手の次のターンまでに状況が変わるので、重みは TUNE.oppHand 倍にする
+  function oppHandScore(s, base, playerId, cardIndex) {
+    var t = HAND_TUNE;
+    var oppId = GameState.getOpponentId(playerId);
+    var per = TUNE.handBase * Math.max(t.floor, Math.min(1, Math.min(aliveHpSum(base.players[playerId], cardIndex), aliveHpSum(base.players[oppId], cardIndex)) / t.ref));
+    var score = 0;
+    for (var i = 0; i < s.players[oppId].hand.length; i++) score += i < 5 ? per : per * t.over5;
+    return score * TUNE.oppHand;
+  }
 
   function evaluate(s, playerId, cardIndex, base) {
     var oppId = GameState.getOpponentId(playerId);
@@ -444,6 +459,7 @@
       score += (l.equipment || []).length * 18;
     });
     score += handScore(me, s.players[oppId], cardIndex);
+    score -= oppHandScore(s, base, playerId, cardIndex);
     score += (me.pendingAttackBoost || 0) * 0.5;
     score += me.tacticsArea.length * 4;
     return score;

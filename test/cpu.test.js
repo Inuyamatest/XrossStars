@@ -4,6 +4,7 @@
  *  - decideAction: 倒せる相手を狙う／強化メモリアをアタックの前に使う／PPが無ければターン終了
  *  - answerQuestion: 選択画面の各種質問に、条件を満たす答えを返す
  *  - CPU同士でランダムなデッキの試合を最後まで行える（エラー・無限ループが無い）
+ *  - ハンデス：相手の手札があるときだけ使う
  *  - 強さ（弱・中・強）: 弱/強の1手も正しい手になっている・強は中より勝ち、中は弱より勝つ
  */
 const assert = require('assert');
@@ -313,6 +314,30 @@ test('弱：何度選ばせても、手札・PPの範囲の手かターン終了
     assert.ok(ids.includes(act.instanceId));
     if (act.type === 'ATTACK') assert.ok(act.options.targetLeaderIndex >= 0 && act.options.targetLeaderIndex < 4);
   }
+});
+// ハンデス：相手の手札があるときだけ使う（相手の手札の価値を数える）
+function handesState(oppHand) {
+  const s = makeState();
+  s.turn.phase = 'MAIN_PHASE';
+  s.turn.turnNumber = 3; // 先攻1ターン目のタクティクス制限を外す
+  s.players.playerB.hand = [];
+  for (let i = 0; i < oppHand; i++) s.players.playerB.hand.push(GameState.createCardInstance('BP01-046'));
+  s.players.playerA.tacticsArea = [{ card: GameState.createCardInstance('BP01-093'), faceUp: true }]; // ジャミングパルス（相手は2枚捨てる）
+  return s;
+}
+test('強・中：ジャミングパルスは、相手の手札があれば使い、相手の手札が0枚なら使わない', () => {
+  ['HARD', 'NORMAL'].forEach((level) => {
+    assert.strictEqual(Cpu.decideAction(handesState(3), 'playerA', cardIndex, { level }).cardId, 'BP01-093', level);
+    assert.strictEqual(Cpu.decideAction(handesState(0), 'playerA', cardIndex, { level }).type, 'END', level);
+  });
+});
+test('中：相手に捨てさせるだけのメモリア（セレブリティーエレガンス）は、相手の手札が0枚なら使わない', () => {
+  const s = handesState(0);
+  s.players.playerA.tacticsArea = [];
+  hand(s, 'BP03-061');
+  assert.strictEqual(Cpu.decideAction(s, 'playerA', cardIndex, { level: 'NORMAL' }).type, 'END');
+  s.players.playerB.hand.push(GameState.createCardInstance('BP01-046'));
+  assert.strictEqual(Cpu.decideAction(s, 'playerA', cardIndex, { level: 'NORMAL' }).type, 'MEMORIA');
 });
 test('強：デッキ・裏向きのトラッシュ・タクティクスデッキが尽きているなら、PPを残して終了フェイズのドローで負けるより、PPを使い切る', () => {
   const s = makeState();
