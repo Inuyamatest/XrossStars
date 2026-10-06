@@ -125,6 +125,7 @@
     '紫宮るな': 'cards/BP05-087_shinomiya-runa_awakened.webp',
     'らいじん': 'cards/BP05-088_raijin_awakened.webp',
     '一ノ瀬うるは': 'cards/BP01-115_ichinose-uruha_awakened.webp',
+    '白雪レイド': 'cards/BP01-007_shirayuki-reid_awakened.webp', // 元は BP01-069（運もミスもない）の画像として誤って置かれていたもの
     'nqrse': 'cards/BP01-130_nqrse_awakened.webp',
     '千燈ゆうひ': 'cards/BP04-098_sendou-yuuhi_awakened.png',
     '夜乃くろむ': 'cards/BP04-092_yano-kuromu_awakened.webp',
