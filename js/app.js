@@ -397,6 +397,10 @@ window.XSComponent = class extends window.DCLogic {
         attack: l.attack, awakened: l.awakened, isDown: l.isDown,
         equipText: l.equipment.length ? l.equipment.map(e => e.name).join('・') : false,
         hpAnim: flash(l),
+        // HPゲージ（残り割合で 緑→黄→赤）とカードの色のグロー
+        hpPct: (l.maxHp ? Math.max(0, Math.min(100, Math.round(l.currentHp / l.maxHp * 100))) : 0) + '%',
+        hpColor: !l.maxHp ? '#3a5283' : l.currentHp / l.maxHp > 0.5 ? '#5fe39a' : l.currentHp / l.maxHp > 0.25 ? '#f5c518' : '#ff4d6d',
+        glow: c ? this.colorHex(c.color) + '55' : 'transparent',
         openPicker: () => this.setState({ picker: { index: i }, query: '' }),
         openDetail: () => this.setState({ detail: { index: i } }),
         openMenu: () => this.setState({ sheet: { index: i }, equipName: '', equipHp: '0' }),
