@@ -270,13 +270,19 @@
     bindEvents();
   }
 
+  // リーダー4体がそろっていれば、今のデッキをコードにして対戦画面（CPU戦の準備）へ持っていく
+  function battleHref() {
+    if (state.leaders.filter(Boolean).length !== 4) return 'battle.html';
+    return 'battle.html#d=' + window.XS_DECK_CODE.encode(buildDeckObject()) + '&go=cpu';
+  }
+
   function renderHeader() {
     return '' +
       '<div class="db-header">' +
         '<h1><span class="db-logo-x">XROSS</span> <span class="db-logo-s">STARS</span><small>デッキビルダー</small></h1>' +
         '<a class="db-back" href="battle.html">メニュー</a>' +
         '<a class="db-back" href="index.html">HP管理</a>' +
-        '<a class="db-back db-back-go" href="battle.html">対戦する →</a>' +
+        '<a class="db-back db-back-go" href="' + esc(battleHref()) + '" title="' + (state.leaders.filter(Boolean).length === 4 ? 'このデッキでCPU対戦の準備画面を開く' : '対戦画面を開く（リーダー4体を選ぶと、このデッキを持っていけます）') + '">対戦する →</a>' +
         '<input class="db-name-input" id="db-deck-name" type="text" placeholder="デッキ名" value="' + esc(state.deckName) + '">' +
         '<button class="db-btn primary" data-act="save">保存</button>' +
         '<button class="db-btn" data-act="load">読み込み</button>' +
@@ -492,11 +498,90 @@
             validation.warnings.map(function (w) { return '<div class="v-warn">⚠ ' + esc(w) + '</div>'; }).join('') +
           '</div>' +
         '</div>' +
+        renderAnalysis() +
         '<div>' +
           '<div class="db-status-title">' + (state.activeTab === 'tactics' ? 'タクティクス内容' : 'デッキ内容') + '</div>' +
           renderDeckList() +
         '</div>' +
       '</div>';
+  }
+
+  // メインデッキに入っている実カード（アタック・メモリア）を1枚ずつ並べた配列
+  function mainDeckCards() {
+    var out = [];
+    deckEntries().forEach(function (e) {
+      var c = CARD_INDEX[e.cardNumber];
+      if (!c || (c.cardType !== 'ATTACK' && c.cardType !== 'MEMORIA')) return;
+      for (var i = 0; i < e.count; i++) out.push(c);
+    });
+    return out;
+  }
+
+  // デッキ分析：コスト分布・平均コスト・色の内訳＋試しドロー
+  function renderAnalysis() {
+    var cards = mainDeckCards();
+    var total = cards.length;
+    var buckets = [0, 0, 0, 0, 0];
+    var costSum = 0, costN = 0, colors = {};
+    cards.forEach(function (c) {
+      if (c.cost != null) { buckets[Math.min(4, c.cost)]++; costSum += c.cost; costN++; }
+      colors[c.color] = (colors[c.color] || 0) + 1;
+    });
+    var max = Math.max.apply(null, buckets.concat([1]));
+    var bars = buckets.map(function (n, i) {
+      var label = i === 4 ? '4+' : String(i);
+      var pct = total ? Math.round(n / total * 100) : 0;
+      return '<div class="db-curve-col" title="コスト' + label + '：' + n + '枚（' + pct + '%）">' +
+        '<span class="db-curve-n">' + (n || '') + '</span>' +
+        '<div class="db-curve-track"><div class="db-curve-bar" style="height:' + (n / max * 100) + '%"></div></div>' +
+        '<span class="db-curve-x">' + label + '</span>' +
+      '</div>';
+    }).join('');
+    var colorChips = Object.keys(COLOR_JA).filter(function (c) { return colors[c]; }).map(function (c) {
+      return '<span class="db-an-chip"><i style="background:' + COLOR_HEX[c] + '"></i>' + COLOR_JA[c] + ' <b>' + colors[c] + '</b></span>';
+    }).join('');
+    return '' +
+      '<div>' +
+        '<div class="db-status-title">デッキ分析</div>' +
+        (total === 0 ? '<div class="db-empty" style="padding:10px">メインデッキにカードを入れると表示されます</div>' :
+          '<div class="db-analysis">' +
+            '<div class="db-an-head"><span>コスト分布</span><span>平均 <b>' + (costN ? (costSum / costN).toFixed(2) : '-') + '</b></span></div>' +
+            '<div class="db-curve" role="img" aria-label="コスト分布 ' + buckets.map(function (n, i) { return 'コスト' + (i === 4 ? '4以上' : i) + ' ' + n + '枚'; }).join('、') + '">' + bars + '</div>' +
+            '<div class="db-an-chips">' + colorChips + '</div>' +
+          '</div>') +
+        '<button class="db-btn db-draw-btn" data-act="draw-open"' + (total < 4 ? ' disabled' : '') + '>🃏 試しドロー（初手4枚）</button>' +
+      '</div>';
+  }
+
+  // 試しドロー：メインデッキをシャッフルして初手4枚を引く（1ラウンドの配り枚数と同じ）。追加ドローも可
+  function shuffledMainDeck() {
+    var a = mainDeckCards().slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function startTestDraw() {
+    var pile = shuffledMainDeck();
+    state.draw = { hand: pile.splice(0, 4), pile: pile };
+    state.modal = 'draw';
+    render();
+  }
+  function renderDrawModal() {
+    var d = state.draw;
+    var costs = d.hand.filter(function (c) { return c.cost != null; }).map(function (c) { return c.cost; });
+    var low = costs.filter(function (x) { return x <= 1; }).length;
+    return modalWrap('試しドロー', '' +
+      '<p class="db-draw-meta">手札 <b>' + d.hand.length + '</b>枚 ・ 山札残り <b>' + d.pile.length + '</b>枚 ・ コスト1以下 <b>' + low + '</b>枚 ・ アタック <b>' + d.hand.filter(function (c) { return c.cardType === 'ATTACK'; }).length + '</b>枚</p>' +
+      '<div class="db-draw-hand">' + d.hand.map(function (c, i) {
+        var img = cardImg(c);
+        return '<div class="db-draw-card' + (i >= 4 ? ' extra' : '') + '" data-act="detail" data-number="' + esc(c.cardNumber) + '" title="' + esc(c.name) + '">' +
+          (img ? '<img src="' + esc(img) + '" alt="">' : '<div class="db-card-placeholder">' + esc(c.name) + '</div>') +
+          (i >= 4 ? '<span>+' + (i - 3) + '</span>' : '') +
+        '</div>';
+      }).join('') + '</div>' +
+      '<div class="db-draw-actions">' +
+        '<button class="db-btn" data-act="draw-more"' + (d.pile.length ? '' : ' disabled') + '>もう1枚引く</button>' +
+        '<button class="db-btn primary" data-act="draw-open">引き直す</button>' +
+      '</div>', 640);
   }
 
   function renderDeckList() {
@@ -563,6 +648,7 @@
     if (state.modal === 'loadcode') {
       return modalWrap('デッキコード読み込み', '<p>URLまたはコードを貼り付けてください。</p><textarea class="db-code-box" id="code-input" placeholder="https://.../deckbuilder.html#d=..."></textarea><button class="db-btn primary" data-act="do-loadcode" style="margin-top:8px">読み込む</button>');
     }
+    if (state.modal === 'draw' && state.draw) return renderDrawModal();
     if (state.modal === 'detail' && state.detailCard) {
       var c = state.detailCard;
       var img = cardImg(c);
@@ -576,10 +662,10 @@
     }
     return '';
   }
-  function modalWrap(title, body) {
+  function modalWrap(title, body, width) {
     return '' +
       '<div class="db-modal-overlay" data-act="close-modal">' +
-        '<div class="db-modal" style="max-width:520px" data-stop="1">' +
+        '<div class="db-modal" style="max-width:' + (width || 520) + 'px" data-stop="1">' +
           '<div class="db-modal-header"><b>' + esc(title) + '</b><button class="db-modal-close" data-act="close-modal">✕</button></div>' +
           '<div class="db-modal-body">' + body + '</div>' +
         '</div>' +
@@ -589,6 +675,9 @@
   // ---------- イベント ----------
   function bindEvents() {
     root.querySelectorAll('[data-stop]').forEach(function (el) { el.addEventListener('click', function (e) { e.stopPropagation(); }); });
+
+    var goLink = root.querySelector('.db-back-go');
+    if (goLink) goLink.addEventListener('click', function () { goLink.href = battleHref(); }); // デッキ名の入力など最新の状態で持っていく
 
     var nameInput = document.getElementById('db-deck-name');
     if (nameInput) nameInput.addEventListener('input', function (e) { state.deckName = e.target.value; });
@@ -649,8 +738,10 @@
     if (act === 'toggle') { var f = el.getAttribute('data-f'); state.filters[f] = !state.filters[f]; state.page = 0; render(); return; }
     if (act === 'page') { state.page += Number(el.getAttribute('data-dir')); render(); return; }
     if (act === 'qty') { addCard(el.getAttribute('data-number'), Number(el.getAttribute('data-delta'))); return; }
-    if (act === 'detail') { state.detailCard = CARD_INDEX[el.getAttribute('data-number')]; state.modal = 'detail'; render(); return; }
-    if (act === 'close-modal') { state.modal = null; state.detailCard = null; render(); return; }
+    if (act === 'detail') { state.detailFrom = state.modal === 'draw' ? 'draw' : null; state.detailCard = CARD_INDEX[el.getAttribute('data-number')]; state.modal = 'detail'; render(); return; }
+    if (act === 'close-modal') { state.modal = (state.modal === 'detail' && state.detailFrom === 'draw') ? 'draw' : null; state.detailFrom = null; state.detailCard = null; render(); return; }
+    if (act === 'draw-open') { startTestDraw(); return; }
+    if (act === 'draw-more') { if (state.draw && state.draw.pile.length) { state.draw.hand.push(state.draw.pile.shift()); render(); } return; }
     if (act === 'save') { state.modal = 'save'; render(); return; }
     if (act === 'do-save') { saveCurrentDeck(); state.modal = null; render(); return; }
     if (act === 'load') { state.modal = 'load'; render(); return; }
@@ -672,7 +763,7 @@
 
   root.addEventListener('click', function (e) {
     if (e.target.classList && e.target.classList.contains('db-modal-overlay')) {
-      state.modal = null; state.picker = null; state.detailCard = null; render();
+      state.modal = null; state.picker = null; state.detailCard = null; state.detailFrom = null; render();
     }
   });
 

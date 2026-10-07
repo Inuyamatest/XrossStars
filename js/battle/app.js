@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008d';
+  var APP_VERSION = '20261008e';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -2549,6 +2549,27 @@
   }
   document.addEventListener('mouseleave', hidePreview);
   window.addEventListener('scroll', hidePreview, { passive: true });
+
+  // デッキビルダーの「対戦する →」から来たとき（#d=<デッキコード>&go=cpu）：そのデッキを自分側にセットしてCPU戦の準備画面を開く
+  (function () {
+    var h = location.hash || '';
+    var m = h.match(/[#&]d=([^&]+)/);
+    if (!m) return;
+    try {
+      var deck = window.XS_DECK_CODE.decode(m[1]);
+      if (!deck.leaders.length) return;
+      deck.name = deck.name || 'デッキビルダーのデッキ';
+      setup.playerA.source = 'CODE';
+      setup.playerA.codeDeck = deck;
+      setup.playerA.savedIndex = null;
+      setup.playerA.codeError = null;
+      if (/[#&]go=cpu\b/.test(h)) { setup.aSide = 'HUMAN'; setup.opponent = 'CPU'; refreshPlayerLabels(); screen = 'setup';
+        // 相手（CPU）のデッキがまだ無ければランダムデッキを入れておく（すぐ「対戦開始」を押せるように。変更も自由）
+        if (setup.playerB.source === 'NONE') { setup.playerB.source = 'RANDOM'; setup.playerB.generatedDeck = buildRandomDeck('プレイヤーB・ランダム'); }
+      }
+    } catch (e) { /* 壊れたコードは無視してメニューを出す */ }
+    history.replaceState(null, '', location.pathname + location.search); // 再読み込みで何度も読み込まないようにURLから外す
+  })();
 
   // URLに部屋コードが付いていれば、招待された側として部屋に参加する
   (function () {
