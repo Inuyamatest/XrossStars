@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008f';
+  var APP_VERSION = '20261008g';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -223,7 +223,7 @@
     document.body.classList.toggle('bt-compact', wide && isCompact());
     document.body.classList.toggle('bt-on-menu', screen === 'menu');
     document.body.classList.toggle('bt-on-setup', screen === 'setup');
-    root.innerHTML = screen === 'menu' ? renderMenu() : (screen === 'setup' ? renderSetup() : renderBattle());
+    root.innerHTML = screen === 'menu' ? renderMenu() : (screen === 'setup' ? renderSetup() + (setup.deckPicker ? renderDeckPicker(setup.deckPicker) : '') : renderBattle());
     bindEvents();
     syncDockHeight();
     if (wide) fillWidePreview();
@@ -584,6 +584,7 @@
       setup[side].source = 'CODE';
       setup[side].codeDeck = deck;
       setup[side].savedIndex = null;
+      setup.deckPicker = null;
     } catch (e) {
       setup[side].codeError = 'デッキコードを読み込めませんでした';
     }
@@ -598,12 +599,57 @@
     '</span></div>';
   }
 
+  // デッキ選択：保存済みデッキをリーダー付きのタイルで並べ、ランダム・コード貼り付けもここでまとめて選ぶ
+  function renderDeckPicker(side) {
+    var s = setup[side];
+    var decks = setup.savedDecks;
+    var tiles = decks.map(function (d, i) {
+      var leaders = (d.leaders || []).map(function (n) { return CARD_INDEX[n]; }).filter(Boolean);
+      var v = window.XS_DECK_RULES.validateDeck(d, CARD_INDEX);
+      var colors = {};
+      leaders.forEach(function (l) { colors[l.color] = (colors[l.color] || 0) + 1; });
+      var on = s.source === 'SAVED' && s.savedIndex === i;
+      return '<button class="bt-dp-tile' + (on ? ' on' : '') + '" data-act="pick-saved-deck" data-side="' + side + '" data-index="' + i + '">' +
+        '<span class="bt-dp-leaders">' + [0, 1, 2, 3].map(function (k) {
+          var c = leaders[k];
+          return '<span class="bt-dp-l">' + (c && cardImg(c, false) ? '<img src="' + esc(cardImg(c, false)) + '" alt="" loading="lazy">' : '') + '</span>';
+        }).join('') + '</span>' +
+        '<span class="bt-dp-name">' + esc(d.name || '名前なし') + '</span>' +
+        '<span class="bt-dp-meta">' +
+          Object.keys(colors).map(function (c) { return '<i class="bt-dp-dot" style="background:var(--' + c + ',#b8b2c2)"></i>' + colors[c]; }).join(' ') +
+          '<span class="bt-dp-state ' + (v.valid ? 'ok' : 'ng') + '">' + (v.valid ? '✓ 構築OK' : '× ' + v.summary.mainCount + '/50') + '</span>' +
+        '</span>' +
+        (on ? '<b class="bt-dp-on">選択中</b>' : '') +
+      '</button>';
+    }).join('');
+    return '' +
+      '<div class="bt-overlay bt-dp" data-side="' + side + '">' +
+        '<div class="bt-dp-bg" data-act="close-deck-picker"></div>' +
+        '<div class="bt-dp-box">' +
+          '<div class="bt-dp-head">' + pBadge(side) + '<b>' + esc(PLAYER_LABEL[side]) + 'のデッキを選ぶ</b><button class="bt-dp-close" data-act="close-deck-picker" title="閉じる">✕</button></div>' +
+          '<div class="bt-dp-body">' +
+            '<div class="bt-dp-sec">SAVED DECKS<span>保存済みデッキ ' + decks.length + '</span></div>' +
+            (decks.length ? '<div class="bt-dp-grid">' + tiles + '</div>'
+              : '<div class="bt-dp-empty">保存済みデッキはまだありません。<a href="deckbuilder.html">デッキビルダー</a>で作って保存すると、ここに並びます。</div>') +
+            '<div class="bt-dp-sec">OTHER<span>そのほか</span></div>' +
+            '<div class="bt-dp-other">' +
+              '<button class="bt-dp-rand" data-act="pick-random" data-side="' + side + '"><span>🎲</span><b>ランダムデッキ</b><small>リーダー4体とカードを自動で選ぶ</small></button>' +
+              '<div class="bt-dp-code">' +
+                '<b>デッキコードで読み込む</b>' +
+                '<div class="bt-setup-row"><input class="bt-input" type="text" data-code-input="' + side + '" data-side="' + side + '" placeholder="デッキコード／デッキビルダーのURL" autocomplete="off" spellcheck="false">' +
+                '<button class="bt-btn primary" data-act="load-code" data-side="' + side + '">読込</button></div>' +
+                (s.codeError ? '<div class="bt-deck-violations">' + esc(s.codeError) + '</div>' : '') +
+              '</div>' +
+            '</div>' +
+            '<a class="bt-dp-build" href="deckbuilder.html">デッキビルダーで新しく作る →</a>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
   function renderSetupPanel(side) {
     var s = setup[side];
     var deck = deckFor(side);
-    var savedOptions = setup.savedDecks.map(function (d, i) {
-      return '<option value="' + i + '"' + (s.source === 'SAVED' && s.savedIndex === i ? ' selected' : '') + '>' + esc(d.name) + '</option>';
-    }).join('');
 
     var leaderCards = deck ? (deck.leaders || []).map(function (n) { return CARD_INDEX[n]; }).filter(Boolean) : [];
     var thumbs = '';
@@ -632,19 +678,11 @@
     return '' +
       '<div class="bt-setup-panel" data-side="' + side + '">' +
         '<h3>' + pBadge(side) + '<span class="bt-sp-name">' + esc(PLAYER_LABEL[side]) + '</span>' + (deck ? '<span class="bt-sp-deck">' + esc(deck.name) + '</span>' : '') + '</h3>' +
-        '<div class="bt-deck-leaders">' + thumbs + '</div>' +
-        '<div class="bt-setup-row">' +
-          '<select class="bt-select" data-act="pick-saved" data-side="' + side + '">' +
-            '<option value="">保存済みデッキから選択…</option>' +
-            savedOptions +
-          '</select>' +
-          '<button class="bt-btn" data-act="pick-random" data-side="' + side + '">ランダムデッキ</button>' +
+        '<div class="bt-deck-leaders" data-act="open-deck-picker" data-side="' + side + '" role="button" tabindex="0" title="デッキを選ぶ">' + thumbs + '</div>' +
+        '<div class="bt-setup-row bt-deck-actions">' +
+          '<button class="bt-btn bt-deck-pick" data-act="open-deck-picker" data-side="' + side + '">' + (deck ? 'デッキを変更' : 'デッキを選ぶ') + '</button>' +
+          '<button class="bt-btn bt-deck-rand" data-act="pick-random" data-side="' + side + '" title="ランダムなデッキを作る">🎲 ランダム</button>' +
         '</div>' +
-        '<div class="bt-setup-row">' +
-          '<input class="bt-input" type="text" data-code-input="' + side + '" placeholder="デッキコード／デッキビルダーのURLを貼り付け" autocomplete="off" spellcheck="false">' +
-          '<button class="bt-btn" data-act="load-code" data-side="' + side + '">コード読込</button>' +
-        '</div>' +
-        (s.codeError ? '<div class="bt-deck-violations">' + esc(s.codeError) + '</div>' : '') +
         summary +
       '</div>';
   }
@@ -2274,15 +2312,11 @@
         if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); handleAction('pick-leader', el); }
       });
     });
-    root.querySelectorAll('[data-act="pick-saved"]').forEach(function (el) {
-      el.addEventListener('change', function (e) {
-        var side = el.getAttribute('data-side');
-        var v = e.target.value;
-        if (v === '') { setup[side].source = 'NONE'; setup[side].savedIndex = null; }
-        else { setup[side].source = 'SAVED'; setup[side].savedIndex = Number(v); }
-        render();
-      });
+    root.querySelectorAll('.bt-deck-leaders[data-act="open-deck-picker"]').forEach(function (el) {
+      el.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); handleAction('open-deck-picker', el); } });
     });
+    var codeIn = root.querySelector('.bt-dp [data-code-input]');
+    if (codeIn) codeIn.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') handleAction('load-code', codeIn); });
   }
 
   function handleAction(act, el) {
@@ -2294,7 +2328,15 @@
       handleChoiceAction(act, el);
       return;
     }
+    if (act === 'open-deck-picker') { setup.savedDecks = loadSavedDecks(); setup.deckPicker = el.getAttribute('data-side'); setup[setup.deckPicker].codeError = null; render(); return; }
+    if (act === 'close-deck-picker') { setup.deckPicker = null; render(); return; }
+    if (act === 'pick-saved-deck') {
+      var sd = el.getAttribute('data-side');
+      setup[sd].source = 'SAVED'; setup[sd].savedIndex = Number(el.getAttribute('data-index'));
+      setup.deckPicker = null; render(); return;
+    }
     if (act === 'pick-random') {
+      setup.deckPicker = null;
       var side = el.getAttribute('data-side');
       setup[side].source = 'RANDOM';
       setup[side].generatedDeck = buildRandomDeck((side === 'playerA' ? 'プレイヤーA' : 'プレイヤーB') + '・ランダム');
@@ -2450,6 +2492,7 @@
 
   // キーボード操作：1〜9 手札のカードを選ぶ／Enter アタック・プレイを確定（Escは下で取り消し）
   document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && screen === 'setup' && setup.deckPicker) { setup.deckPicker = null; render(); return; }
     if (screen !== 'battle' || !game || ev.ctrlKey || ev.metaKey || ev.altKey) return;
     var tag = ev.target && ev.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
