@@ -694,3 +694,126 @@ body.bt-on-menu{background-color:#0b1730;
 .bw-hand .bt-chipx{font-size:13px}
 @media (max-width:760px){ .bt-chipx{font-size:10px;padding:2px 4px} }
 @media (max-width:760px){ .bt-battle .bt-score{justify-content:flex-start;padding:0 150px 0 2px} }
+
+/* =========================================================
+   横向きのスマホ（body.bt-wide.bt-compact）：ワイド表示を小さくした版
+   ========================================================= */
+.bt-rotate-tip{display:none}
+@media (orientation:portrait) and (max-width:760px){
+  .bt-rotate-tip{display:block;text-align:center;font-size:11px;color:var(--blue);background:rgba(98,197,238,.1);border:1px solid rgba(98,197,238,.3);border-radius:999px;padding:4px 10px;margin:0 auto 2px}
+}
+.bt-compact .bw{--bw-gap:5px;grid-template-columns:minmax(150px,25vw) minmax(0,1fr) minmax(140px,21vw);padding:max(5px,env(safe-area-inset-top)) max(5px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(5px,env(safe-area-inset-left))}
+.bt-compact .bw-panel{padding:4px 6px;border-radius:6px}
+.bt-compact .bw-head{font-size:10px;margin-bottom:2px;gap:4px}
+.bt-compact .bw-head b{font-size:13px}
+.bt-compact .bw-head .bt-pbadge{width:16px;height:16px;font-size:9px}
+.bt-compact .bw-backs{display:none}
+.bt-compact .bw-log{padding:3px 6px}
+.bt-compact .bw-logarrow{font-size:9px}
+.bt-compact .bw-loglast .bt-logitem,.bt-compact .bw-log .bt-logitem{font-size:10px}
+.bt-compact .bw-log .bt-loglist{max-height:48dvh}
+.bt-compact .bw-hand .bt-hand{--cols:3;gap:7px 5px;padding:6px 3px 2px}
+.bt-compact .bw-hand-7 .bt-hand,.bt-compact .bw-hand-8 .bt-hand,.bt-compact .bw-hand-9 .bt-hand{--cols:3}
+.bt-compact .bw-hand .bt-hname{display:none}
+.bt-compact .bw-hand .bt-cost{width:18px;height:18px;font-size:11px;top:-4px;left:-3px;border-width:1.5px}
+.bt-compact .bw-hand .bt-chipx{font-size:9px;padding:1px 3px}
+.bt-compact .bt-handsort button{min-height:18px;padding:0 5px;font-size:9px}
+.bt-compact .bw-center{gap:3px}
+.bt-compact .bw-center .bt-score{min-height:18px;gap:8px}
+.bt-compact .bw-center .bt-score .bt-sc b{font-size:15px}
+.bt-compact .bw-center .bt-score .bt-round{font-size:9px;padding:1px 8px}
+.bt-compact .bw-center .bt-score .bt-pbadge{width:16px;height:16px;font-size:9px}
+.bt-compact .bw-strip{min-height:26px;padding:2px 6px;gap:6px;font-size:10px}
+.bt-compact .bw-strip .bt-pname{font-size:10px}
+.bt-compact .bw-strip .bt-plabel{max-width:5em}
+.bt-compact .bw-strip .bt-turntag{font-size:8px;padding:1px 5px}
+.bt-compact .bt-ppcards{height:16px}
+.bt-compact .bt-ppc{width:14px;height:16px}
+.bt-compact .bt-ppc img{width:10px;height:14px}
+.bt-compact .bt-pp-num{font-size:12px}
+.bt-compact .bw-zlabel{display:none}
+.bt-compact .bw-tactics .bt-mini.tactics{width:36px}
+.bt-compact .bw-tactics .bt-mini .bt-mplay{min-height:16px;font-size:8px;margin-top:1px}
+.bt-compact .bw-strip .bt-counter{font-size:9px;padding:1px 6px}
+.bt-compact .bw-strip .bt-counter b{font-size:11px}
+.bt-compact .bt-boost{font-size:9px}
+.bt-compact .bw-leaders{gap:10px}
+.bt-compact .bw-leaders .bt-leader{width:min(calc((100% - 30px) / 4), calc((100dvh - 178px) / 2 * 63 / 88));min-width:52px}
+.bt-compact .bt-hpbig{font-size:clamp(10px,calc((100dvh - 178px) / 22),14px);margin-top:1px}
+.bt-compact .bt-info{display:none}
+.bt-compact .bt-badge-top .bt-tag{font-size:8px;padding:1px 4px}
+.bt-compact .bt-down-stamp span{font-size:14px}
+.bt-compact .bt-dmgtag{padding:1px 5px 2px;font-size:8px;border-width:1.5px}
+.bt-compact .bt-dmgtag b{font-size:13px}
+.bt-compact .bw-mid{min-height:34px;padding:2px 6px;gap:2px}
+.bt-compact .bw-play-label{font-size:8px}
+.bt-compact .bw-play .bt-mini{width:min(30px,calc((100dvh - 178px) / 9))}
+.bt-compact .bw-play .bt-mini.echo{width:min(42px,calc((100dvh - 178px) / 6))}
+.bt-compact .bw-mid .bt-ev{font-size:9px;padding:1px 6px}
+.bt-compact .bw-tools{gap:3px}
+.bt-compact .bw-tools .bt-btn{min-height:24px;padding:0 7px;font-size:9px}
+.bt-compact .bw-preview{display:none}
+.bt-compact .bw-prompt{flex:1;min-height:0;overflow:auto;padding:6px;gap:5px}
+.bt-compact .bw-prompt .bt-prompt-text{font-size:11px;line-height:1.4}
+.bt-compact .bw-prompt .bt-prompt-text .bt-ctext{font-size:10px;-webkit-line-clamp:4}
+.bt-compact .bw-prompt .bt-btn{min-height:30px;padding:0 10px;font-size:11px}
+.bt-compact .bw-prompt .bt-btn.attack{min-height:36px;font-size:13px}
+.bt-compact .bw-prompt .bt-steps .bt-step{font-size:9px;padding:1px 5px}
+.bt-compact .bt-dmgpreview{font-size:10px;gap:3px;flex-wrap:wrap}
+.bt-compact .bt-dmgpreview .bt-dp-total{font-size:16px}
+.bt-compact .bt-cpuspeed{font-size:9px;gap:2px}
+.bt-compact .bt-cpuspeed button{min-height:22px;min-width:28px;padding:0 4px;font-size:9px}
+.bt-compact .bt-cpuspeed-label{display:none}
+.bt-compact .bw-keys{display:none}
+.bt-compact .bw-arrow-path{stroke-width:3}
+/* 横向きのスマホのメニュー */
+@media (orientation:landscape) and (max-height:520px){
+  .bt-menu{padding:14px 18px 12px;gap:10px;grid-template-rows:auto 1fr auto}
+  .bm-logo{font-size:38px}
+  .bm-sub{font-size:11px;margin-top:4px}
+  .bm-links{gap:6px}
+  .bm-link{padding:8px 12px;font-size:12px}
+  .bm-fan{min-height:160px}
+  .bm-fan-card{width:clamp(80px,13vw,130px)}
+  .bm-main{gap:8px}
+  .bm-tile{padding:8px 4px;gap:3px}
+  .bm-tile b{font-size:13px}
+  .bm-tile small{display:none}
+  .bm-ico svg{width:30px;height:30px}
+  .bm-ver{display:none}
+}
+/* 横向きのスマホ：手札の見出し・道具・操作欄を詰める */
+.bw-handhead{flex-wrap:wrap}
+.bt-handsort button{white-space:nowrap}
+.bw-hand .bt-hand{padding-top:14px}
+.bt-compact .bw-hlabel{display:none}
+.bt-compact .bw-hand .bt-hand{padding-top:12px}
+.bt-compact .bw-long{display:none}
+.bt-compact .bw-tools{flex-wrap:nowrap}
+.bt-compact .bw-tools .bt-btn{min-height:26px;padding:0 9px;font-size:10px}
+.bt-compact .bw-strip .bt-plabel{max-width:4.5em}
+.bt-compact .bw-strip .bt-counter[title="トラッシュ"]{display:none}
+.bt-compact .bt-mini .bt-mback span{font-size:6px;padding:1px 3px;letter-spacing:.04em}
+.bt-compact .bw-prompt .bt-steps{display:none}
+.bt-compact .bw-prompt [data-act="show-detail"]{display:none}
+.bt-compact .bw-prompt .bt-prompt-actions{gap:5px}
+.bt-compact .bw-prompt .bt-prompt-actions .bt-btn.attack,.bt-compact .bw-prompt .bt-prompt-actions .bt-btn.primary,.bt-compact .bw-prompt .bt-prompt-actions .bt-btn.danger{flex:1 1 100%}
+.bt-compact .bt-dmgpreview{margin:2px 0}
+.bt-compact .bt-next{font-size:10px}
+/* 高さの低い画面の選択画面（タクティクス・対象など） */
+@media (max-height:520px){
+  .bt-overlay{padding:6px}
+  .bt-choice .bt-overlay-box{max-height:calc(100dvh - 12px);padding:10px 12px 0;gap:8px}
+  .bt-choice-src{width:44px}
+  .bt-choice-title{font-size:13px;line-height:1.4}
+  .bt-choice-text{font-size:11px;padding:4px 8px}
+  .bt-choice-grid{gap:8px;padding:2px}
+  .bt-choice-item{width:84px;padding:4px;gap:2px}
+  .bt-choice-item.landscape{width:118px}
+  .bt-choice-cap,.bt-choice-sub{font-size:10px}
+  .bt-choice-foot{position:sticky;bottom:0;background:var(--bg2);padding:8px 0 10px;margin-top:auto}
+  .bt-overlay-box{padding:14px 16px;gap:8px}
+  .bt-overlay-box .bt-big-title{font-size:24px}
+  .bt-btn.big{min-height:40px;padding:0 24px;font-size:14px}
+}
+.bt-compact .bw-play-label,.bt-compact .bw-play .bt-zone-empty{display:none}
