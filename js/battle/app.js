@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007a';
+  var APP_VERSION = '20261007b';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -746,9 +746,16 @@
             '<button class="bt-btn ghost" data-act="to-menu">メニューに戻る</button>' +
           '</div>' +
           '<div class="bw-preview" id="bw-preview"></div>' +
-          (readOnly ? '' : '<div class="bw-prompt">' + renderPrompt(state) + (hasCpu() ? renderCpuSpeed() : '') + '</div>') +
+          (readOnly ? '' : '<div class="bw-prompt">' + renderPrompt(state) + (hasCpu() ? renderCpuSpeed() : '') +
+            (opponentTurnActive() ? '' : '<div class="bw-keys"><kbd>1</kbd>〜<kbd>9</kbd> 手札を選ぶ　<kbd>Enter</kbd> 決定　<kbd>Esc</kbd> 取り消し</div>') + '</div>') +
         '</aside>' +
       '</div>';
+  }
+
+  function deckBreakdown(player) {
+    var n = { ATTACK: 0, MEMORIA: 0 };
+    player.deck.forEach(function (c) { var t = cardOf(c.cardId).cardType; if (n[t] != null) n[t]++; });
+    return n;
   }
 
   // ワイド表示：プレイヤーの帯（PP・次のアタックへの強化・タクティクス・山札などの枚数）
@@ -764,7 +771,7 @@
         renderBoostBadge(player) +
         '<span class="bw-tactics"><span class="bw-zlabel">TACTICS</span>' + renderTacticsHtml(state, playerId, isActive, readOnly, hideSecret) + '</span>' +
         '<span class="bt-counters">' +
-          '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b></span>' +
+          '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b>' + (hideSecret ? '' : (function () { var n = deckBreakdown(player); return '<small class="bw-deckmix" title="山札に残っているアタック／メモリアの枚数（順番はわかりません）">A' + n.ATTACK + '・M' + n.MEMORIA + '</small>'; })()) + '</span>' +
           '<span class="bt-counter" title="トラッシュ">トラッシュ <b>' + player.trash.length + '</b></span>' +
         '</span>' +
       '</div>';
@@ -952,6 +959,13 @@
 
     var floater = '';
     if (delta) floater = '<span class="bt-float' + (delta > 0 ? ' heal' : '') + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
+    // アタックの対象を選ぶ間：この相手に与えるダメージと、ダウンさせられるか
+    var dmgTag = '';
+    if (p.enemy && p.pickable && sel.attackerLeaderIndex != null) {
+      var est = estimateSelDamage(game.state, idx);
+      var kills = est.total >= curHp;
+      dmgTag = '<span class="bt-dmgtag' + (kills ? ' kill' : '') + '"><b>-' + est.total + '</b>' + (kills ? '撃破' : '残り' + (curHp - est.total)) + '</span>';
+    }
 
     return '' +
       '<div class="' + cls + '" data-leader="' + playerId + ':' + idx + '"' + (p.pickable ? ' data-act="pick-leader" data-player="' + playerId + '" data-index="' + idx + '" role="button" tabindex="0"' : '') + '>' +
@@ -960,6 +974,7 @@
           '<div class="bt-badge-top">' + tags + '</div>' +
           '<button class="bt-info" data-act="show-detail" data-card="' + esc(leader.cardId) + '" title="カード詳細">i</button>' +
           (leader.isDown ? '<div class="bt-down-stamp"><span>DOWN</span></div>' : '') +
+          dmgTag +
           '<div class="bt-lhud">' +
             '<div class="bt-lname">' + esc(card.name) + '</div>' +
             '<div class="bt-lstats"><span class="bt-hpnum">' + (leader.isDown ? 0 : curHp) + '<small>/' + maxHp + '</small></span><span class="bt-atk"><i>ATK </i>' + atk + '</span></div>' +
@@ -1211,21 +1226,27 @@
   }
 
   // アタックの予想ダメージ（攻撃力＋カードの上乗せ＋次のアタックへの強化）
-  function renderDamagePreview(state) {
-    if (sel.attackerLeaderIndex == null) return '';
+  // 選択中のアタックで、相手のリーダー（targetIdx。未定ならnull）に与えるダメージの見積もり（アタック時の効果で増える分は含まない）
+  function estimateSelDamage(state, targetIdx) {
     var pid = sel.ownerId;
     var player = state.players[pid];
     var attacker = player.leaders[sel.attackerLeaderIndex];
-    var targetPid = opponentOf(pid);
     var ctx = {
       ownerPlayerId: pid, attackerPlayerId: pid, attackerLeaderIndex: sel.attackerLeaderIndex,
-      targetPlayerId: targetPid, targetLeaderIndex: sel.targetLeaderIndex, cardIndex: cardIndex,
+      targetPlayerId: opponentOf(pid), targetLeaderIndex: targetIdx, cardIndex: cardIndex,
     };
     var atk = Eng.GameState.getLeaderCurrentAtk(cardIndex, attacker);
     var cardBonus = Eng.Resolver.computeAttackCardBaseDamage(sel.cardId, state, ctx);
     var firstOfMulti = !sel.attacks || sel.attacks.length === 0;
     var boost = firstOfMulti ? (player.pendingAttackBoost || 0) + Eng.Resolver.computeAttackTimeBoost(state, pid, ctx) : 0;
-    var total = Math.max(0, atk + cardBonus + boost);
+    return { atk: atk, cardBonus: cardBonus, boost: boost, total: Math.max(0, atk + cardBonus + boost) };
+  }
+
+  function renderDamagePreview(state) {
+    if (sel.attackerLeaderIndex == null) return '';
+    var targetPid = opponentOf(sel.ownerId);
+    var est = estimateSelDamage(state, sel.targetLeaderIndex);
+    var atk = est.atk, cardBonus = est.cardBonus, boost = est.boost, total = est.total;
     var hasChoiceBonus = Eng.CardEffectData.getEffectsForCard(sel.cardId).some(function (e) {
       return e.trigger === 'ON_ATTACK' && e.action && ['ATTACK_DAMAGE_BONUS', 'MULTI_ATTACK'].indexOf(e.action.type) < 0;
     });
@@ -2283,6 +2304,24 @@
     game = null; sel = null; lastRoundBanner = null; detailCardId = null; logOpen = false; pendingChoice = null;
     setup.savedDecks = loadSavedDecks();
   }
+
+  // キーボード操作：1〜9 手札のカードを選ぶ／Enter アタック・プレイを確定（Escは下で取り消し）
+  document.addEventListener('keydown', function (ev) {
+    if (screen !== 'battle' || !game || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    var tag = ev.target && ev.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (pendingChoice || detailCardId || root.querySelector('.bt-overlay')) return;
+    if (ev.key === 'Enter') {
+      var btn = root.querySelector('[data-act="confirm-attack"], [data-act="confirm-memoria"]');
+      if (btn) { ev.preventDefault(); handleAction(btn.getAttribute('data-act'), btn); }
+      return;
+    }
+    if (/^[1-9]$/.test(ev.key)) {
+      var cards = root.querySelectorAll('[data-act="select-hand"]');
+      var el = cards[Number(ev.key) - 1];
+      if (el) { ev.preventDefault(); handleAction('select-hand', el); }
+    }
+  });
 
   document.addEventListener('keydown', function (ev) {
     if (ev.key !== 'Escape' || screen !== 'battle') return;

@@ -648,3 +648,14 @@ body.bt-on-menu{background-color:#0b1730;
   .bm-ver{left:16px}
 }
 .bt-setup-back{display:flex}
+
+/* アタックの対象を選ぶ間のダメージ見積もり（相手のリーダーの上） */
+.bt-dmgtag{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-index:3;display:flex;flex-direction:column;align-items:center;gap:0;padding:4px 10px 5px;border-radius:10px;background:rgba(10,9,14,.82);border:2px solid #fff;color:#fff;font-size:11px;font-weight:700;line-height:1.15;white-space:nowrap;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.bt-dmgtag b{font-family:var(--num);font-size:22px;letter-spacing:.02em}
+.bt-dmgtag.kill{background:linear-gradient(135deg,#ff458e,#ff7a3d);border-color:#ffe1ec;animation:bt-dmgtag-pop 1s ease-in-out infinite}
+@keyframes bt-dmgtag-pop{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
+@media (max-width:760px){ .bt-dmgtag{padding:2px 6px;font-size:9px} .bt-dmgtag b{font-size:15px} }
+/* 山札の内訳・キーボードの案内（ワイド表示） */
+.bw-deckmix{margin-left:6px;font-family:var(--num);font-size:11px;color:var(--sub);letter-spacing:.04em}
+.bw-keys{font-size:11px;color:var(--dim);text-align:right}
+.bw-keys kbd{display:inline-block;min-width:18px;padding:0 4px;border-radius:4px;border:1px solid var(--line2);background:var(--bg2);color:var(--sub);font-family:var(--num);font-size:11px;text-align:center}
