@@ -5,6 +5,8 @@
 const STEP_MAX_HP = 10;
 const HISTORY_LIMIT = 30;
 const SLOT_COUNT = 4;
+const STEP_KEY = 'xs-hp-step';   // −／＋ボタン1回あたりの量（ヘッダーで切り替え）
+const STEP_CHOICES = [10, 20, 30, 50];
 const SESSION_KEY = 'xs-hp-session'; // 試合中の状態（リーダー・HP・装備・覚醒・履歴）。再読み込みしても続きから使えるように端末へ保存
 
 window.XSComponent = class extends window.DCLogic {
@@ -14,7 +16,8 @@ window.XSComponent = class extends window.DCLogic {
     query: '', booster: 'ALL', color: 'ALL',
     // カスタマイズ：overrides = { [leaderId]: {name, awakeningEffect, hp, ..., imageUrl, awakenedImageUrl} }
     overrides: {}, editMode: false, editor: null, editorBusy: false,
-    importer: null // デッキコード読み込み { text, error }
+    importer: null, // デッキコード読み込み { text, error }
+    step: (() => { try { const n = Number(localStorage.getItem(STEP_KEY)); return STEP_CHOICES.indexOf(n) >= 0 ? n : 10; } catch (e) { return 10; } })()
   };
 
   componentDidMount() {
@@ -404,8 +407,9 @@ window.XSComponent = class extends window.DCLogic {
         openPicker: () => this.setState({ picker: { index: i }, query: '' }),
         openDetail: () => this.setState({ detail: { index: i } }),
         openMenu: () => this.setState({ sheet: { index: i }, equipName: '', equipHp: '0' }),
-        heal10: () => this.apply(i, { heal: 10 }, '10回復'),
-        hit10: () => this.apply(i, { damage: 10 }, '10ダメージ')
+        healLabel: '−' + st.step, hitLabel: '＋' + st.step,
+        heal10: () => this.apply(i, { heal: st.step }, st.step + '回復'),
+        hit10: () => this.apply(i, { damage: st.step }, st.step + 'ダメージ')
       };
     });
 
@@ -571,6 +575,10 @@ window.XSComponent = class extends window.DCLogic {
       stop: e => e.stopPropagation(),
       askResetAll: () => this.setState({ confirm: { index: null, detail: '4人全員のHPを全回復します。覚醒状態・装備・最大HPはそのまま残ります。' } }),
       cancelConfirm: () => this.setState({ confirm: null }),
+      stepOpts: STEP_CHOICES.map(n => ({
+        label: String(n), cls: 'xs-step-btn' + (st.step === n ? ' on' : ''),
+        pick: () => { try { localStorage.setItem(STEP_KEY, String(n)); } catch (e) { /* noop */ } this.setState({ step: n }); }
+      })),
       importer: st.importer ? {
         text: st.importer.text, error: st.importer.error || false,
         note: st.importer.fromLink ? 'デッキビルダーから届いたデッキです。読み込むと、いまのリーダーとHPは置き換わります。' : 'デッキビルダーのデッキコードかURLを貼り付けると、リーダー4体をまとめてセットします（HPは満タンから）。'
