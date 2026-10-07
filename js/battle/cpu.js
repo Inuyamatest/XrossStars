@@ -54,7 +54,7 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3 };
+  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -86,6 +86,30 @@
     var count = Resolver.getMultiAttackCount(cardId) || 1;
     var dmg = downs ? hp : Math.max(0, atk + base) * count + boost;
     return { damage: dmg, hp: hp, kill: dmg >= hp };
+  }
+
+  // 複数回アタック（ストームラッシュ）の対象の割り振り：同じリーダーに全部撃つと、1回目でダウンさせた後の残りが無駄になる。
+  // 1回ずつ「この1回で倒せる相手（体力の多い順）」→いなければ「残り体力の一番少ない相手」を選ぶ（倒し切れる相手を順番に狙う）
+  function planMultiAttack(state, playerId, cardId, attackerIndex, count, cardIndex) {
+    var player = state.players[playerId];
+    var oppId = GameState.getOpponentId(playerId);
+    var targets = Resolver.getAllowedAttackTargets(state, playerId);
+    var remain = {};
+    targets.forEach(function (ti) { remain[ti] = GameState.getLeaderCurrentHp(cardIndex, state.players[oppId].leaders[ti]); });
+    var ctx = { ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: targets[0], cardIndex: cardIndex };
+    var per = Math.max(0, GameState.getLeaderCurrentAtk(cardIndex, player.leaders[attackerIndex]) + Resolver.computeAttackCardBaseDamage(cardId, state, ctx));
+    var first = per + (player.pendingAttackBoost || 0);
+    var out = [];
+    for (var k = 0; k < count; k++) {
+      var dmg = k === 0 ? first : per;
+      var alive = targets.filter(function (ti) { return remain[ti] > 0; });
+      if (!alive.length) alive = targets;
+      var killable = alive.filter(function (ti) { return remain[ti] <= dmg; }).sort(function (a, b) { return remain[b] - remain[a]; });
+      var ti = killable.length ? killable[0] : alive.slice().sort(function (a, b) { return remain[a] - remain[b]; })[0];
+      remain[ti] -= dmg;
+      out.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: ti });
+    }
+    return { attacks: out };
   }
 
   // アタック後効果の見積もり（中の判断と、強のターンの残りの見積もりで使う。強の1手目は盤面のコピーで実行して比べる）。
@@ -228,6 +252,7 @@
       if (!card || card.cardType !== 'MEMORIA') return;
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
+      if (TUNE.combo && !comboReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // コンボの準備カードは決め手を撃てるときまで温存
       plays.push({ kind: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId, cost: cost, boost: boostAmountOf(c.cardId), utility: hasUtilityNow(state, playerId, c.cardId) });
     });
     if (Phases.canPlayTactics(state)) {
@@ -262,10 +287,7 @@
       var count = Resolver.getMultiAttackCount(attack.cardId);
       var oppId = GameState.getOpponentId(playerId);
       var options = { attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target };
-      if (count) {
-        options = { attacks: [] };
-        for (var i = 0; i < count; i++) options.attacks.push({ attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target });
-      }
+      if (count) options = planMultiAttack(state, playerId, attack.cardId, attack.attacker, count, cardIndex);
       return { type: 'ATTACK', instanceId: attack.instanceId, cardId: attack.cardId, options: options };
     }
 
@@ -290,9 +312,11 @@
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
       if (card.cardType === 'MEMORIA') {
+        if (TUNE.combo && !comboReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // コンボの準備カードは温存
         acts.push({ type: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId });
       } else if (card.cardType === 'ATTACK') {
         var count = Resolver.getMultiAttackCount(c.cardId);
+        if (count) aliveIndexes(player).forEach(function (ai) { acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: planMultiAttack(state, playerId, c.cardId, ai, count, cardIndex) }); });
         aliveIndexes(player).forEach(function (ai) {
           Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
             var one = { attackerLeaderIndex: ai, targetPlayerId: oppId, targetLeaderIndex: ti };
@@ -437,6 +461,61 @@
     return score * TUNE.oppHand;
   }
 
+  // ---------- コンボ（揃えて同じターンに使うと強い組み合わせ）----------
+  // enabler（準備のメモリア）は、payoff（決め手のアタック）を同じターンに撃てるときまで手札に温存する。
+  // 名前で判定する（パラレル版も同じカードとして扱う）。hold＝揃っているときに手札に残す価値（evaluateの点数）
+  var COMBOS = [
+    { enabler: '先導者の証', payoffs: ['ストームラッシュ'], hold: 70 },                                        // 攻撃力+30 → 3回アタック
+    { enabler: 'グレイトフルファーマー', payoffs: ['ダブルダウン', 'ストームラッシュ', 'ロケットランチャー', '勝利の雄たけび'], hold: 50 }, // アタックをもう一度
+  ];
+  function nameOf(cardId, cardIndex) { var c = cardIndex[cardId]; return c ? c.name : ''; }
+  function countNames(list, names, cardIndex) {
+    return list.reduce(function (n, c) { return n + (names.indexOf(nameOf(c.cardId || (c.card && c.card.cardId), cardIndex)) >= 0 ? 1 : 0); }, 0);
+  }
+  function comboHoldScore(me, cardIndex) {
+    var score = 0;
+    COMBOS.forEach(function (cb) {
+      var en = countNames(me.hand, [cb.enabler], cardIndex);
+      if (!en) return;
+      var payHand = countNames(me.hand, cb.payoffs, cardIndex);
+      var payDeck = countNames(me.deck, cb.payoffs, cardIndex);
+      if (payHand) score += cb.hold * Math.min(en, payHand) + cb.hold * 0.4 * Math.max(0, en - payHand);
+      else if (payDeck) score += cb.hold * 0.4 * en;
+    });
+    return score;
+  }
+  // 準備カードを今プレイしてよいか：準備カードでなければ常にtrue。準備カードなら、手札の決め手を同じターンに撃てる（PPが足りる）ときだけ
+  function comboReady(state, playerId, cardId, cost, pp, cardIndex, excluded) {
+    var name = nameOf(cardId, cardIndex);
+    var cb = COMBOS.filter(function (x) { return x.enabler === name; })[0];
+    if (!cb) return true;
+    var me = state.players[playerId];
+    if (!countNames(me.hand, cb.payoffs, cardIndex) && !countNames(me.deck, cb.payoffs, cardIndex)) return true; // 決め手がもう残っていなければ普通に使う
+    return me.hand.some(function (h) {
+      if ((excluded && excluded[h.instanceId]) || cb.payoffs.indexOf(nameOf(h.cardId, cardIndex)) < 0) return false;
+      var pc = Resolver.getEffectivePlayCost(state, playerId, h.cardId, cardIndex);
+      return pc != null && cost + pc <= pp;
+    });
+  }
+  // このアクションが「手札に決め手があるときの準備カード」か（2手先まで必ず読む）
+  function isComboStarter(state, playerId, act, cardIndex) {
+    if (!act || act.type !== 'MEMORIA') return false;
+    var name = nameOf(act.cardId, cardIndex);
+    var hand = state.players[playerId].hand;
+    return COMBOS.some(function (cb) { return cb.enabler === name && countNames(hand, cb.payoffs, cardIndex) > 0; });
+  }
+  // 手札に加えるカードの選び方（討伐クエスト等）：足りないコンボパーツ＞ACE＞コストの高いカード
+  function addToHandValue(cardId, hand, cardIndex) {
+    var cd = cardIndex[cardId];
+    if (!cd) return 0;
+    var v = (typeof cd.cost === 'number' ? cd.cost : 0) * 8 + (cd.ace ? 20 : 0);
+    COMBOS.forEach(function (cb) {
+      if (cd.name === cb.enabler) v += countNames(hand, cb.payoffs, cardIndex) ? 120 : 40;
+      if (cb.payoffs.indexOf(cd.name) >= 0) v += countNames(hand, [cb.enabler], cardIndex) ? 120 : 30;
+    });
+    return v;
+  }
+
   function evaluate(s, playerId, cardIndex, base) {
     var oppId = GameState.getOpponentId(playerId);
     if (s.match.status === 'FINISHED') return s.match.winner === playerId ? 1e6 : (s.match.winner === 'DRAW' ? 0 : -1e6);
@@ -459,6 +538,7 @@
       score += (l.equipment || []).length * 18;
     });
     score += handScore(me, s.players[oppId], cardIndex);
+    if (TUNE.combo) score += comboHoldScore(me, cardIndex);
     score -= oppHandScore(s, base, playerId, cardIndex);
     score += (me.pendingAttackBoost || 0) * 0.5;
     score += me.tacticsArea.length * 4;
@@ -479,7 +559,9 @@
     // 2手先まで読む：点数の高い1手目（上位TUNE.depth2Top個）について、2手目もすべて試してからターンの残りを進める
     if (TUNE.depth2 && tried.length > 1) {
       tried.sort(function (a, b) { return b.score - a.score; });
-      tried.slice(0, TUNE.depth2Top).forEach(function (t) {
+      var explore = tried.slice(0, TUNE.depth2Top);
+      if (TUNE.combo) tried.slice(TUNE.depth2Top).forEach(function (t) { if (isComboStarter(state, playerId, t.act, cardIndex)) explore.push(t); }); // コンボの1手目は点数が低く見えても必ず続きを読む
+      explore.forEach(function (t) {
         if (turnOver(t.s1, playerId, base)) return;
         secondActions(t.s1, playerId, cardIndex, helpers).forEach(function (a2) {
           var s2 = simulate(t.s1, playerId, a2, cardIndex);
@@ -678,6 +760,12 @@
           return [best.i];
         }
         return (q.preselect && q.preselect.length ? q.preselect : [0]).slice(0, q.max);
+      }
+      case 'ADD_TO_HAND': {
+        if (!TUNE.combo) return (q.preselect && q.preselect.length ? q.preselect : [0]).slice(0, q.max);
+        if (!cards.length || !(q.max > 0)) return [];
+        return cards.map(function (c, i) { return { i: i, v: addToHandValue(c.cardId, player.hand, cardIndex) }; })
+          .sort(function (a, b) { return b.v - a.v; }).slice(0, q.max).map(function (x) { return x.i; });
       }
       default:
         // 手札に加える等（選ぶほど得なもの）
