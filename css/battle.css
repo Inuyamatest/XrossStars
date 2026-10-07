@@ -639,7 +639,7 @@ body.bt-on-menu{background-color:#0b1730;
 .bm-link:active{transform:scale(.98)}
 .bm-fan{grid-column:2;grid-row:1 / span 2;position:relative;min-height:340px;z-index:1;pointer-events:none}
 .bm-fan-card{position:absolute;left:50%;top:50%;width:clamp(120px,15vw,220px);aspect-ratio:63/88;
-  transform:translate(-50%,-50%) translateX(calc(var(--i) * 32%)) translateY(calc(var(--i) * var(--i) * 3%)) rotate(calc(var(--i) * 9deg));transform-origin:50% 120%}
+  transform:translate(-50%,-50%) translateX(calc(var(--i) * 86%)) translateY(calc(var(--i) * var(--i) * 4%)) rotate(calc(var(--i) * 5deg));transform-origin:50% 120%}
 .bm-fan-face{position:relative;width:100%;height:100%;border-radius:10px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.15);
   animation:bm-deal .9s cubic-bezier(.2,.8,.25,1.1) both, bm-bob 5.5s ease-in-out infinite;animation-delay:calc(var(--k) * .09s + .15s), calc(var(--k) * -.9s);transition:transform .3s ease}
 .bm-fan-face img{width:100%;height:100%;object-fit:cover}
@@ -780,7 +780,7 @@ body.bt-on-menu{background-color:#0b1730;
   .bm-links{gap:6px}
   .bm-link{padding:8px 12px;font-size:12px}
   .bm-fan{min-height:160px}
-  .bm-fan-card{width:clamp(80px,13vw,130px)}
+  .bm-fan-card{width:clamp(64px,10vw,110px)}
   .bm-main{gap:8px}
   .bm-tile{padding:8px 4px;gap:3px}
   .bm-tile b{font-size:13px}
@@ -949,3 +949,6 @@ body.bt-on-menu{animation:bm-grid-pan 14s linear infinite}
   .bm-bigx,.bm-beams i,.bm-scan::after,.bm-halo::before,.bm-halo::after,.bm-floor,.bm-kicker,.bm-logo .bm-x,.bm-logo .bm-s,.bm-tagline,.bm-info,.bm-live i,.bm-ticker-in{animation:none !important}
   .bm-stage{transform:none}
 }
+@media (max-width:820px){ .bm-fan-card{width:min(22vw,96px)} }
+/* PC：扇を左に寄せる（右端にはみ出さないように） */
+@media (min-width:1000px) and (min-height:521px){ .bm-stage{left:-9vw} }
