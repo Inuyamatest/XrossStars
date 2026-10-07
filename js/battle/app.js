@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008k';
+  var APP_VERSION = '20261008l';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -135,6 +135,9 @@
   // 対戦画面のレイアウト：'auto'（横長の大きな画面ならワイド） | 'wide'（1画面に収めるワイド表示） | 'classic'（縦に並べる従来の表示）
   var LAYOUT_KEY = 'xs-battle-layout';
   var layoutPref = loadPref(LAYOUT_KEY, ['auto', 'wide', 'classic'], 'auto');
+  // ワイド表示の盤面を少し奥へ傾けて立体的に見せる（3D）。オン／オフは盤面右上のボタンで切り替え
+  var TILT_KEY = 'xs-battle-tilt';
+  var tiltPref = loadPref(TILT_KEY, ['on', 'off'], 'on');
   var wideMq = window.matchMedia ? window.matchMedia('(min-width: 1100px) and (min-height: 640px)') : null;
   var HAND_SORTS = { draw: '引いた順', cost: 'コスト順', type: '種類順' };
   var handSort = loadPref('xs-battle-hand-sort', Object.keys(HAND_SORTS), 'draw');
@@ -221,6 +224,7 @@
     var wide = screen === 'battle' && isWide();
     document.body.classList.toggle('bt-wide', wide);
     document.body.classList.toggle('bt-compact', wide && isCompact());
+    document.body.classList.toggle('bt-tilt', wide && tiltPref === 'on');
     document.body.classList.toggle('bt-on-menu', screen === 'menu');
     document.body.classList.toggle('bt-on-setup', screen === 'setup');
     root.innerHTML = screen === 'menu' ? renderMenu() : (screen === 'setup' ? renderSetup() + (setup.deckPicker ? renderDeckPicker(setup.deckPicker) : '') : renderBattle());
@@ -858,6 +862,7 @@
         '<main class="bw-center">' +
           renderScore(state) +
           renderWideStrip(state, top, readOnly, deltas, hideTopSecret) +
+          '<div class="bw-table">' +
           '<div class="bw-leaders top">' + topPlayer.leaders.map(function (l, i) { return renderLeader(top, l, i, readOnly, deltas[top + ':' + i]); }).join('') + '</div>' +
           '<div class="bw-mid">' +
             '<div class="bw-play"><span class="bw-play-label">' + pShort(top) + ' PLAY</span>' + renderPlayHtml(topPlayer) + '</div>' +
@@ -865,12 +870,14 @@
             '<div class="bw-play"><span class="bw-play-label">' + pShort(bottom) + ' PLAY</span>' + renderPlayHtml(bottomPlayer) + '</div>' +
           '</div>' +
           '<div class="bw-leaders bottom">' + bottomPlayer.leaders.map(function (l, i) { return renderLeader(bottom, l, i, readOnly, deltas[bottom + ':' + i]); }).join('') + '</div>' +
+          '</div>' +
           renderWideStrip(state, bottom, readOnly, deltas, hideBottomSecret) +
           '<svg class="bw-arrow" aria-hidden="true"><defs><marker id="bw-arrowhead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs><path class="bw-arrow-path" d="" marker-end="url(#bw-arrowhead)"/></svg>' +
         '</main>' +
         '<aside class="bw-right">' +
           '<div class="bw-tools">' +
             '<button class="bt-btn ghost" data-act="toggle-sound" title="効果音">' + (Fx.isSoundOn() ? '♪<span class="bw-long"> 音ON</span>' : '♪<span class="bw-long"> 音OFF</span>') + '</button>' +
+            '<button class="bt-btn ghost' + (tiltPref === 'on' ? ' on' : '') + '" data-act="toggle-tilt" title="盤面を傾けて立体的に見せる">3D</button>' +
             '<button class="bt-btn ghost" data-act="toggle-layout" title="縦に並べる従来の表示にする">表示<span class="bw-long">切替</span></button>' +
             '<button class="bt-btn ghost" data-act="to-menu">メニュー<span class="bw-long">に戻る</span></button>' +
           '</div>' +
@@ -2385,6 +2392,7 @@
     }
     if (act === 'hand-sort') { handSort = el.getAttribute('data-value'); savePref('xs-battle-hand-sort', handSort); render(); return; }
     if (act === 'toggle-wide-log') { wideLogOpen = !wideLogOpen; savePref('xs-battle-wide-log', wideLogOpen ? 'open' : 'closed'); render(); return; }
+    if (act === 'toggle-tilt') { tiltPref = tiltPref === 'on' ? 'off' : 'on'; savePref(TILT_KEY, tiltPref); render(); return; }
     if (act === 'toggle-layout') { layoutPref = isWide() ? 'classic' : 'wide'; savePref(LAYOUT_KEY, layoutPref); render(); return; }
     if (act === 'online-leave') { closeOnline(); render(); return; }
     if (act === 'online-copy') { copyRoomUrl(); return; }
