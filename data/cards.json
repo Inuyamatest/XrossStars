@@ -12504,7 +12504,7 @@
   "confirmStatus": "カード画像で確認（公式ページ未確認）",
   "confirmed": false,
   "parallelGroupId": "BP05-042",
-  "imageUrl": null,
+  "imageUrl": "cards/BP05-042.webp",
   "imageUrlAwakened": null
  },
  {
@@ -12564,7 +12564,7 @@
   "confirmStatus": "カード画像で確認（公式ページ未確認）",
   "confirmed": false,
   "parallelGroupId": "BP05-044",
-  "imageUrl": null,
+  "imageUrl": "cards/BP05-044.webp",
   "imageUrlAwakened": null
  },
  {
@@ -13088,7 +13088,7 @@
   "confirmStatus": "カード画像で確認（公式ページ未確認）",
   "confirmed": false,
   "parallelGroupId": "BP05-070",
-  "imageUrl": null,
+  "imageUrl": "cards/BP05-070.webp",
   "imageUrlAwakened": null
  },
  {
@@ -13148,7 +13148,7 @@
   "confirmStatus": "カード画像で確認（公式ページ未確認）",
   "confirmed": false,
   "parallelGroupId": "BP05-072",
-  "imageUrl": null,
+  "imageUrl": "cards/BP05-072.webp",
   "imageUrlAwakened": null
  },
  {
