@@ -22,12 +22,13 @@
     leaders: [null, null, null, null], // cardNumber x4
     deckCards: {},                      // cardNumber -> count
     tactics: [],                        // cardNumber[] (max5, no dup name)
+    pp: { card: null, ticket: null },   // 使うPPカード／PPチケットのデザイン（見た目だけ。デッキ枚数には含めない）
     filters: {
       q: '', numberQ: '', set: 'ALL', cardType: 'ALL', color: 'ALL', rarity: 'ALL', cost: 'ALL',
       aceOnly: false, leaderOnly: false, eligibleOnly: false, inDeckOnly: false, leaderName: '',
     },
     page: 0,
-    activeTab: 'main', // 'main' | 'tactics'
+    activeTab: 'main', // 'main' | 'tactics' | 'pp'
     picker: null,      // { slot: 0..3 } リーダー選択モーダル
     modal: null,       // 'save' | 'load' | 'code' | 'loadcode' | 'detail'
     detailCard: null,
@@ -53,6 +54,7 @@
       leaders: state.leaders.filter(Boolean),
       cards: deckEntries(),
       tactics: state.tactics.slice(),
+      pp: (state.pp.card || state.pp.ticket) ? { card: state.pp.card, ticket: state.pp.ticket } : undefined,
     };
   }
 
@@ -102,9 +104,10 @@
   }
 
   function filteredCards() {
+    // メインデッキに入るのはアタック・メモリアだけ。タクティクスは専用タブ、PP系はPPタブで扱う
     var pool = state.activeTab === 'tactics'
       ? CARDS.filter(function (c) { return c.cardType === 'TACTICS'; })
-      : CARDS.filter(function (c) { return c.cardType !== 'LEADER'; });
+      : CARDS.filter(function (c) { return c.cardType === 'ATTACK' || c.cardType === 'MEMORIA'; });
     return pool.filter(matchesFilters);
   }
 
@@ -204,6 +207,7 @@
     state.deckCards = {};
     (deck.cards || []).forEach(function (e) { state.deckCards[e.cardNumber] = e.count; });
     state.tactics = (deck.tactics || []).slice();
+    state.pp = { card: (deck.pp && CARD_INDEX[deck.pp.card]) ? deck.pp.card : null, ticket: (deck.pp && CARD_INDEX[deck.pp.ticket]) ? deck.pp.ticket : null };
     state.modal = null;
     state.page = 0;
     render();
@@ -251,10 +255,11 @@
         '<div class="db-main">' +
           renderLeaderSlots(leaderCards) +
           renderTabs() +
-          renderFilters() +
-          renderGridMeta() +
-          renderGrid(leaderCards) +
-          renderPager() +
+          (state.activeTab === 'pp' ? renderPpPicker() :
+            renderFilters() +
+            renderGridMeta() +
+            renderGrid(leaderCards) +
+            renderPager()) +
         '</div>' +
         renderSidebar(validation) +
       '</div>' +
@@ -280,12 +285,14 @@
       '</div>';
   }
 
-  // リーダー名 → 専用カード（ビルドルール「リーダー：○○」）の種類数
+  // リーダー名 → 専用カード（ビルドルール「リーダー：○○」）の種類数（メイン／タクティクス別）
   var LEADER_CARD_COUNT = {};
   CARDS.forEach(function (c) {
     var r = c.buildRuleParsed;
     if (r && r.kind === 'LEADER_NAME' && c.parallelGroupId === c.cardNumber) {
-      LEADER_CARD_COUNT[r.leaderName] = (LEADER_CARD_COUNT[r.leaderName] || 0) + 1;
+      var k = c.cardType === 'TACTICS' ? 'tactics' : 'main';
+      LEADER_CARD_COUNT[r.leaderName] = LEADER_CARD_COUNT[r.leaderName] || { main: 0, tactics: 0 };
+      LEADER_CARD_COUNT[r.leaderName][k]++;
     }
   });
   // 色指定（「○のリーダー3体以上」）カードが要求する色と体数
@@ -317,7 +324,8 @@
       var card = num ? CARD_INDEX[num] : null;
       if (card) {
         var img = cardImg(card);
-        var n = LEADER_CARD_COUNT[card.name] || 0;
+        var cnt = LEADER_CARD_COUNT[card.name];
+        var n = cnt ? (state.activeTab === 'tactics' ? cnt.tactics : cnt.main) : 0;
         var active = state.filters.leaderName === card.name;
         html += '' +
           '<div class="db-leader-slot filled" data-act="open-picker" data-slot="' + i + '" style="--c:' + (COLOR_HEX[card.color] || '#9b9797') + '" title="' + esc('覚醒時：' + (card.text || '')) + '">' +
@@ -346,7 +354,35 @@
       '<div class="db-tabs">' +
         '<button class="db-tab' + (state.activeTab === 'main' ? ' active' : '') + '" data-act="tab" data-tab="main">メインデッキ（50枚）</button>' +
         '<button class="db-tab' + (state.activeTab === 'tactics' ? ' active' : '') + '" data-act="tab" data-tab="tactics">タクティクス（5枚）</button>' +
+        '<button class="db-tab' + (state.activeTab === 'pp' ? ' active' : '') + '" data-act="tab" data-tab="pp">PP' + ((state.pp.card || state.pp.ticket) ? ' ✓' : '') + '</button>' +
       '</div>';
+  }
+
+  // PPタブ：使うPPカード／PPチケットのデザインを1枚ずつ選ぶ（効果は同じなので見た目だけ。デッキコードにも入る）
+  var PP_CARDS = CARDS.filter(function (c) { return c.cardType === 'PP' && c.imageUrl; });
+  var PP_TICKETS = CARDS.filter(function (c) { return c.cardType === 'PP_TICKET' && c.imageUrl; });
+  function renderPpPicker() {
+    function section(title, note, list, kind) {
+      var cur = state.pp[kind];
+      return '' +
+        '<div class="db-pp-sec">' +
+          '<div class="db-pp-head"><span class="db-status-title">' + title + '</span><span class="db-pp-note">' + note + '</span>' +
+            (cur ? '<button class="db-lb-clear" data-act="pp-pick" data-kind="' + kind + '" data-number="">選択を外す ✕</button>' : '') +
+          '</div>' +
+          '<div class="db-pp-grid' + (kind === 'ticket' ? ' wide' : '') + '">' + list.map(function (c) {
+            var on = cur === c.cardNumber;
+            return '<button class="db-pp-item' + (on ? ' on' : '') + '" data-act="pp-pick" data-kind="' + kind + '" data-number="' + esc(on ? '' : c.cardNumber) + '" title="' + esc(c.cardNumber + (c.rarity ? '（' + c.rarity + '）' : '')) + '">' +
+              '<img src="' + esc(c.imageUrl) + '" alt="" loading="lazy">' +
+              '<span>' + esc(c.cardNumber) + '</span>' +
+              (on ? '<b>使用中</b>' : '') +
+            '</button>';
+          }).join('') + '</div>' +
+        '</div>';
+    }
+    return '<div class="db-pp">' +
+      section('PPカード', '対戦画面のPP表示に使うデザイン（' + PP_CARDS.length + '種）', PP_CARDS, 'card') +
+      section('PPチケット', '後攻のときタクティクスエリアに置かれるチケットのデザイン（' + PP_TICKETS.length + '種）', PP_TICKETS, 'ticket') +
+    '</div>';
   }
 
   function renderFilters() {
@@ -356,7 +392,7 @@
     }
     var typeOptions = state.activeTab === 'tactics'
       ? ''
-      : ['ALL', 'ATTACK', 'MEMORIA', 'TACTICS', 'PP', 'PP_TICKET'].map(function (t) {
+      : ['ALL', 'ATTACK', 'MEMORIA'].map(function (t) {
           return opt(t, t === 'ALL' ? 'カード種類：すべて' : TYPE_JA_SHORT[t], f.cardType === t);
         }).join('');
     return '' +
@@ -606,7 +642,8 @@
     if (act === 'open-picker') { state.picker = { slot: Number(el.getAttribute('data-slot')) }; state.filters.pickerQ = ''; render(); return; }
     if (act === 'close-picker') { state.picker = null; render(); return; }
     if (act === 'pick-leader') { setLeader(state.picker.slot, el.getAttribute('data-number')); return; }
-    if (act === 'leader-cards') { e.stopPropagation(); state.filters.leaderName = el.getAttribute('data-name') || ''; state.activeTab = 'main'; state.page = 0; render(); return; }
+    if (act === 'leader-cards') { e.stopPropagation(); state.filters.leaderName = el.getAttribute('data-name') || ''; if (state.activeTab === 'pp') state.activeTab = 'main'; state.page = 0; render(); return; }
+    if (act === 'pp-pick') { state.pp[el.getAttribute('data-kind')] = el.getAttribute('data-number') || null; render(); return; }
     if (act === 'remove-leader') { removeLeader(Number(el.getAttribute('data-slot')), e); return; }
     if (act === 'tab') { state.activeTab = el.getAttribute('data-tab'); state.page = 0; render(); return; }
     if (act === 'toggle') { var f = el.getAttribute('data-f'); state.filters[f] = !state.filters[f]; state.page = 0; render(); return; }

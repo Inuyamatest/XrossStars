@@ -112,6 +112,13 @@
       violations.push('デッキは' + MAIN_DECK_SIZE + '枚必要です（現在' + totalMain + '枚）');
     }
 
+    // --- メインデッキに入れられるのはアタック・メモリアのみ（タクティクス・リーダーは別枠）---
+    mainEntries.forEach(function (e) {
+      var card = cardIndex[e.cardNumber];
+      if (card.cardType === 'TACTICS') violations.push('「' + card.name + '」はタクティクスカードのため、メインデッキには入れられません（タクティクスデッキに入れてください）');
+      else if (card.cardType === 'LEADER') violations.push('「' + card.name + '」はリーダーカードのため、メインデッキには入れられません');
+    });
+
     // --- 同名4枚制限 ---
     var nameCounts = {};
     mainEntries.forEach(function (e) {

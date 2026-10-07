@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008c';
+  var APP_VERSION = '20261008d';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -679,6 +679,7 @@
       state: state,
       cpus: { playerA: setup.aSide === 'CPU' ? setup.cpuLevelA : null, playerB: setup.opponent === 'CPU' ? setup.cpuLevel : null },
       fxSeen: state.actionLog.length,
+      pp: { playerA: deckA.pp || null, playerB: deckB.pp || null }, // デッキビルダーで選んだPPカード／PPチケットのデザイン
     };
     cpuPaused = false;
     refreshPlayerLabels();
@@ -839,7 +840,7 @@
       '<div class="bw-strip' + (playerId === 'playerB' ? ' pB' : '') + (isActive ? ' is-active' : '') + '">' +
         '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
         (isActive ? '<span class="bt-turntag">' + (isCpu(playerId) ? 'CPU TURN' : (game.online && isRemoteSide(playerId) ? 'OPPONENT TURN' : 'YOUR TURN')) + '</span>' : '') +
-        '<span class="bt-pp" title="PP：使える ' + pp + '枚 / 使用済み ' + player.ppCards.tapped + '枚">' + renderPpCards(player, deltas['pp:' + playerId]) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
+        '<span class="bt-pp" title="PP：使える ' + pp + '枚 / 使用済み ' + player.ppCards.tapped + '枚">' + renderPpCards(player, deltas['pp:' + playerId], playerId) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
         renderBoostBadge(player) +
         '<span class="bw-tactics"><span class="bw-zlabel">TACTICS</span>' + renderTacticsHtml(state, playerId, isActive, readOnly, hideSecret) + '</span>' +
         '<span class="bt-counters">' +
@@ -932,7 +933,7 @@
       '<div class="bt-strip">' +
         '<span class="bt-pname">' + pBadge(playerId) + '<span class="bt-plabel">' + esc(PLAYER_LABEL[playerId]) + '</span></span>' +
         (isActive ? '<span class="bt-turntag">' + (isCpu(playerId) ? 'CPU TURN' : (game.online && isRemoteSide(playerId) ? 'OPPONENT TURN' : 'YOUR TURN')) + '</span>' : '') +
-        '<span class="bt-pp" title="PP（プレイポイントカード）：縦向き＝使える ' + pp + '枚 / 横向き＝使用済み ' + player.ppCards.tapped + '枚">' + renderPpCards(player, deltas['pp:' + playerId]) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
+        '<span class="bt-pp" title="PP（プレイポイントカード）：縦向き＝使える ' + pp + '枚 / 横向き＝使用済み ' + player.ppCards.tapped + '枚">' + renderPpCards(player, deltas['pp:' + playerId], playerId) + '<span class="bt-pp-num">' + pp + '/' + player.ppCards.max + '</span></span>' +
         renderBoostBadge(player) +
         '<span class="bt-counters">' +
           '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b></span>' +
@@ -951,7 +952,16 @@
 
   // PPはプレイポイントカードで表す。使える分は縦向き、使った分は横向き（右から倒れていく）。
   // was: 直前の描画時点の { max, tapped }（変化があったときだけ）。倒れた/起きた/増えたカードに演出を付ける
-  function renderPpCards(player, was) {
+  // デッキビルダーのPPタブで選んだデザイン（見た目だけ。未選択なら null）
+  function ppDesign(playerId, kind) {
+    var p = game && game.pp && game.pp[playerId];
+    var c = p && p[kind] ? CARD_INDEX[p[kind]] : null;
+    return c && cardImg(c, false) ? c : null;
+  }
+
+  function renderPpCards(player, was, playerId) {
+    var design = ppDesign(playerId, 'card');
+    var ppSrc = design ? cardImg(design, false) : 'cards/pp-mini.webp';
     var max = player.ppCards.max;
     var tapped = player.ppCards.tapped;
     var untappedNow = max - tapped;
@@ -965,7 +975,7 @@
         else if (used && i < untappedWas) cls += ' tapping';                 // いま払った
         else if (!used && i >= untappedWas) cls += ' untapping';             // いま回復した
       }
-      html += '<span class="' + cls + '"><img src="cards/pp-mini.webp" alt="" draggable="false"></span>';
+      html += '<span class="' + cls + '"><img src="' + esc(ppSrc) + '" alt="" draggable="false"></span>';
     }
     html += '</span>';
     if (was) {
@@ -1074,7 +1084,7 @@
       var disabled = !canPlay || !affordable || !Eng.Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex);
       return '' +
         '<div class="bt-mini tactics" title="' + esc(card.name) + '（C' + (card.cost != null ? card.cost : '?') + '・' + (equip ? '装備' : '消費') + '）">' +
-          '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '" data-preview="' + esc(t.card.cardId) + '">' + imgTag(card, false, 'bt-mnoimg') + '</div>' +
+          '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '" data-preview="' + esc(t.card.cardId) + '">' + imgTag((card.cardType === 'PP_TICKET' && ppDesign(playerId, 'ticket')) || card, false, 'bt-mnoimg') + '</div>' +
           (isActive && !readOnly ? '<button class="bt-mplay' + (disabled ? '' : ' ready') + '" data-act="play-tactics" data-instance="' + esc(t.card.instanceId) + '" data-equip="' + (equip ? 1 : 0) + '"' + (disabled ? ' disabled' : '') + '>' + (equip ? '装備' : '使う') + '</button>' : '') +
         '</div>';
     }).join('') : '<span class="bt-zone-empty">なし</span>';

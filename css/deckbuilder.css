@@ -193,3 +193,19 @@ html,body{font-family:'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN'
   .db-lb-own b{font-size:12px}
 }
 @media (orientation:landscape) and (max-height:520px) and (min-width:560px){ .db-leaders{grid-template-columns:repeat(4,minmax(0,1fr))} }
+/* ---- PPタブ（デザイン選択） ---- */
+.db-pp{display:flex;flex-direction:column;gap:16px}
+.db-pp-sec{background:rgba(9,18,38,.8);border:1px solid rgba(120,180,255,.22);border-radius:10px;padding:12px}
+.db-pp-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:10px}
+.db-pp-note{font-size:12px;color:var(--xs-sub)}
+.db-pp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.db-pp-grid.wide{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.db-pp-item{position:relative;display:flex;flex-direction:column;gap:4px;padding:5px;border-radius:8px;border:1px solid rgba(120,180,255,.18);background:rgba(6,12,28,.7);color:var(--xs-sub);font-size:10.5px;font-family:var(--db-num);cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+.db-pp-item img{width:100%;aspect-ratio:63/88;object-fit:cover;border-radius:5px;display:block}
+.db-pp-grid.wide .db-pp-item img{aspect-ratio:88/63}
+.db-pp-item:hover{border-color:rgba(98,197,238,.6);transform:translateY(-2px)}
+.db-pp-item.on{border-color:#f5c518;box-shadow:0 0 0 1px #f5c518,0 0 18px -4px rgba(245,197,24,.7);color:var(--xs-text)}
+.db-pp-item b{position:absolute;top:8px;left:8px;padding:2px 7px;border-radius:999px;background:#f5c518;color:#0b1730;font-size:10px;font-family:'Noto Sans JP',sans-serif}
+@media (max-width:640px){ .db-pp-grid{grid-template-columns:repeat(auto-fill,minmax(72px,1fr))} .db-pp-grid.wide{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))} }
+.db-tab[data-tab="pp"]{flex:0 0 auto;min-width:76px;padding:0 14px}
+@media (max-width:640px){ .db-tab{font-size:11px;padding:0 6px;white-space:nowrap;letter-spacing:-.02em} .db-tab[data-tab="pp"]{min-width:56px} }
