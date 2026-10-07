@@ -1136,3 +1136,6 @@ body.bt-tilt .bw-leaders .bt-leader{transform:translateZ(1px)}
 .bt-compact .bw.bw-slim .bw-leaders .bt-leader{width:min(calc((100% - 30px) / 4), calc((100dvh - 164px) / 2 * 63 / 88))}
 .bt-compact .bw-play.folded::after{left:0}
 .bt-compact .bw-play.keep .bw-play-label{display:block;font-size:8px}
+
+/* Three.js の3D演出を描く透明なキャンバス（演出中だけ置かれる） */
+.fx3d-canvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:61}

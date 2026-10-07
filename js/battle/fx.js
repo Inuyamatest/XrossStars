@@ -181,9 +181,11 @@
     ], { duration: 420, easing: 'cubic-bezier(.5,0,.8,.6)', fill: 'forwards' });
   }
 
-  function hit(el, amount, big) {
+  var FX3D = function () { return root.XS_BATTLE_FX3D; }; // Three.js の3D演出（読み込めていなければ2Dだけ）
+  function hit(el, amount, big, side) {
     var r = rectOf(el);
     if (!r) return;
+    if (FX3D()) FX3D().hit(r, big, side);
     spawn('fx-flash' + (big ? ' big' : ''), r, '', 500);
     if (!reduceMotion) spawn('fx-slash' + (big ? ' big' : ''), r, '<i></i><i></i>', 600);
     if (big) shake(8);
@@ -196,6 +198,7 @@
   }
   function ko(el) {
     var r = rectOf(el);
+    if (r && FX3D()) FX3D().ko(r);
     if (r) {
       spawn('fx-shock', r, '', 900);
       spawn('fx-ko-text', r, '<span>DOWN</span>', 1100);
@@ -205,6 +208,7 @@
   function burst(el, kind) {
     var r = rectOf(el);
     if (!r) return;
+    if (kind === 'awaken' && FX3D()) FX3D().awaken(r);
     spawn('fx-burst ' + kind, r, '<i></i>', 1100);
     if (kind === 'awaken') spawn('fx-ko-text awaken', r, '<span>覚醒！</span>', 1200);
   }
@@ -249,7 +253,7 @@
         case 'DAMAGE_DEALT':
           if (p.targetPlayerId != null) {
             (function (d, q) {
-              at(d, function () { hit(helpers.leaderEl(q.targetPlayerId, q.targetLeaderIndex), q.amount, q.amount >= 80); sound('hit', q.amount >= 80); });
+              at(d, function () { hit(helpers.leaderEl(q.targetPlayerId, q.targetLeaderIndex), q.amount, q.amount >= 80, q.targetPlayerId === 'playerA' ? 'playerB' : 'playerA'); sound('hit', q.amount >= 80); });
             })(t, p);
             mark(p.targetPlayerId, p.targetLeaderIndex, t);
             t += 260;
