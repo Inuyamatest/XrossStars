@@ -54,7 +54,7 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, handQuality: false, qualityK: 0.5, qualityMin: 0.6, qualityMax: 1.6 };
+  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: false, depth2Top: 3, handQuality: false, qualityK: 0.5, qualityMin: 0.6, qualityMax: 1.6 };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -500,13 +500,46 @@
   function decideHard(state, playerId, cardIndex, helpers, excluded) {
     var base = state;
     var best = { score: evaluate(playOutTurnFromEnd(state, playerId, cardIndex), playerId, cardIndex, base), act: { type: 'END' } };
+    var tried = [];
     legalActions(state, playerId, cardIndex, helpers, excluded).forEach(function (act) {
       var s1 = simulate(state, playerId, act, cardIndex);
       if (!s1) return;
       var score = evaluate(playOutTurn(s1, playerId, cardIndex, helpers, base), playerId, cardIndex, base);
+      tried.push({ act: act, s1: s1, score: score });
       if (score > best.score + 0.001) best = { score: score, act: act };
     });
+    // 2手先まで読む：点数の高い1手目（上位TUNE.depth2Top個）について、2手目もすべて試してからターンの残りを進める
+    if (TUNE.depth2 && tried.length > 1) {
+      tried.sort(function (a, b) { return b.score - a.score; });
+      tried.slice(0, TUNE.depth2Top).forEach(function (t) {
+        if (turnOver(t.s1, playerId, base)) return;
+        secondActions(t.s1, playerId, cardIndex, helpers).forEach(function (a2) {
+          var s2 = simulate(t.s1, playerId, a2, cardIndex);
+          if (!s2) return;
+          var score2 = evaluate(playOutTurn(s2, playerId, cardIndex, helpers, base), playerId, cardIndex, base);
+          if (score2 > best.score + 0.001) best = { score: score2, act: t.act };
+        });
+      });
+    }
     return best.act;
+  }
+
+  // 2手目の候補：メモリア・タクティクスはすべて、アタックはカードごとに見込みの高いアタッカーと対象の組を2つまで（読む手の数を抑える）
+  function secondActions(s, playerId, cardIndex, helpers) {
+    var acts = legalActions(s, playerId, cardIndex, helpers, {});
+    var out = [];
+    var byCard = {};
+    acts.forEach(function (a) {
+      if (a.type !== 'ATTACK') { out.push(a); return; }
+      var o = a.options.attacks ? a.options.attacks[0] : a.options;
+      var est = estimateAttack(s, playerId, a.cardId, o.attackerLeaderIndex, o.targetLeaderIndex, cardIndex);
+      var sc = scoreAttack(est, 0, a.cardId, s.players[playerId].leaders[o.attackerLeaderIndex], 0);
+      (byCard[a.instanceId] = byCard[a.instanceId] || []).push({ a: a, sc: sc });
+    });
+    Object.keys(byCard).forEach(function (k) {
+      byCard[k].sort(function (x, y) { return y.sc - x.sc; }).slice(0, 2).forEach(function (x) { out.push(x.a); });
+    });
+    return out;
   }
 
   // 今すぐターンを終えた場合の盤面（終了フェイズまで）
