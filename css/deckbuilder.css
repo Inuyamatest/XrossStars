@@ -100,3 +100,58 @@ a{color:var(--xs-blue)}
 .db-code-box{width:100%;min-height:70px;font-family:monospace;font-size:11px;background:var(--xs-bg);color:var(--xs-text);border:1px solid var(--xs-border);border-radius:2px;padding:8px;word-break:break-all}
 
 .db-empty{color:var(--xs-sub);font-size:13px;padding:20px;text-align:center}
+
+/* =========================================================
+   見た目を対戦画面・メニューにそろえる（濃紺・方眼の背景、青とピンクの差し色）
+   ========================================================= */
+:root{
+  --xs-bg:#0b1730; --xs-panel:#0f1d3a; --xs-panel2:#13254a; --xs-text:#eef4ff; --xs-sub:#8fa3c4;
+  --xs-border:#2e4777; --xs-line:#1d3260;
+  --xs-red:#ff458e; --xs-blue:#62c5ee; --xs-green:#6fd08a; --xs-yellow:#f5c518;
+  --xs-ok:#62c5ee; --xs-ng:#ff5c9d;
+  --db-num:'Rajdhani','Oswald',system-ui,sans-serif;
+}
+html,body{font-family:'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic',system-ui,sans-serif;
+  background-color:#0b1730;
+  background-image:radial-gradient(1000px 520px at 50% -10%,rgba(98,197,238,.12),transparent 60%),radial-gradient(900px 500px at 50% 110%,rgba(255,92,157,.10),transparent 60%),linear-gradient(rgba(120,180,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(120,180,255,.07) 1px,transparent 1px);
+  background-size:auto,auto,44px 44px,44px 44px;background-attachment:fixed}
+.db-header{background:rgba(9,18,38,.86);backdrop-filter:blur(8px);border-bottom:1px solid rgba(120,180,255,.25)}
+.db-header h1{display:flex;align-items:baseline;gap:6px;font-family:var(--db-num);font-weight:700;font-size:20px;letter-spacing:.12em}
+.db-header h1 .db-logo-x{color:#fff;text-shadow:0 0 12px rgba(98,197,238,.5)}
+.db-header h1 .db-logo-s{color:#ff5c9d;text-shadow:0 0 12px rgba(255,92,157,.55)}
+.db-header h1 small{font-family:'Noto Sans JP',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--xs-blue);margin-left:6px}
+.db-header .db-name-input{border-radius:8px;background:rgba(6,12,28,.8);border-color:var(--xs-border)}
+.db-header .db-name-input:focus{outline:none;border-color:var(--xs-blue);box-shadow:0 0 0 2px rgba(98,197,238,.25)}
+.db-header .db-back{border-radius:999px;padding:0 14px;border-color:var(--xs-border);color:var(--xs-sub)}
+.db-header .db-back:hover{color:var(--xs-text);border-color:var(--xs-blue)}
+.db-header .db-back-go{color:#fff;border-color:transparent;background:linear-gradient(135deg,#ff458e,#ff7a3d)}
+.db-btn{border-radius:999px;padding:0 16px;border-color:var(--xs-border);font-weight:600}
+.db-btn:hover{background:rgba(98,197,238,.14);border-color:var(--xs-blue)}
+.db-btn.primary,.db-filters .db-chip.active,.db-tab.active{background:linear-gradient(135deg,#1aa3d9,#3b6cff);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(59,108,255,.3)}
+.db-btn.primary:hover{background:linear-gradient(135deg,#2ab5ea,#4f7dff)}
+.db-tab{border-radius:999px;font-weight:600}
+.db-leader-slot{border-radius:10px;border:1px dashed rgba(120,180,255,.4);background:rgba(9,18,38,.7);transition:border-color .15s,box-shadow .15s,transform .15s}
+.db-leader-slot:hover{border-color:var(--xs-blue);box-shadow:0 0 18px -4px rgba(98,197,238,.6);transform:translateY(-2px)}
+.db-leader-slot .db-leader-name{background:linear-gradient(180deg,transparent,rgba(6,12,28,.92));padding:12px 4px 4px;font-weight:700}
+.db-filters{background:rgba(9,18,38,.8);border:1px solid rgba(120,180,255,.22);border-radius:10px}
+.db-filters input[type=text],.db-filters input[type=search],.db-filters select{border-radius:8px;background:rgba(6,12,28,.8)}
+.db-filters .db-chip{border-radius:999px}
+.db-card{background:rgba(9,18,38,.82);border:1px solid rgba(120,180,255,.18);border-radius:10px;transition:border-color .15s,box-shadow .15s,transform .15s}
+.db-card:hover{border-color:rgba(98,197,238,.6);box-shadow:0 0 16px -4px rgba(98,197,238,.55);transform:translateY(-2px)}
+.db-card .db-card-img{background:#0a1530}
+.db-card .db-card-name{font-weight:700}
+.db-card .db-card-meta{font-family:var(--db-num);letter-spacing:.04em}
+.db-card .db-card-ace{background:var(--xs-yellow);color:#1b1200}
+.db-card .db-qty-btn{border-radius:50%;border-color:var(--xs-border)}
+.db-card .db-qty-btn:not(:disabled):hover{background:rgba(98,197,238,.18);border-color:var(--xs-blue)}
+.db-card .db-qty{font-family:var(--db-num);font-weight:700;font-size:15px}
+.db-sidebar{background:rgba(9,18,38,.88);border-left:1px solid rgba(120,180,255,.22)}
+.db-status-title{font-family:var(--db-num);font-weight:700;color:var(--xs-blue);letter-spacing:.2em}
+.db-status-grid .db-stat{background:rgba(6,12,28,.7);border:1px solid rgba(120,180,255,.18);border-radius:8px}
+.db-status-grid .db-stat b{font-family:var(--db-num);font-size:20px}
+.db-deck-list .db-deck-row{border-bottom-color:rgba(120,180,255,.14)}
+.db-modal-overlay{background:rgba(6,10,24,.82);backdrop-filter:blur(4px)}
+.db-modal{background:linear-gradient(180deg,#12213f,#0d1a35);border:1px solid rgba(120,180,255,.3);border-radius:14px;box-shadow:0 18px 48px rgba(0,0,0,.6)}
+.db-savedlist .row{background:rgba(6,12,28,.7);border:1px solid rgba(120,180,255,.18);border-radius:8px}
+.db-code-box{border-radius:8px;background:rgba(6,12,28,.85)}
+@media (max-width:900px){ .db-sidebar{border-top:1px solid rgba(120,180,255,.22)} }

@@ -54,7 +54,7 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8 };
+  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, handQuality: false, qualityK: 0.5, qualityMin: 0.6, qualityMax: 1.6 };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -421,8 +421,40 @@
     if (supply < 5) per *= t.lowSupply;
     if (supply === 0) extra = me.tacticsDeck.length === 0 ? -5e4 : -25;
     var score = 0;
-    for (var i = 0; i < me.hand.length; i++) score += i < 5 ? per : per * t.over5;
+    if (TUNE.handQuality) {
+      // カードの強さで重みを付ける（強いカードを温存し、弱いカードから使う）。
+      // 強さは自分のデッキ（山札＋手札）の平均を1として、平均からの差をTUNE.qualityK倍だけ反映する（手札全体の価値は今までと同じくらいに保つ）。
+      // 強い順に5枚までは満額、6枚目以降は半分
+      var pool = me.deck.concat(me.hand);
+      var avg = pool.length ? pool.reduce(function (sum, c) { return sum + cardQuality(c.cardId, cardIndex); }, 0) / pool.length : 1;
+      var qs = me.hand.map(function (c) { return 1 + TUNE.qualityK * (cardQuality(c.cardId, cardIndex) - avg) / avg; }).sort(function (a, b) { return b - a; });
+      for (var j = 0; j < qs.length; j++) score += per * qs[j] * (j < 5 ? 1 : t.over5);
+    } else {
+      for (var i = 0; i < me.hand.length; i++) score += i < 5 ? per : per * t.over5;
+    }
     return score + extra;
+  }
+  // 手札のカード1枚の強さ（1.0が平均くらい）。次のアタックへの上乗せ・アタックの上乗せ・アタック後のダメージ・ドロー・プレイ時のダメージから見積もる
+  var qualityCache = {};
+  function cardQuality(cardId, cardIndex) {
+    if (qualityCache[cardId] != null) return qualityCache[cardId];
+    var card = cardIndex[cardId] || {};
+    var boost = 0, atk = 0, after = 0, draw = 0, burn = 0;
+    effectsOf(cardId).forEach(function (e) {
+      var a = e.action || {};
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') boost += (e.modifier.amount || 0) * (e.modifier.condition ? 0.5 : 1);
+      if (e.trigger === 'ON_ATTACK' && a.type === 'ATTACK_DAMAGE_BONUS') atk += (a.amount || 0) * (e.condition ? 0.5 : 1);
+      if (e.trigger === 'AFTER_ATTACK' && a.type === 'DAMAGE') after += (a.amount || 0) * (e.condition ? 0.5 : 1);
+      if ((e.trigger === 'ON_PLAY' || e.trigger === 'AFTER_ATTACK') && a.type === 'DRAW') draw += (a.amount || 0) * (e.condition ? 0.5 : 1);
+      if (e.trigger === 'ON_PLAY' && a.type === 'DAMAGE') burn += a.amount || 0;
+    });
+    var q;
+    if (card.cardType === 'MEMORIA') q = 0.7 + boost / 100 + burn / 100 + draw * 0.2;
+    else q = 0.8 + atk / 120 + after / 100 + draw * 0.15;
+    if (typeof card.cost === 'number' && card.cost >= 2) q += 0.05 * (card.cost - 1); // 重いカードは強い効果のことが多い
+    q = Math.max(TUNE.qualityMin, Math.min(TUNE.qualityMax, q));
+    qualityCache[cardId] = q;
+    return q;
   }
   // 相手の手札の価値（強）：相手の手札も相手にとっては同じように価値がある。
   // これを数えないと、ハンデス（対戦相手は手札を捨てる）の得を評価できず、相手の手札が0枚でも撃ってしまう。
@@ -660,5 +692,6 @@
     TUNE: TUNE,
     estimateAttack: estimateAttack,
     afterAttackValue: afterAttackValue,
+    cardQuality: cardQuality,
   };
 }));
