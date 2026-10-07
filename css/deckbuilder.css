@@ -238,3 +238,9 @@ html,body{font-family:'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN'
 .db-draw-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 @keyframes db-draw-in{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){ .db-draw-card{animation:none} }
+
+/* ---- 通知（トースト） ---- */
+.db-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;max-width:calc(100vw - 32px);padding:10px 18px;border-radius:999px;
+  background:linear-gradient(135deg,rgba(18,33,63,.96),rgba(11,23,48,.96));border:1px solid rgba(98,197,238,.55);color:#eef4ff;font-size:13px;font-weight:600;
+  box-shadow:0 10px 28px rgba(0,0,0,.5),0 0 18px -6px rgba(98,197,238,.7);animation:db-toast-in .25s ease}
+@keyframes db-toast-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}

@@ -184,7 +184,8 @@ function main() {
       confirmed: p.confirmStatus === '公式カードページ確認済',
       isParallel: true,
       parallelGroupId: p.baseCardNumber,
-      imageUrl: findExistingImage(p.cardNumber),
+      // パラレル版の画像がまだ無いときは、通常版の画像で代用する（画像なし表示にしない）
+      imageUrl: findExistingImage(p.cardNumber) || findExistingImage(p.baseCardNumber),
       imageUrlAwakened: null,
     });
   });

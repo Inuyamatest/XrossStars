@@ -194,7 +194,7 @@
   "confirmed": true,
   "parallelGroupId": "BP01-007",
   "imageUrl": "cards/imgi_57_image_1.webp",
-  "imageUrlAwakened": "cards/imgi_57_image_1.webp"
+  "imageUrlAwakened": "cards/BP01-007_shirayuki-reid_awakened.webp"
  },
  {
   "cardNumber": "BP01-008",
@@ -1871,7 +1871,7 @@
   "confirmed": true,
   "parallelGroupId": "BP04-010",
   "imageUrl": "cards/BP04-098_sendou-yuuhi.webp",
-  "imageUrlAwakened": "cards/BP04-098_sendou-yuuhi_awakened.png"
+  "imageUrlAwakened": "cards/BP04-098_sendou-yuuhi_awakened.webp"
  },
  {
   "cardNumber": "BP04-011",
@@ -2697,7 +2697,7 @@
   "confirmStatus": "公式カードページ確認済",
   "confirmed": true,
   "parallelGroupId": "BP01-020",
-  "imageUrl": "cards/BP01-020.png",
+  "imageUrl": "cards/BP01-020.webp",
   "imageUrlAwakened": null
  },
  {
@@ -12935,7 +12935,7 @@
   "confirmed": true,
   "isParallel": true,
   "parallelGroupId": "BP02-045",
-  "imageUrl": null,
+  "imageUrl": "cards/BP02-045.webp",
   "imageUrlAwakened": null
  },
  {

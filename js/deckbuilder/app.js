@@ -265,7 +265,7 @@
       '</div>' +
       (state.picker ? renderLeaderPicker() : '') +
       (state.modal ? renderModal(validation) : '') +
-      (state.toast ? '<div style="position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#2d2b2b;border:1px solid #444141;padding:8px 16px;border-radius:20px;font-size:13px;z-index:60">' + esc(state.toast) + '</div>' : '');
+      (state.toast ? '<div class="db-toast" role="status">' + esc(state.toast) + '</div>' : '');
 
     bindEvents();
   }

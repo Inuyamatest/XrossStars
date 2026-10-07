@@ -1,7 +1,7 @@
 /* Xross Stars 対戦UI — 盤面レイアウト（手番プレイヤーが常に下側に来る対戦台方式） */
 :root{
-  --bg:#141218; --bg2:#1c1a21; --panel:#23202a; --panel2:#2c2834; --line:#3a3543; --line2:#4b4556;
-  --text:#f4f1f8; --sub:#a39cb0; --dim:#6f6879;
+  --bg:#0b1730; --bg2:#0f1d3a; --panel:#12213f; --panel2:#16274b; --line:rgba(120,180,255,.2); --line2:rgba(120,180,255,.32);
+  --text:#eef4ff; --sub:#8fa3c4; --dim:#5d7398;
   --red:#ff458e; --blue:#62c5ee; --green:#6fd08a; --yellow:#f5c518; --colorless:#b8b2c2;
   --pA:#62c5ee; --pB:#ff5c9d;
   --accent:#62c5ee;
@@ -15,8 +15,10 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--jp);-webkit-text-size-adjust:100%}
 body{background:
-  radial-gradient(1200px 600px at 50% -10%, rgba(98,197,238,.10), transparent 60%),
-  radial-gradient(900px 500px at 50% 110%, rgba(255,92,157,.10), transparent 60%),
+  radial-gradient(1200px 600px at 50% -10%, rgba(98,197,238,.12), transparent 60%),
+  radial-gradient(900px 500px at 50% 110%, rgba(255,92,157,.12), transparent 60%),
+  linear-gradient(rgba(120,180,255,.05) 1px, transparent 1px) 0 0 / 44px 44px,
+  linear-gradient(90deg, rgba(120,180,255,.05) 1px, transparent 1px) 0 0 / 44px 44px,
   var(--bg);
   min-height:100dvh}
 button,input,select{font-family:inherit;color:inherit}
@@ -26,7 +28,7 @@ img{display:block}
 .bt-app{display:flex;flex-direction:column;min-height:100dvh}
 
 /* ---------- トップバー ---------- */
-.bt-topbar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(20,18,24,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+.bt-topbar{display:flex;align-items:center;gap:10px;padding:8px 14px;background:rgba(8,16,34,.82);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
 .bt-logo{font-family:var(--num);font-weight:700;font-size:18px;letter-spacing:.14em;margin:0;white-space:nowrap}
 .bt-logo span{color:var(--pB)}
 .bt-topbar nav{margin-left:auto;display:flex;gap:6px}
@@ -208,7 +210,7 @@ img{display:block}
 .bt-mini.tactics{width:84px}
 .bt-mini.tactics .bt-mcard{aspect-ratio:88/63}
 .bt-mini.tactics.secret{cursor:default}
-.bt-mini .bt-mcard.bt-mback{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#2c2834 0 6px,#23202a 6px 12px)}
+.bt-mini .bt-mcard.bt-mback{display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#1b2d55 0 6px,#12213f 6px 12px)}
 .bt-mini .bt-mback span{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--sub);padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.45)}
 .bt-mini.echo{width:72px}
 .bt-mini.echo .bt-mcard{aspect-ratio:88/63;position:relative;border-color:var(--yellow)}
@@ -244,7 +246,7 @@ img{display:block}
 @keyframes bt-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 /* ---------- 手札ドック ---------- */
-.bt-dock{position:fixed;left:0;right:0;bottom:0;z-index:25;background:linear-gradient(180deg,rgba(20,18,24,.72),rgba(20,18,24,.97) 30%);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+.bt-dock{position:fixed;left:0;right:0;bottom:0;z-index:25;background:linear-gradient(180deg,rgba(8,16,34,.72),rgba(8,16,34,.97) 30%);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
 .bt-dock-inner{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
 .bt-prompt{display:flex;align-items:center;gap:10px;min-height:40px;flex-wrap:wrap}
 /* CPUの速度・一時停止（CPU対戦・観戦のとき手札の上に出す） */
@@ -276,7 +278,7 @@ img{display:block}
 .bt-handcard.unplayable .bt-cost{border-color:var(--dim);color:var(--dim)}
 .bt-hname{font-size:10px;color:var(--sub);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .bt-hand-hidden{display:flex;gap:6px;align-items:center;color:var(--sub);font-size:12px;padding:12px 4px}
-.bt-cardback{width:40px;aspect-ratio:63/88;border-radius:4px;background:repeating-linear-gradient(45deg,#2c2834 0 6px,#23202a 6px 12px);border:1px solid var(--line2)}
+.bt-cardback{width:40px;aspect-ratio:63/88;border-radius:4px;background:repeating-linear-gradient(45deg,#1b2d55 0 6px,#12213f 6px 12px);border:1px solid var(--line2)}
 
 @media (max-width:640px){
   .bt-battle{padding:4px 8px calc(var(--dock-h) + 8px);gap:5px}
@@ -393,7 +395,7 @@ img{display:block}
 
 /* ---- カードのプレビュー（マウスを合わせたカードを大きく表示） ---- */
 /* 手札ドックの上の領域に収める（ドックの予想ダメージやボタンを隠さないように） */
-.bt-preview{--pv-h:calc(100dvh - var(--dock-h, 0px) - 76px);position:fixed;top:60px;right:16px;z-index:120;width:min(620px,calc(100vw - 32px));max-height:max(320px,var(--pv-h));display:flex;gap:16px;align-items:flex-start;padding:14px;border-radius:14px;background:rgba(20,18,24,.96);border:1px solid var(--line2);box-shadow:0 18px 48px rgba(0,0,0,.6);pointer-events:none;opacity:0;transform:translateX(12px);transition:opacity .12s, transform .12s;overflow:hidden}
+.bt-preview{--pv-h:calc(100dvh - var(--dock-h, 0px) - 76px);position:fixed;top:60px;right:16px;z-index:120;width:min(620px,calc(100vw - 32px));max-height:max(320px,var(--pv-h));display:flex;gap:16px;align-items:flex-start;padding:14px;border-radius:14px;background:rgba(8,16,34,.96);border:1px solid var(--line2);box-shadow:0 18px 48px rgba(0,0,0,.6);pointer-events:none;opacity:0;transform:translateX(12px);transition:opacity .12s, transform .12s;overflow:hidden}
 .bt-preview.at-left{right:auto;left:16px;transform:translateX(-12px)}
 .bt-preview.show{opacity:1;transform:none}
 .bt-pv-img{width:min(280px,calc((max(320px,var(--pv-h)) - 28px) * 63 / 88));flex:none;aspect-ratio:63/88;border-radius:10px;overflow:hidden;background:var(--panel2)}
@@ -514,7 +516,7 @@ img{display:block}
 .bt-start-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 /* デッキ切れ：裏向きのタクティクスを選ぶ */
 .bt-choice-item.facedown .bt-choice-img{display:flex;align-items:center;justify-content:center}
-.bt-facedown-back{width:100%;aspect-ratio:88/63;border-radius:6px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#2c2834 0 8px,#23202a 8px 16px);border:1px solid var(--line2)}
+.bt-facedown-back{width:100%;aspect-ratio:88/63;border-radius:6px;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg,#1b2d55 0 8px,#12213f 8px 16px);border:1px solid var(--line2)}
 .bt-facedown-back span{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--sub);padding:3px 10px;border-radius:999px;background:rgba(0,0,0,.45)}
 .bt-choice-note{margin:8px 0 0;font-size:12px;color:var(--sub);text-align:center}
 
