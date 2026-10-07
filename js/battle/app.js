@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007g';
+  var APP_VERSION = '20261007h';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -281,32 +281,74 @@
     for (var p = 0; p < 22; p++) {
       particles += '<i style="--x:' + Math.round(Math.random() * 100) + '%;--s:' + (2 + Math.round(Math.random() * 4)) + 'px;--d:' + (7 + Math.round(Math.random() * 9)) + 's;--delay:-' + Math.round(Math.random() * 14) + 's"></i>';
     }
-    function tile(icon, label, sub, attrs) {
-      return '<button class="bm-tile" ' + attrs + '><span class="bm-ico">' + MENU_ICONS[icon] + '</span><b>' + label + '</b><small>' + sub + '</small></button>';
+    function tile(no, icon, label, en, sub, attrs, primary, tag) {
+      tag = tag || 'button';
+      return '<' + tag + ' class="bm-tile' + (primary ? ' primary' : '') + '" ' + attrs + '>' +
+        '<span class="bm-no">' + no + '</span><span class="bm-en">' + en + '</span>' +
+        '<span class="bm-ico">' + MENU_ICONS[icon] + '</span><b>' + label + '</b><small>' + sub + '</small></' + tag + '>';
     }
+    var nCards = {}, nLeaders = {};
+    CARDS.forEach(function (c) { if (c.cardType === 'LEADER') nLeaders[c.name] = true; else nCards[c.name] = true; });
+    var tips = MENU_TIPS.map(function (t) { return '<span>' + esc(t) + '</span>'; }).join('');
     return '' +
       '<div class="bt-menu">' +
+        '<div class="bm-beams" aria-hidden="true"><i></i><i></i><i></i></div>' +
+        '<div class="bm-bigx" aria-hidden="true"><i></i><i></i></div>' +
         '<div class="bm-particles" aria-hidden="true">' + particles + '</div>' +
-        '<div class="bm-fan" aria-hidden="true">' + fan + '</div>' +
+        '<div class="bm-stage" aria-hidden="true">' +
+          '<div class="bm-halo"></div>' +
+          '<div class="bm-fan">' + fan + '</div>' +
+          '<div class="bm-floor"></div>' +
+        '</div>' +
         '<div class="bm-head">' +
-          '<div class="bm-logo">XROSS<span>STARS</span></div>' +
+          '<div class="bm-corner tl"></div>' +
+          '<div class="bm-kicker"><i></i>TRADING CARD GAME</div>' +
+          '<div class="bm-logo"><span class="bm-x">XROSS</span><span class="bm-s">STARS</span></div>' +
           '<div class="bm-sub">BATTLE SIMULATOR</div>' +
+          '<div class="bm-tagline">CPU戦・ふたり対戦・オンライン対戦、デッキの勝率検証まで</div>' +
+        '</div>' +
+        '<div class="bm-info" aria-hidden="true">' +
+          '<span><b>' + Object.keys(nCards).length + '</b>カード</span>' +
+          '<span><b>' + Object.keys(nLeaders).length + '</b>リーダー</span>' +
+          '<span class="bm-live"><i></i>ONLINE READY</span>' +
         '</div>' +
         '<nav class="bm-links">' +
-          '<a class="bm-link" href="deckbuilder.html">デッキビルダー</a>' +
-          '<a class="bm-link" href="index.html">HP管理</a>' +
-          '<button class="bm-link" data-act="menu-go" data-value="sim">デッキ検証（勝率を測る）</button>' +
+          '<a class="bm-link" href="deckbuilder.html"><span class="bm-lno">A</span>デッキビルダー<i class="bm-arrow">›</i></a>' +
+          '<a class="bm-link" href="index.html"><span class="bm-lno">B</span>HP管理<i class="bm-arrow">›</i></a>' +
+          '<button class="bm-link" data-act="menu-go" data-value="sim"><span class="bm-lno">C</span>デッキ検証（勝率を測る）<i class="bm-arrow">›</i></button>' +
         '</nav>' +
         '<nav class="bm-main">' +
-          tile('cpu', 'VS CPU', 'CPUと対戦', 'data-act="menu-go" data-value="cpu"') +
-          tile('local', 'ふたりで対戦', '1台の端末で交互に', 'data-act="menu-go" data-value="local"') +
-          tile('online', 'オンライン対戦', 'URLを送って対戦', 'data-act="online-host"') +
-          tile('watch', 'CPU観戦', 'CPU同士の対戦を見る', 'data-act="menu-go" data-value="watch"') +
-          '<a class="bm-tile" href="deckbuilder.html"><span class="bm-ico">' + MENU_ICONS.deck + '</span><b>デッキ編集</b><small>デッキビルダーへ</small></a>' +
+          tile('01', 'cpu', 'VS CPU', 'VERSUS CPU', 'CPUと対戦', 'data-act="menu-go" data-value="cpu"', true) +
+          tile('02', 'local', 'ふたりで対戦', 'LOCAL MATCH', '1台の端末で交互に', 'data-act="menu-go" data-value="local"') +
+          tile('03', 'online', 'オンライン対戦', 'ONLINE MATCH', 'URLを送って対戦', 'data-act="online-host"') +
+          tile('04', 'watch', 'CPU観戦', 'SPECTATE', 'CPU同士の対戦を見る', 'data-act="menu-go" data-value="watch"') +
+          tile('05', 'deck', 'デッキ編集', 'DECK EDIT', 'デッキビルダーへ', 'href="deckbuilder.html"', false, 'a') +
         '</nav>' +
+        '<div class="bm-ticker" aria-hidden="true"><div class="bm-ticker-in"><b>TIPS</b>' + tips + '<b>TIPS</b>' + tips + '</div></div>' +
         '<div class="bm-ver">App ' + esc(APP_VERSION) + '</div>' +
+        '<div class="bm-scan" aria-hidden="true"></div>' +
       '</div>';
   }
+
+  // メニュー下部に流す使い方のヒント
+  var MENU_TIPS = [
+    '数字キー1〜9で手札を選び、Enterで決定できます',
+    'アタックの対象を選ぶと、与えるダメージと撃破できるかが表示されます',
+    'デッキ検証で、CPU同士を何十戦も戦わせてデッキの勝率を測れます',
+    'スマホは横向きにすると1画面で遊べます',
+    'デッキビルダーのURLやデッキコードを貼るだけで対戦に使えます',
+    'オンライン対戦はURLを相手に送るだけ。登録はいりません',
+    'CPUの強さは弱・中・強の3段階。強は先読みして手を選びます',
+  ];
+
+  // メニューの奥行き：マウスの位置に合わせて、カードと背景を少しずらす
+  document.addEventListener('mousemove', function (ev) {
+    if (screen !== 'menu') return;
+    var m = root.querySelector('.bt-menu');
+    if (!m) return;
+    m.style.setProperty('--mx', ((ev.clientX / window.innerWidth) - 0.5).toFixed(3));
+    m.style.setProperty('--my', ((ev.clientY / window.innerHeight) - 0.5).toFixed(3));
+  }, { passive: true });
 
   var MENU_FLIP_MS = 3600;
   setInterval(function () {
