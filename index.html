@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/broadsheet.css">
-<link rel="stylesheet" href="css/app.css?v=20261008o">
+<link rel="stylesheet" href="css/app.css?v=20261008p">
 
 <!-- 描画エンジン（React は dc-runtime より先に読み込むと CDN を使わずローカルで動く） -->
 <script src="js/vendor/react.production.min.js"></script>
@@ -29,16 +29,16 @@
 <script src="js/vendor/print-plates.js"></script>
 
 <!-- データ（第5弾以降のリーダー・装備はここに追記） -->
-<script src="js/data/leaders.js?v=20261008o"></script>
-<script src="js/data/images.js?v=20261008o"></script>
+<script src="js/data/leaders.js?v=20261008p"></script>
+<script src="js/data/images.js?v=20261008p"></script>
 <script src="js/data/effects.js"></script>
 
 <!-- カスタマイズ内容の保存（IndexedDB）と画像圧縮 -->
 <script src="js/storage.js"></script>
-<script src="js/deckbuilder/deckcode.js?v=20261008o"></script>
+<script src="js/deckbuilder/deckcode.js?v=20261008p"></script>
 
 <!-- アプリ本体 -->
-<script src="js/app.js?v=20261008o"></script>
+<script src="js/app.js?v=20261008p"></script>
 </head>
 <body>
 <x-dc>
@@ -51,6 +51,7 @@
     <a href="battle.html" class="xs-pill xs-go">対戦する →</a>
     <span class="xs-legend"><i class="h">−</i>回復 <i class="d">＋</i>ダメージ</span>
     <span class="xs-step" title="−／＋ボタン1回あたりの量"><span class="xs-step-lbl">1回</span><sc-for list="{{ stepOpts }}" as="o" hint-placeholder-count="4"><button sc-camel-on-click="{{ o.pick }}" class="{{ o.cls }}">{{ o.label }}</button></sc-for></span>
+    <sc-if value="{{ wakeSupported }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ toggleWake }}" class="{{ wakeCls }}" title="{{ wakeTitle }}">☀<span class="xs-wake-lbl"> スリープ防止 {{ wakeLabel }}</span></button></sc-if>
     <button sc-camel-on-click="{{ openImporter }}" class="xs-pill xs-primary">デッキ読込</button>
     <button sc-camel-on-click="{{ askResetAll }}" class="xs-pill">全員HPリセット</button>
   </div>

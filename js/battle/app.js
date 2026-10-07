@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008o';
+  var APP_VERSION = '20261008p';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -887,6 +887,7 @@
         '<aside class="bw-right">' +
           '<div class="bw-tools">' +
             '<button class="bt-btn ghost" data-act="toggle-sound" title="効果音">' + (Fx.isSoundOn() ? '♪<span class="bw-long"> 音ON</span>' : '♪<span class="bw-long"> 音OFF</span>') + '</button>' +
+            fx3dButton('') +
             '<button class="bt-btn ghost' + (tiltPref === 'on' ? ' on' : '') + '" data-act="toggle-tilt" title="盤面を傾けて立体的に見せる">3D</button>' +
             '<button class="bt-btn ghost" data-act="toggle-layout" title="縦に並べる従来の表示にする">表示<span class="bw-long">切替</span></button>' +
             '<button class="bt-btn ghost" data-act="to-menu">メニュー<span class="bw-long">に戻る</span></button>' +
@@ -978,6 +979,15 @@
     return out;
   }
 
+  // 3D演出（Three.js）のオン／オフボタン。使えない環境では出さない
+  function fx3dButton(extraCls) {
+    var F3 = window.XS_BATTLE_FX3D;
+    if (!F3 || !F3.available()) return '';
+    var on = F3.isEnabled();
+    var label = extraCls ? '' : '<span class="bw-long"> 演出' + (on ? 'ON' : 'OFF') + '</span>'; // 従来表示は狭いのでアイコンだけ
+    return '<button class="bt-btn ghost' + extraCls + (on ? ' on' : ' off') + '" data-act="toggle-fx3d" title="アタック・覚醒・ダウンの3D演出（' + (on ? 'ON' : 'OFF') + '）" aria-pressed="' + on + '">✨' + label + '</button>';
+  }
+
   function renderScore(state) {
     var w = state.match.roundWins;
     return '' +
@@ -986,6 +996,7 @@
         '<span class="bt-round">ROUND ' + state.match.roundNumber + '<span class="bt-mode"> ・ ' + (state.match.mode === 'QUICK' ? 'クイック' : 'スタンダード') + '</span></span>' +
         '<span class="bt-sc"><b>' + w.playerB + '</b>' + pBadge('playerB') + '</span>' +
         '<button class="bt-btn ghost bt-soundbtn" data-act="toggle-sound" title="効果音">' + (Fx.isSoundOn() ? '音 ON' : '音 OFF') + '</button>' +
+        fx3dButton(' bt-fx3dbtn') +
         '<button class="bt-btn ghost bt-logbtn" data-act="toggle-log">ログ</button>' +
         '<button class="bt-btn ghost bt-layoutbtn" data-act="toggle-layout" title="1画面に収めるワイド表示にする">ワイド表示</button>' +
       '</div>';
@@ -2418,6 +2429,7 @@
 
     if (act === 'toggle-log') { logOpen = !logOpen; render(); return; }
     if (act === 'toggle-sound') { Fx.setSoundOn(!Fx.isSoundOn()); render(); return; }
+    if (act === 'toggle-fx3d') { var F3 = window.XS_BATTLE_FX3D; if (F3) F3.setEnabled(!F3.isEnabled()); render(); return; }
     if (act === 'cpu-speed') { cpuSpeed = +el.getAttribute('data-value'); savePref('xs-battle-cpu-speed', String(cpuSpeed)); restartCpuTimer(); render(); return; }
     if (act === 'cpu-pause') { cpuPaused = !cpuPaused; restartCpuTimer(); render(); return; }
     if (act === 'show-detail') { detailCardId = el.getAttribute('data-card'); render(); return; }

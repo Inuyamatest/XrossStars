@@ -7,7 +7,8 @@ const HISTORY_LIMIT = 30;
 const SLOT_COUNT = 4;
 const STEP_KEY = 'xs-hp-step';   // −／＋ボタン1回あたりの量（ヘッダーで切り替え）
 const STEP_CHOICES = [10, 20, 30, 50];
-const SESSION_KEY = 'xs-hp-session'; // 試合中の状態（リーダー・HP・装備・覚醒・履歴）。再読み込みしても続きから使えるように端末へ保存
+const SESSION_KEY = 'xs-hp-session';
+const WAKE_KEY = 'xs-hp-wakelock'; // 試合中に画面が消えないようにする（Screen Wake Lock）。既定はオン // 試合中の状態（リーダー・HP・装備・覚醒・履歴）。再読み込みしても続きから使えるように端末へ保存
 
 window.XSComponent = class extends window.DCLogic {
   state = {
@@ -17,6 +18,8 @@ window.XSComponent = class extends window.DCLogic {
     // カスタマイズ：overrides = { [leaderId]: {name, awakeningEffect, hp, ..., imageUrl, awakenedImageUrl} }
     overrides: {}, editMode: false, editor: null, editorBusy: false,
     importer: null, // デッキコード読み込み { text, error }
+    wake: (() => { try { return localStorage.getItem(WAKE_KEY) !== 'off'; } catch (e) { return true; } })(),
+    wakeActive: false,
     step: (() => { try { const n = Number(localStorage.getItem(STEP_KEY)); return STEP_CHOICES.indexOf(n) >= 0 ? n : 10; } catch (e) { return 10; } })()
   };
 
@@ -32,7 +35,34 @@ window.XSComponent = class extends window.DCLogic {
     this.onResize();
     this.importFromHash();
     window.addEventListener('hashchange', this.importFromHash);
+    document.addEventListener('visibilitychange', this.onVisible);
+    document.addEventListener('pointerdown', this.onFirstTouch, { once: true });
+    this.syncWake();
   }
+
+  // ---- スリープ防止（画面をつけっぱなしにする）----
+  // 画面を切り替えるとブラウザが自動で解除するので、戻ってきたら取り直す。端末によっては操作の後でないと取れないので、最初のタップでも取り直す
+  wakeSupported() { return typeof navigator !== 'undefined' && 'wakeLock' in navigator; }
+  syncWake() {
+    if (!this.wakeSupported()) return;
+    if (this.state.wake && !this.wakeLock && document.visibilityState === 'visible') {
+      navigator.wakeLock.request('screen').then(lock => {
+        this.wakeLock = lock;
+        this.setState({ wakeActive: true });
+        lock.addEventListener('release', () => { this.wakeLock = null; this.setState({ wakeActive: false }); });
+      }).catch(() => this.setState({ wakeActive: false }));
+    } else if (!this.state.wake && this.wakeLock) {
+      this.wakeLock.release().catch(() => {});
+      this.wakeLock = null;
+    }
+  }
+  onVisible = () => { if (document.visibilityState === 'visible') this.syncWake(); };
+  onFirstTouch = () => this.syncWake();
+  toggleWake = () => {
+    const wake = !this.state.wake;
+    try { localStorage.setItem(WAKE_KEY, wake ? 'on' : 'off'); } catch (e) { /* noop */ }
+    this.setState({ wake }, () => this.syncWake());
+  };
   componentDidUpdate() {
     if (this.state.slots !== this.savedSlots) { this.savedSlots = this.state.slots; this.saveSession(); }
   }
@@ -40,6 +70,8 @@ window.XSComponent = class extends window.DCLogic {
     document.removeEventListener('xs-leaders-ready', this.reload);
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('hashchange', this.importFromHash);
+    document.removeEventListener('visibilitychange', this.onVisible);
+    if (this.wakeLock) this.wakeLock.release().catch(() => {});
   }
 
   // 起動時（とリーダーデータの読み込み完了時）：保存してある試合があれば続きから、なければ空き枠
@@ -575,6 +607,11 @@ window.XSComponent = class extends window.DCLogic {
       stop: e => e.stopPropagation(),
       askResetAll: () => this.setState({ confirm: { index: null, detail: '4人全員のHPを全回復します。覚醒状態・装備・最大HPはそのまま残ります。' } }),
       cancelConfirm: () => this.setState({ confirm: null }),
+      wakeSupported: this.wakeSupported(),
+      wakeCls: 'xs-pill xs-wake' + (st.wake ? ' on' : ''),
+      wakeTitle: st.wake ? (st.wakeActive ? 'スリープ防止：ON（画面が消えません）' : 'スリープ防止：ON（画面をタップすると有効になります）') : 'スリープ防止：OFF',
+      wakeLabel: st.wake ? 'ON' : 'OFF',
+      toggleWake: this.toggleWake,
       stepOpts: STEP_CHOICES.map(n => ({
         label: String(n), cls: 'xs-step-btn' + (st.step === n ? ' on' : ''),
         pick: () => { try { localStorage.setItem(STEP_KEY, String(n)); } catch (e) { /* noop */ } this.setState({ step: n }); }

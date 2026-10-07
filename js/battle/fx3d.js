@@ -10,6 +10,9 @@
   'use strict';
 
   var reduceMotion = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // オン／オフ（対戦画面の「✨」ボタン）。端末に記憶し、既定はオン
+  var PREF = 'xs-battle-fx3d';
+  var enabled = (function () { try { return localStorage.getItem(PREF) !== 'off'; } catch (e) { return true; } })();
   var THREE = null, loading = null, failed = false;
   var renderer, scene, camera, canvas, W = 0, H = 0;
   var effects = [];   // { update(t) -> 生きていれば true, dispose() }
@@ -17,7 +20,7 @@
   var tex = {};       // 使い回すテクスチャ
 
   function preload() {
-    if (THREE || loading || failed || reduceMotion) return loading;
+    if (THREE || loading || failed || reduceMotion || !enabled) return loading;
     var url = new URL('js/vendor/three.module.min.js', document.baseURI).href;
     loading = import(url).then(function (mod) { THREE = mod; setup(); }).catch(function () { failed = true; });
     return loading;
@@ -81,7 +84,12 @@
     ensureCanvas();
     if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
   }
-  function ready() { return !!(THREE && renderer && !failed && !reduceMotion); }
+  function ready() { return !!(enabled && THREE && renderer && !failed && !reduceMotion); }
+  function setEnabled(on) {
+    enabled = !!on;
+    try { localStorage.setItem(PREF, enabled ? 'on' : 'off'); } catch (e) { /* noop */ }
+    if (enabled) preload();
+  }
 
   // ---------- 部品 ----------
   var add = function () { return THREE.AdditiveBlending; };
@@ -245,5 +253,9 @@
     });
   }
 
-  root.XS_BATTLE_FX3D = { preload: preload, hit: hit, awaken: awaken, ko: ko, ready: ready };
+  root.XS_BATTLE_FX3D = {
+    preload: preload, hit: hit, awaken: awaken, ko: ko, ready: ready, setEnabled: setEnabled,
+    isEnabled: function () { return enabled; },
+    available: function () { return !reduceMotion && !failed && 'WebGLRenderingContext' in root; },
+  };
 }(typeof self !== 'undefined' ? self : this));
