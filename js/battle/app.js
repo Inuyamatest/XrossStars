@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007f';
+  var APP_VERSION = '20261007g';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -267,14 +267,14 @@
     sim: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 40V8M8 40h32"/><rect x="14" y="26" width="6" height="10"/><rect x="24" y="18" width="6" height="18"/><rect x="34" y="12" width="6" height="24"/></svg>',
     deck: '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="20" height="28" rx="3" transform="rotate(-10 18 26)"/><rect x="20" y="8" width="20" height="28" rx="3"/><path d="M30 17l2 4 4 .5-3 3 .8 4-3.8-2-3.8 2 .8-4-3-3 4-.5z"/></svg>',
   };
-  var menuFan = null; // メニューの背景に並べるリーダーカード（開くたびにランダム）
+  var menuFan = null; // メニューの背景に並べるリーダーカード4枚（開くたびにランダム）
   function renderMenu() {
     if (!menuFan) {
       var leaders = CARDS.filter(function (c) { return c.cardType === 'LEADER' && c.imageUrl; });
-      menuFan = shuffled(leaders).slice(0, 5);
+      menuFan = shuffled(leaders).slice(0, 4); // リーダーは4体で1チーム
     }
     var fan = menuFan.map(function (c, i) {
-      return '<div class="bm-fan-card" style="--i:' + (i - 2) + ';--k:' + i + '"><div class="bm-fan-face">' + imgTag(c, false, 'bt-lnoimg') + '</div></div>';
+      return '<div class="bm-fan-card" style="--i:' + (i - 1.5) + ';--k:' + i + '"><div class="bm-fan-face">' + imgTag(c, false, 'bt-lnoimg') + '</div></div>';
     }).join('');
     // 背景の光の粒（位置・大きさ・速さはばらばらに）
     var particles = '';
