@@ -638,9 +638,15 @@ body.bt-on-menu{background-color:#0b1730;
 .bm-link:hover{background:rgba(98,197,238,.22)}
 .bm-link:active{transform:scale(.98)}
 .bm-fan{grid-column:2;grid-row:1 / span 2;position:relative;min-height:340px;z-index:1;pointer-events:none}
-.bm-fan-card{position:absolute;left:50%;top:50%;width:clamp(120px,15vw,220px);aspect-ratio:63/88;border-radius:10px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.15);
+.bm-fan-card{position:absolute;left:50%;top:50%;width:clamp(120px,15vw,220px);aspect-ratio:63/88;
   transform:translate(-50%,-50%) translateX(calc(var(--i) * 32%)) translateY(calc(var(--i) * var(--i) * 3%)) rotate(calc(var(--i) * 9deg));transform-origin:50% 120%}
-.bm-fan-card img{width:100%;height:100%;object-fit:cover}
+.bm-fan-face{position:relative;width:100%;height:100%;border-radius:10px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.6),0 0 0 2px rgba(255,255,255,.15);
+  animation:bm-deal .9s cubic-bezier(.2,.8,.25,1.1) both, bm-bob 5.5s ease-in-out infinite;animation-delay:calc(var(--k) * .09s + .15s), calc(var(--k) * -.9s);transition:transform .3s ease}
+.bm-fan-face img{width:100%;height:100%;object-fit:cover}
+.bm-fan-face::after{content:"";position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.38) 48%,transparent 60%);transform:translateX(-120%);animation:bm-shine 6s ease-in-out infinite;animation-delay:calc(var(--k) * .6s + 1.2s);pointer-events:none}
+.bm-fan-face{perspective:700px}
+.bm-fan-face img{transition:transform .28s ease-in}
+.bm-fan-face img.flip{transform:rotateY(90deg)}
 .bm-main{grid-column:1 / span 2;grid-row:3;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;position:relative;z-index:2}
 .bm-tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 8px 14px;background:rgba(9,18,38,.82);border:1px solid rgba(120,180,255,.35);border-radius:12px;color:#fff;text-decoration:none;cursor:pointer;transition:transform .12s,background .15s,border-color .15s;font-family:var(--jp)}
 .bm-tile:hover{transform:translateY(-4px);background:rgba(98,197,238,.18);border-color:var(--blue)}
@@ -817,3 +823,35 @@ body.bt-on-menu{background-color:#0b1730;
   .bt-btn.big{min-height:40px;padding:0 24px;font-size:14px}
 }
 .bt-compact .bw-play-label,.bt-compact .bw-play .bt-zone-empty{display:none}
+
+/* ---------- メニューのアニメーション ---------- */
+@keyframes bm-deal{0%{opacity:0;transform:translateY(130%) rotate(calc(var(--i) * -14deg)) scale(.7)}100%{opacity:1;transform:none}}
+@keyframes bm-bob{0%,100%{translate:0 0}50%{translate:0 -9px}}
+@keyframes bm-shine{0%,62%{transform:translateX(-120%)}82%,100%{transform:translateX(120%)}}
+@keyframes bm-logo-in{0%{opacity:0;transform:translateX(-24px);filter:blur(8px)}100%{opacity:1;transform:none;filter:none}}
+@keyframes bm-glow{0%,100%{text-shadow:0 0 24px rgba(255,92,157,.55)}50%{text-shadow:0 0 38px rgba(255,92,157,.9),0 0 8px rgba(255,255,255,.35)}}
+@keyframes bm-glow-w{0%,100%{text-shadow:0 0 24px rgba(98,197,238,.5)}50%{text-shadow:0 0 34px rgba(98,197,238,.85)}}
+@keyframes bm-rise{0%{opacity:0;transform:translateY(26px)}100%{opacity:1;transform:none}}
+@keyframes bm-slide{0%{opacity:0;transform:translateX(-30px)}100%{opacity:1;transform:none}}
+@keyframes bm-grid-pan{to{background-position:0 0,0 0,44px 44px,44px 44px}}
+@keyframes bm-float-up{0%{transform:translateY(0);opacity:0}10%{opacity:.9}90%{opacity:.7}100%{transform:translateY(-110vh);opacity:0}}
+@keyframes bm-ico-bounce{0%,100%{transform:translateY(0)}35%{transform:translateY(-6px) rotate(-6deg)}65%{transform:translateY(-2px) rotate(4deg)}}
+@keyframes bm-sub-in{0%{opacity:0;letter-spacing:.9em}100%{opacity:1;letter-spacing:.42em}}
+body.bt-on-menu{animation:bm-grid-pan 14s linear infinite}
+.bm-logo{animation:bm-logo-in .8s ease-out both, bm-glow-w 4s ease-in-out 1s infinite}
+.bm-logo span{animation:bm-glow 3s ease-in-out .8s infinite}
+.bm-sub{animation:bm-sub-in 1.1s ease-out .3s both}
+.bm-link{animation:bm-slide .6s ease-out both}
+.bm-link:nth-child(1){animation-delay:.35s}.bm-link:nth-child(2){animation-delay:.45s}.bm-link:nth-child(3){animation-delay:.55s}
+.bm-tile{animation:bm-rise .6s cubic-bezier(.2,.8,.3,1) both}
+.bm-tile:nth-child(1){animation-delay:.5s}.bm-tile:nth-child(2){animation-delay:.6s}.bm-tile:nth-child(3){animation-delay:.7s}.bm-tile:nth-child(4){animation-delay:.8s}.bm-tile:nth-child(5){animation-delay:.9s}
+.bm-tile:hover .bm-ico svg{animation:bm-ico-bounce .6s ease}
+.bm-tile:hover{box-shadow:0 0 22px -4px rgba(98,197,238,.7)}
+.bm-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.bm-particles i{position:absolute;left:var(--x);bottom:-10px;width:var(--s);height:var(--s);border-radius:50%;background:radial-gradient(circle,#fff,rgba(98,197,238,.6) 60%,transparent);box-shadow:0 0 8px rgba(120,200,255,.8);animation:bm-float-up var(--d) linear infinite;animation-delay:var(--delay)}
+.bm-particles i:nth-child(3n){background:radial-gradient(circle,#fff,rgba(255,92,157,.65) 60%,transparent);box-shadow:0 0 8px rgba(255,92,157,.8)}
+.bm-fan{perspective:900px}
+@media (prefers-reduced-motion: reduce){
+  body.bt-on-menu,.bm-logo,.bm-logo span,.bm-sub,.bm-link,.bm-tile,.bm-fan-face,.bm-fan-face::after,.bm-particles i{animation:none !important}
+  .bm-particles{display:none}
+}

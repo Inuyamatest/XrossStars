@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007e';
+  var APP_VERSION = '20261007f';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -274,13 +274,19 @@
       menuFan = shuffled(leaders).slice(0, 5);
     }
     var fan = menuFan.map(function (c, i) {
-      return '<div class="bm-fan-card" style="--i:' + (i - 2) + '">' + imgTag(c, false, 'bt-lnoimg') + '</div>';
+      return '<div class="bm-fan-card" style="--i:' + (i - 2) + ';--k:' + i + '"><div class="bm-fan-face">' + imgTag(c, false, 'bt-lnoimg') + '</div></div>';
     }).join('');
+    // 背景の光の粒（位置・大きさ・速さはばらばらに）
+    var particles = '';
+    for (var p = 0; p < 22; p++) {
+      particles += '<i style="--x:' + Math.round(Math.random() * 100) + '%;--s:' + (2 + Math.round(Math.random() * 4)) + 'px;--d:' + (7 + Math.round(Math.random() * 9)) + 's;--delay:-' + Math.round(Math.random() * 14) + 's"></i>';
+    }
     function tile(icon, label, sub, attrs) {
       return '<button class="bm-tile" ' + attrs + '><span class="bm-ico">' + MENU_ICONS[icon] + '</span><b>' + label + '</b><small>' + sub + '</small></button>';
     }
     return '' +
       '<div class="bt-menu">' +
+        '<div class="bm-particles" aria-hidden="true">' + particles + '</div>' +
         '<div class="bm-fan" aria-hidden="true">' + fan + '</div>' +
         '<div class="bm-head">' +
           '<div class="bm-logo">XROSS<span>STARS</span></div>' +
@@ -301,6 +307,27 @@
         '<div class="bm-ver">App ' + esc(APP_VERSION) + '</div>' +
       '</div>';
   }
+
+  var MENU_FLIP_MS = 3600;
+  setInterval(function () {
+    if (screen !== 'menu' || !menuFan || document.hidden) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var faces = root.querySelectorAll('.bm-fan-face');
+    if (!faces.length) return;
+    var shown = {};
+    menuFan.forEach(function (c) { shown[c.cardNumber] = true; });
+    var pool = CARDS.filter(function (c) { return c.cardType === 'LEADER' && c.imageUrl && !shown[c.cardNumber]; });
+    if (!pool.length) return;
+    var k = Math.floor(Math.random() * faces.length);
+    var next = pool[Math.floor(Math.random() * pool.length)];
+    var img = faces[k].querySelector('img');
+    var src = cardImg(next, false);
+    if (!img || !src) return;
+    // 画像だけを回して裏返し、真横を向いたところで差し替える（外側の浮かぶ動きは止めない）
+    img.classList.add('flip');
+    setTimeout(function () { img.src = src; img.alt = next.name; menuFan[k] = next; }, 280);
+    setTimeout(function () { img.classList.remove('flip'); }, 320);
+  }, MENU_FLIP_MS);
 
   // ================= セットアップ画面 =================
   function renderSetup() {
