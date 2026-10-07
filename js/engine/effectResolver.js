@@ -189,6 +189,20 @@
         (action.actions || []).forEach(function (sub) { applyAction(state, sub, targets, ctx, cardIndex); });
         return state;
 
+      case 'DAMAGE_ATTACKER_KEEP_MIN': {
+        // ロングレンジスナイプ「アタッカーに20ダメージ。このダメージによってアタッカーがダウンするなら、代わりに残り体力を10にする。」
+        // ＝残り体力が minHp を下回らない分だけダメージを与える（ダウンはしない）。ダウン中のアタッカーには何もしない。
+        var atkPid = ctx.ownerPlayerId, atkIdx = ctx.attackerLeaderIndex;
+        if (atkPid == null || atkIdx == null) return state;
+        var atkLeader = state.players[atkPid].leaders[atkIdx];
+        if (!atkLeader || atkLeader.isDown) return state;
+        var selfDamage = Math.min(action.amount, GameState.getLeaderCurrentHp(cardIndex, atkLeader) - (action.minHp || 0));
+        if (selfDamage <= 0) return state;
+        atkLeader.damage += selfDamage;
+        Events.logEvent(state, 'DAMAGE_DEALT', { playerId: atkPid, leaderIndex: atkIdx, amount: selfDamage, source: 'CARD_EFFECT' });
+        return state;
+      }
+
       case 'TEMP_ATK_MODIFIER':
         // duration（いつ消えるか）はPROVISIONAL（ruleConfig.js参照）。leader.tempAtkModifierへ加算するだけで、
         // 実際のクリアはendTurnAndSwitchWithEffects/processRoundEndWithEffectsが行う。

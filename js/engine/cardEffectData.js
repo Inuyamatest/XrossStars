@@ -1845,6 +1845,32 @@
     'BP05-029': [E({ trigger: 'AFTER_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
     // BP05-030 ダークリープ（アタック, 青, cost1, リーダー：tttcheekyttt） … ブリッツブラストと同じ
     'BP05-030': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) { return state.players[ctx.targetPlayerId].leaders[ctx.targetLeaderIndex].isDown; }, action: { type: 'DISCARD_HAND', who: 'OPPONENT', amount: 1 } })],
+    // --- 第5弾 リーダー専用カード（カード画像で確認。効果は同じテキストの既存カードと同じ定義）---
+    // BP05-035 レイジングスラッシュ（黄・胡桃のあ (IGV)）= 仁義なき抗争と同文
+    'BP05-035': [E({ trigger: 'ON_ATTACK', action: { type: 'OPTIONAL_HAND_DISCARD_FOR_BONUS', bonus: 30, random: true } })],
+    // BP05-036 ミスショット（黄・Cpt (IGV)）= だまし討ちと同文
+    'BP05-036': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    // BP05-042 ブライトホーリー（緑・花芽すみれ (IGV)）= ハイグラバーストと同文
+    'BP05-042': [E({
+      trigger: 'AFTER_ATTACK',
+      condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }),
+      target: F.makeAllOtherOpponentLeadersTarget(),
+      action: { type: 'DAMAGE', amount: 10 },
+    })],
+    // BP05-044 ロングレンジスナイプ（緑・ハセシン）
+    // 「〖アタック後〗対戦相手の他のリーダー1体に20ダメージ。アタッカーに20ダメージ。このダメージによってアタッカーがダウンするなら、代わりに残り体力を10にする。」
+    // 相手の他のリーダーがいなくても（対象なしで1つ目が不発でも）、アタッカーへのダメージは別の文なので行う＝2つの効果に分けて登録する。
+    'BP05-044': [
+      E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } }),
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DAMAGE_ATTACKER_KEEP_MIN', amount: 20, minHp: 10 } }),
+    ],
+    // BP05-063 ミッドナイトトーク（黄・胡桃のあ (IGV)）= シャンパンコール！と同文
+    'BP05-063': [E({ trigger: 'ON_PLAY', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'ATTACK', operator: 'GTE', count: 1 }), action: { type: 'DRAW', amount: 1 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } })],
+    // BP05-064 Cap-chicken（黄・Cpt (IGV)）／BP05-070 ハイリスク・ハイリターン（緑・花芽すみれ (IGV)）= 究極自摸と同文
+    'BP05-064': [E({ trigger: 'AFTER_ATTACK', action: { type: 'DRAW', amount: 1 } })],
+    'BP05-070': [E({ trigger: 'AFTER_ATTACK', action: { type: 'DRAW', amount: 1 } })],
+    // BP05-072 一般通過（緑・ハセシン）= 小さなビデオレターと同文
+    'BP05-072': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } }), E({ trigger: 'AFTER_ATTACK', target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 10 } })],
     // BP05-034 ジャンプスケア（アタック, 黄, cost1, リーダー：神成きゅぴ (IGV)） … 一斧両断と同じ
     'BP05-034': [E({ trigger: 'AFTER_ATTACK', condition: F.makeOverkillAmountCondition({ operator: 'GTE', amount: 10 }), target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 30 } })],
     // BP05-037 バックワードショット（アタック, 黄, cost1, リーダー：Ras (IGV)） … うるパーンチッ！と同じ
