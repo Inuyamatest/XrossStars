@@ -2168,7 +2168,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "REJECT"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2195,7 +2197,9 @@
   "atk": 30,
   "awakenHp": 130,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "CR"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2222,7 +2226,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "REJECT"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2249,7 +2255,9 @@
   "atk": 30,
   "awakenHp": 130,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "CR"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2330,7 +2338,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "Neo-Porte"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2384,7 +2394,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "VSPO!"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2411,7 +2423,9 @@
   "atk": 30,
   "awakenHp": 130,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "VSPO!"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2438,7 +2452,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "CR"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2465,7 +2481,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "CR"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2492,7 +2510,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "VSPO!"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2519,7 +2539,9 @@
   "atk": 30,
   "awakenHp": 140,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "VSPO!"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,
@@ -2546,7 +2568,9 @@
   "atk": 30,
   "awakenHp": 130,
   "awakenAtk": 40,
-  "affiliations": [],
+  "affiliations": [
+   "CR"
+  ],
   "buildRule": null,
   "buildRuleParsed": null,
   "ace": false,

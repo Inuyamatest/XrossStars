@@ -213,5 +213,28 @@ test('ミッドナイトトーク：アタックカードがプレイエリア�
   assert.strictEqual(state.players.playerB.hand.length, h + 1);
 });
 
+// ============================================================
+console.log('=== 第5弾リーダーの所属（カード画像の印字で確認）===');
+// ============================================================
+test('所属：CR／VSPO!／REJECT／Neo-Porte／印字なし', () => {
+  const aff = (n) => (cardIndex[n].affiliations || []).join(',');
+  ['BP05-L02', 'BP05-L04', 'BP05-L11', 'BP05-L12', 'BP05-L15'].forEach((n) => assert.strictEqual(aff(n), 'CR', n));
+  ['BP05-L09', 'BP05-L10', 'BP05-L13', 'BP05-L14'].forEach((n) => assert.strictEqual(aff(n), 'VSPO!', n));
+  ['BP05-L01', 'BP05-L03'].forEach((n) => assert.strictEqual(aff(n), 'REJECT', n));
+  assert.strictEqual(aff('BP05-L07'), 'Neo-Porte');
+  ['BP05-L05', 'BP05-L06', 'BP05-L08', 'BP05-L16'].forEach((n) => assert.strictEqual(aff(n), '', n));
+});
+test('魔王降臨：第5弾のCRリーダー4体だけでも「すべてがCR」になり、アタックを受けたリーダーがダウンする', () => {
+  const state = Match.createMatch({
+    matchId: 't', mode: 'STANDARD', firstPlayer: 'playerA', ppTicketCardId: PP_TICKET,
+    playerA: { leaderCardIds: LEADERS_A, deckCardIds: new Array(50).fill(FILLER_ATTACK), tacticsDeckCardIds: TACTICS_5 },
+    playerB: { leaderCardIds: ['BP05-L02', 'BP05-L04', 'BP05-L11', 'BP05-L12'], deckCardIds: new Array(50).fill(FILLER_ATTACK), tacticsDeckCardIds: TACTICS_5 },
+  });
+  state.turn.activePlayer = 'playerB'; state.turn.turnNumber = 2;
+  ['playerA', 'playerB'].forEach((pid) => { state.players[pid].hand = []; state.players[pid].ppCards.max = 10; state.players[pid].ppCards.tapped = 0; });
+  attackWith(state, 'ST02-009', { targetLeaderIndex: 0 });
+  assert.strictEqual(state.players.playerA.leaders[0].isDown, true);
+});
+
 console.log('\n' + passed + ' passed, ' + failed + ' failed');
 if (failed > 0) process.exit(1);
