@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007b';
+  var APP_VERSION = '20261007c';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -136,6 +136,7 @@
   var LAYOUT_KEY = 'xs-battle-layout';
   var layoutPref = loadPref(LAYOUT_KEY, ['auto', 'wide', 'classic'], 'auto');
   var wideMq = window.matchMedia ? window.matchMedia('(min-width: 1100px) and (min-height: 640px)') : null;
+  var wideLogOpen = loadPref('xs-battle-wide-log', ['open', 'closed'], 'closed') === 'open'; // ワイド表示のバトルログ（押すと開く）
   function isWide() { return layoutPref === 'wide' || (layoutPref === 'auto' && !!(wideMq && wideMq.matches)); }
   if (wideMq) {
     var onWideChange = function () { if (screen === 'battle') render(); };
@@ -717,11 +718,11 @@
             '<div class="bw-head">' + pBadge(top) + esc(PLAYER_LABEL[top]) + 'の手札 <b>' + topPlayer.hand.length + '</b></div>' +
             '<div class="bw-backs">' + topPlayer.hand.map(function () { return '<span class="bt-cardback"></span>'; }).join('') + '</div>' +
           '</section>' +
-          '<section class="bw-panel bw-log">' +
-            '<div class="bw-head">バトルログ</div>' +
-            '<div class="bt-loglist">' + renderLogEntries(state, 120) + '</div>' +
+          '<section class="bw-panel bw-log' + (wideLogOpen ? ' open' : '') + '">' +
+            '<button class="bw-head bw-logtoggle" data-act="toggle-wide-log" aria-expanded="' + wideLogOpen + '">バトルログ<span class="bw-logarrow">' + (wideLogOpen ? '▲ 閉じる' : '▼ 開く') + '</span></button>' +
+            (wideLogOpen ? '<div class="bt-loglist">' + renderLogEntries(state, 120) + '</div>' : '<div class="bw-loglast">' + renderLogEntries(state, 1, true) + '</div>') +
           '</section>' +
-          '<section class="bw-panel bw-hand">' +
+          '<section class="bw-panel bw-hand bw-hand-' + Math.min(bottomPlayer.hand.length, 9) + '">' +
             '<div class="bw-head">' + pBadge(bottom) + esc(PLAYER_LABEL[bottom]) + 'の手札 <b>' + bottomPlayer.hand.length + '</b></div>' +
             renderHandHtml(state, bottom, hideHand, readOnly) +
           '</section>' +
@@ -1264,12 +1265,15 @@
   }
 
   // ---------- ログ・オーバーレイ ----------
-  function renderLogEntries(state, limit) {
-    var entries = state.actionLog.slice(-limit).reverse().map(function (e) {
+  // limit件まで新しい順に。latestOnly：表示できる出来事のうち一番新しい1件だけ
+  function renderLogEntries(state, limit, latestOnly) {
+    var items = [];
+    for (var i = state.actionLog.length - 1; i >= 0 && (latestOnly ? items.length < limit : state.actionLog.length - i <= limit); i--) {
+      var e = state.actionLog[i];
       var d = describeEvent(e);
-      if (!d) return '';
-      return '<div class="bt-logitem ' + d.cls + '"><span class="t">R' + e.roundNumber + ' T' + e.turnNumber + '</span><span>' + esc(d.text) + '</span></div>';
-    }).join('');
+      if (d) items.push('<div class="bt-logitem ' + d.cls + '"><span class="t">R' + e.roundNumber + ' T' + e.turnNumber + '</span><span>' + esc(d.text) + '</span></div>');
+    }
+    var entries = items.join('');
     return entries || '<div class="bt-logitem">まだ記録がありません</div>';
   }
 
@@ -2200,6 +2204,7 @@
       window.scrollTo(0, 0);
       return;
     }
+    if (act === 'toggle-wide-log') { wideLogOpen = !wideLogOpen; savePref('xs-battle-wide-log', wideLogOpen ? 'open' : 'closed'); render(); return; }
     if (act === 'toggle-layout') { layoutPref = isWide() ? 'classic' : 'wide'; savePref(LAYOUT_KEY, layoutPref); render(); return; }
     if (act === 'online-leave') { closeOnline(); render(); return; }
     if (act === 'online-copy') { copyRoomUrl(); return; }

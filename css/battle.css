@@ -535,23 +535,31 @@ body.bt-wide{overflow:hidden;background-color:#0b1730;
     linear-gradient(90deg, rgba(120,180,255,.08) 1px, transparent 1px);
   background-size:auto, 44px 44px, 44px 44px}
 body.bt-wide .bt-topbar{display:none}
-.bw{--bw-gap:10px;display:grid;grid-template-columns:minmax(250px,22vw) minmax(0,1fr) minmax(300px,24vw);gap:var(--bw-gap);height:100dvh;padding:var(--bw-gap);overflow:hidden}
+.bw{--bw-gap:10px;display:grid;grid-template-columns:minmax(280px,25vw) minmax(0,1fr) minmax(290px,22vw);gap:var(--bw-gap);height:100dvh;padding:var(--bw-gap);overflow:hidden}
 .bw-panel{background:rgba(9,18,38,.78);border:1px solid rgba(120,180,255,.22);border-radius:8px;padding:8px 10px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
 .bw-head{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.06em;margin-bottom:6px}
 .bw-head b{font-family:var(--num);font-size:16px;color:var(--text)}
 .bw-head .bt-pbadge{width:20px;height:20px;font-size:11px}
 
 /* 左：相手の手札・ログ・自分の手札 */
-.bw-left{display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:var(--bw-gap);min-height:0}
+.bw-left{display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:var(--bw-gap);min-height:0}
 .bw-backs{display:flex;flex-wrap:wrap;gap:4px}
 .bw-backs .bt-cardback{width:30px}
-.bw-log{display:flex;flex-direction:column;min-height:0}
-.bw-log .bt-loglist{flex:1;overflow:auto;padding-right:4px}
+.bw-log{display:flex;flex-direction:column;min-height:0;padding:6px 10px}
+.bw-logtoggle{width:100%;margin:0;padding:2px 0;background:none;border:0;cursor:pointer;color:var(--sub);text-align:left}
+.bw-logtoggle:hover{color:var(--text)}
+.bw-logarrow{margin-left:auto;font-size:11px;color:var(--blue)}
+.bw-log .bt-loglist{max-height:34dvh;overflow:auto;padding-right:4px}
+.bw-loglast .bt-logitem{border-bottom:0;padding:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bw-loglast .bt-logitem span:last-child{overflow:hidden;text-overflow:ellipsis}
 .bw-log .bt-logitem{font-size:12px;padding:4px 0}
-.bw-hand .bt-hand{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px 6px;overflow:visible;padding:8px 2px 0}
-.bw-hand .bt-handcard{width:auto}
-.bw-hand .bt-hname{font-size:9px}
-.bw-hand .bt-cost{width:22px;height:22px;font-size:13px;top:-5px;left:-4px}
+.bw-hand{display:flex;flex-direction:column;min-height:0}
+.bw-hand .bt-hand{--cols:3;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:12px 10px;overflow-y:auto;overflow-x:hidden;padding:10px 6px 4px;align-content:start;flex:1;min-height:0}
+.bw-hand-7 .bt-hand,.bw-hand-8 .bt-hand{--cols:4}
+.bw-hand-9 .bt-hand{--cols:5}
+.bw-hand .bt-handcard{width:auto;max-width:150px}
+.bw-hand .bt-hname{font-size:11px}
+.bw-hand .bt-cost{width:28px;height:28px;font-size:16px;top:-7px;left:-6px}
 .bw-hand .bt-hand-hidden{flex-wrap:wrap;padding:6px 2px}
 
 /* 中央：リーダーとプレイエリア */
@@ -606,7 +614,6 @@ body.bt-wide .bt-topbar{display:none}
 .bw-prompt .bt-steps{flex-wrap:wrap}
 @media (max-height:760px){
   .bw-leaders .bt-leader{width:min(calc((100% - 66px) / 4), calc((100dvh - 430px) / 2 * 63 / 88), 200px)}
-  .bw-hand .bt-hname{display:none}
 }
 
 /* =========================================================
@@ -659,3 +666,7 @@ body.bt-on-menu{background-color:#0b1730;
 .bw-deckmix{margin-left:6px;font-family:var(--num);font-size:11px;color:var(--sub);letter-spacing:.04em}
 .bw-keys{font-size:11px;color:var(--dim);text-align:right}
 .bw-keys kbd{display:inline-block;min-width:18px;padding:0 4px;border-radius:4px;border:1px solid var(--line2);background:var(--bg2);color:var(--sub);font-family:var(--num);font-size:11px;text-align:center}
+.bw-strip .bt-counter{white-space:nowrap}
+.bw-strip .bt-counters{flex:none}
+@media (max-width:1440px){ .bw-zlabel{display:none} .bw-strip .bt-plabel{max-width:7em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
+@media (max-width:1300px){ .bw-deckmix{display:none} }
