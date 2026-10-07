@@ -101,3 +101,12 @@ button,input,select{font-family:inherit}
   .xs-tag{font-size:9.5px;letter-spacing:.06em}
   .xs-tag b{font-size:13px}
 }
+
+/* スマホ縦：ヘッダーを2段に収める */
+@media (max-width:560px){
+  .xs-head{gap:5px 6px}
+  .xs-logo{font-size:16px;letter-spacing:.1em}
+  .xs-pill{min-height:26px;padding:0 9px;font-size:10.5px}
+  .xs-step-lbl{display:none}
+  .xs-step-btn{min-width:26px;height:22px;font-size:13px;padding:0 4px}
+}
