@@ -54,7 +54,7 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true };
+  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -287,7 +287,11 @@
       var count = Resolver.getMultiAttackCount(attack.cardId);
       var oppId = GameState.getOpponentId(playerId);
       var options = { attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target };
-      if (count) options = planMultiAttack(state, playerId, attack.cardId, attack.attacker, count, cardIndex);
+      if (count && TUNE.multiPlan) options = planMultiAttack(state, playerId, attack.cardId, attack.attacker, count, cardIndex);
+      else if (count) {
+        options = { attacks: [] };
+        for (var i = 0; i < count; i++) options.attacks.push({ attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target });
+      }
       return { type: 'ATTACK', instanceId: attack.instanceId, cardId: attack.cardId, options: options };
     }
 
@@ -316,7 +320,7 @@
         acts.push({ type: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId });
       } else if (card.cardType === 'ATTACK') {
         var count = Resolver.getMultiAttackCount(c.cardId);
-        if (count) aliveIndexes(player).forEach(function (ai) { acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: planMultiAttack(state, playerId, c.cardId, ai, count, cardIndex) }); });
+        if (count && TUNE.multiPlan) aliveIndexes(player).forEach(function (ai) { acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: planMultiAttack(state, playerId, c.cardId, ai, count, cardIndex) }); });
         aliveIndexes(player).forEach(function (ai) {
           Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
             var one = { attackerLeaderIndex: ai, targetPlayerId: oppId, targetLeaderIndex: ti };
