@@ -146,7 +146,7 @@
   }
   function shake(strength) {
     if (reduceMotion) return;
-    var board = document.querySelector('.bt-battle');
+    var board = document.querySelector('.bt-battle, .bw-center');
     if (!board || !board.animate) return;
     var s = strength || 6;
     board.animate([
