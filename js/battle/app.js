@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007c';
+  var APP_VERSION = '20261007d';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -136,6 +136,8 @@
   var LAYOUT_KEY = 'xs-battle-layout';
   var layoutPref = loadPref(LAYOUT_KEY, ['auto', 'wide', 'classic'], 'auto');
   var wideMq = window.matchMedia ? window.matchMedia('(min-width: 1100px) and (min-height: 640px)') : null;
+  var HAND_SORTS = { draw: '引いた順', cost: 'コスト順', type: '種類順' };
+  var handSort = loadPref('xs-battle-hand-sort', Object.keys(HAND_SORTS), 'draw');
   var wideLogOpen = loadPref('xs-battle-wide-log', ['open', 'closed'], 'closed') === 'open'; // ワイド表示のバトルログ（押すと開く）
   function isWide() { return layoutPref === 'wide' || (layoutPref === 'auto' && !!(wideMq && wideMq.matches)); }
   if (wideMq) {
@@ -722,8 +724,8 @@
             '<button class="bw-head bw-logtoggle" data-act="toggle-wide-log" aria-expanded="' + wideLogOpen + '">バトルログ<span class="bw-logarrow">' + (wideLogOpen ? '▲ 閉じる' : '▼ 開く') + '</span></button>' +
             (wideLogOpen ? '<div class="bt-loglist">' + renderLogEntries(state, 120) + '</div>' : '<div class="bw-loglast">' + renderLogEntries(state, 1, true) + '</div>') +
           '</section>' +
-          '<section class="bw-panel bw-hand bw-hand-' + Math.min(bottomPlayer.hand.length, 9) + '">' +
-            '<div class="bw-head">' + pBadge(bottom) + esc(PLAYER_LABEL[bottom]) + 'の手札 <b>' + bottomPlayer.hand.length + '</b></div>' +
+          '<section class="bw-panel bw-hand bw-hand-' + Math.min(bottomPlayer.hand.length, 13) + '">' +
+            '<div class="bw-head">' + pBadge(bottom) + esc(PLAYER_LABEL[bottom]) + 'の手札 <b>' + bottomPlayer.hand.length + '</b>' + renderHandSort() + '</div>' +
             renderHandHtml(state, bottom, hideHand, readOnly) +
           '</section>' +
         '</aside>' +
@@ -753,12 +755,6 @@
       '</div>';
   }
 
-  function deckBreakdown(player) {
-    var n = { ATTACK: 0, MEMORIA: 0 };
-    player.deck.forEach(function (c) { var t = cardOf(c.cardId).cardType; if (n[t] != null) n[t]++; });
-    return n;
-  }
-
   // ワイド表示：プレイヤーの帯（PP・次のアタックへの強化・タクティクス・山札などの枚数）
   function renderWideStrip(state, playerId, readOnly, deltas, hideSecret) {
     var player = state.players[playerId];
@@ -772,7 +768,7 @@
         renderBoostBadge(player) +
         '<span class="bw-tactics"><span class="bw-zlabel">TACTICS</span>' + renderTacticsHtml(state, playerId, isActive, readOnly, hideSecret) + '</span>' +
         '<span class="bt-counters">' +
-          '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b>' + (hideSecret ? '' : (function () { var n = deckBreakdown(player); return '<small class="bw-deckmix" title="山札に残っているアタック／メモリアの枚数（順番はわかりません）">A' + n.ATTACK + '・M' + n.MEMORIA + '</small>'; })()) + '</span>' +
+          '<span class="bt-counter" title="山札">山札 <b>' + player.deck.length + '</b></span>' +
           '<span class="bt-counter" title="トラッシュ">トラッシュ <b>' + player.trash.length + '</b></span>' +
         '</span>' +
       '</div>';
@@ -1093,6 +1089,48 @@
   }
 
   // ---------- 手札ドック ----------
+  // 手札のカードの効果の要点（上乗せ・ドロー・ダメージ）を小さなチップにする
+  function handChips(cardId) {
+    var chips = [];
+    var boost = 0, atk = 0, draw = 0, burn = 0, after = 0;
+    Eng.CardEffectData.getEffectsForCard(cardId).forEach(function (e) {
+      var a = e.action || {};
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') boost += e.modifier.amount || 0;
+      if (e.trigger === 'ON_ATTACK' && a.type === 'ATTACK_DAMAGE_BONUS' && !e.condition) atk += a.amount || 0;
+      if ((e.trigger === 'ON_PLAY' || e.trigger === 'AFTER_ATTACK') && a.type === 'DRAW') draw += a.amount || 0;
+      if (e.trigger === 'ON_PLAY' && a.type === 'DAMAGE') burn += a.amount || 0;
+      if (e.trigger === 'AFTER_ATTACK' && a.type === 'DAMAGE') after += a.amount || 0;
+    });
+    if (boost) chips.push('<span class="bt-chipx boost" title="次のアタックのダメージ+' + boost + '">+' + boost + '</span>');
+    if (atk) chips.push('<span class="bt-chipx atk" title="このアタックのダメージ' + (atk > 0 ? '+' : '') + atk + '">ATK' + (atk > 0 ? '+' : '') + atk + '</span>');
+    if (burn) chips.push('<span class="bt-chipx burn" title="プレイ時に' + burn + 'ダメージ">' + burn + 'ダメ</span>');
+    if (after) chips.push('<span class="bt-chipx after" title="アタック後に' + after + 'ダメージ">後' + after + '</span>');
+    if (draw) chips.push('<span class="bt-chipx draw" title="カードを' + draw + '枚引く">ドロー' + draw + '</span>');
+    return chips.slice(0, 2).join('');
+  }
+
+  var TYPE_ORDER = { ATTACK: 0, MEMORIA: 1 };
+  function sortedHand(state, playerId) {
+    var hand = state.players[playerId].hand.slice();
+    if (handSort === 'draw') return hand;
+    var key = function (c) {
+      var card = cardOf(c.cardId);
+      var cost = Eng.Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
+      var cv = cost == null ? 99 : cost;
+      var tv = TYPE_ORDER[card.cardType] != null ? TYPE_ORDER[card.cardType] : 2;
+      return handSort === 'cost' ? [cv, tv] : [tv, cv];
+    };
+    return hand.map(function (c, i) { return { c: c, k: key(c), i: i }; })
+      .sort(function (a, b) { return (a.k[0] - b.k[0]) || (a.k[1] - b.k[1]) || (a.i - b.i); })
+      .map(function (x) { return x.c; });
+  }
+
+  function renderHandSort() {
+    return '<span class="bt-handsort">' + Object.keys(HAND_SORTS).map(function (k) {
+      return '<button class="' + (handSort === k ? 'on' : '') + '" data-act="hand-sort" data-value="' + k + '">' + HAND_SORTS[k] + '</button>';
+    }).join('') + '</span>';
+  }
+
   // readOnly：選択中・決着の演出中など、手札を見せるだけで選べないとき
   function renderHandHtml(state, playerId, hideHand, readOnly) {
     var player = state.players[playerId];
@@ -1102,16 +1140,18 @@
     }
     if (player.hand.length === 0) return '<div class="bt-hand-hidden">手札がありません</div>';
     var canAct = !readOnly && !opponentTurnActive();
-    return '<div class="bt-hand">' + player.hand.map(function (c) {
+    var myTurn = canAct && !isSpectate() && state.turn.activePlayer === playerId && state.turn.phase !== 'ROUND_SETUP';
+    return '<div class="bt-hand">' + sortedHand(state, playerId).map(function (c) {
       var card = cardOf(c.cardId);
       var effCost = Eng.Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       var affordable = effCost != null && effCost <= pp;
       var reason = effCost == null ? 'コスト未確定のためプレイできません' : (affordable ? '' : 'PPが足りません');
       var isSel = sel && sel.cardInstanceId === c.instanceId;
+      var typeCls = card.cardType === 'ATTACK' ? ' t-atk' : (card.cardType === 'MEMORIA' ? ' t-mem' : '');
       return '' +
-        '<div class="bt-handcard' + (isSel ? ' selected' : '') + (affordable && (!opponentTurnActive() || isSpectate()) ? '' : ' unplayable') + '"' + (canAct ? ' data-act="select-hand"' : '') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
+        '<div class="bt-handcard' + typeCls + (isSel ? ' selected' : '') + (myTurn && affordable ? ' playable' : '') + (affordable && (!opponentTurnActive() || isSpectate()) ? '' : ' unplayable') + '"' + (canAct ? ' data-act="select-hand"' : '') + ' data-instance="' + esc(c.instanceId) + '" data-preview="' + esc(c.cardId) + '" title="' + esc(card.name + (reason ? '（' + reason + '）' : '')) + '">' +
           '<span class="bt-cost' + (effCost != null && effCost < card.cost ? ' free' : '') + '">' + (effCost != null ? effCost : '?') + '</span>' +
-          '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '</div>' +
+          '<div class="bt-hcard">' + imgTag(card, false, 'bt-hnoimg') + '<span class="bt-hchips">' + handChips(c.cardId) + '</span></div>' +
           '<div class="bt-hname">' + esc(card.name) + '</div>' +
         '</div>';
     }).join('') + '</div>';
@@ -1121,7 +1161,7 @@
     return '' +
       '<div class="bt-dock"><div class="bt-dock-inner">' +
         '<div class="bt-prompt">' + renderPrompt(state) + '</div>' +
-        (hasCpu() ? renderCpuSpeed() : '') +
+        '<div class="bt-dock-tools">' + (hasCpu() ? renderCpuSpeed() : '') + (hideHand ? '' : renderHandSort()) + '</div>' +
         renderHandHtml(state, playerId, hideHand, false) +
       '</div></div>';
   }
@@ -2204,6 +2244,7 @@
       window.scrollTo(0, 0);
       return;
     }
+    if (act === 'hand-sort') { handSort = el.getAttribute('data-value'); savePref('xs-battle-hand-sort', handSort); render(); return; }
     if (act === 'toggle-wide-log') { wideLogOpen = !wideLogOpen; savePref('xs-battle-wide-log', wideLogOpen ? 'open' : 'closed'); render(); return; }
     if (act === 'toggle-layout') { layoutPref = isWide() ? 'classic' : 'wide'; savePref(LAYOUT_KEY, layoutPref); render(); return; }
     if (act === 'online-leave') { closeOnline(); render(); return; }

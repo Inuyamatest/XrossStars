@@ -555,8 +555,9 @@ body.bt-wide .bt-topbar{display:none}
 .bw-log .bt-logitem{font-size:12px;padding:4px 0}
 .bw-hand{display:flex;flex-direction:column;min-height:0}
 .bw-hand .bt-hand{--cols:3;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:12px 10px;overflow-y:auto;overflow-x:hidden;padding:10px 6px 4px;align-content:start;flex:1;min-height:0}
-.bw-hand-7 .bt-hand,.bw-hand-8 .bt-hand{--cols:4}
-.bw-hand-9 .bt-hand{--cols:5}
+.bw-hand-10 .bt-hand,.bw-hand-11 .bt-hand,.bw-hand-12 .bt-hand{--cols:4}
+.bw-hand-13 .bt-hand{--cols:5}
+@media (max-height:800px){ .bw-hand-7 .bt-hand,.bw-hand-8 .bt-hand,.bw-hand-9 .bt-hand{--cols:4} }
 .bw-hand .bt-handcard{width:auto;max-width:150px}
 .bw-hand .bt-hname{font-size:11px}
 .bw-hand .bt-cost{width:28px;height:28px;font-size:16px;top:-7px;left:-6px}
@@ -662,11 +663,34 @@ body.bt-on-menu{background-color:#0b1730;
 .bt-dmgtag.kill{background:linear-gradient(135deg,#ff458e,#ff7a3d);border-color:#ffe1ec;animation:bt-dmgtag-pop 1s ease-in-out infinite}
 @keyframes bt-dmgtag-pop{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
 @media (max-width:760px){ .bt-dmgtag{padding:2px 6px;font-size:9px} .bt-dmgtag b{font-size:15px} }
-/* 山札の内訳・キーボードの案内（ワイド表示） */
-.bw-deckmix{margin-left:6px;font-family:var(--num);font-size:11px;color:var(--sub);letter-spacing:.04em}
+/* キーボードの案内（ワイド表示） */
 .bw-keys{font-size:11px;color:var(--dim);text-align:right}
 .bw-keys kbd{display:inline-block;min-width:18px;padding:0 4px;border-radius:4px;border:1px solid var(--line2);background:var(--bg2);color:var(--sub);font-family:var(--num);font-size:11px;text-align:center}
 .bw-strip .bt-counter{white-space:nowrap}
 .bw-strip .bt-counters{flex:none}
 @media (max-width:1440px){ .bw-zlabel{display:none} .bw-strip .bt-plabel{max-width:7em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
-@media (max-width:1300px){ .bw-deckmix{display:none} }
+
+/* =========================================================
+   手札：今プレイできるカードを光らせる・効果の要点のチップ・並べ替え
+   ========================================================= */
+.bt-hcard{position:relative}
+.bt-handcard.t-atk .bt-hcard{border-bottom:3px solid #ff6b8f}
+.bt-handcard.t-mem .bt-hcard{border-bottom:3px solid #5fd1ff}
+.bt-handcard.playable .bt-hcard{border-color:#7ff0c2;box-shadow:0 0 0 1px #7ff0c2,0 0 16px rgba(127,240,194,.55),0 6px 14px rgba(0,0,0,.45)}
+.bt-handcard.playable .bt-cost{border-color:#7ff0c2;color:#7ff0c2;box-shadow:0 0 10px rgba(127,240,194,.6)}
+.bt-handcard.playable.selected .bt-hcard{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent),0 10px 22px rgba(98,197,238,.45)}
+.bt-hchips{position:absolute;left:3px;right:3px;bottom:3px;display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-end;pointer-events:none}
+.bt-chipx{font-family:var(--num);font-weight:700;font-size:12px;line-height:1;padding:3px 6px;border-radius:999px;color:#fff;background:rgba(10,9,14,.85);border:1px solid rgba(255,255,255,.35);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.bt-chipx.boost{background:linear-gradient(135deg,#f5c518,#ff9d2e);color:#1b1200;border-color:transparent;text-shadow:none}
+.bt-chipx.atk{background:linear-gradient(135deg,#ff458e,#ff7a3d);border-color:transparent}
+.bt-chipx.burn{background:#b8325c;border-color:transparent}
+.bt-chipx.after{background:#5a3cb8;border-color:transparent}
+.bt-chipx.draw{background:#1a8fc4;border-color:transparent}
+.bt-handsort{display:inline-flex;gap:2px;margin-left:auto}
+.bt-handsort button{min-height:22px;padding:0 8px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--sub);font-size:10px;font-weight:700;cursor:pointer}
+.bt-handsort button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bt-dock-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bt-dock-tools:empty{display:none}
+.bw-hand .bt-chipx{font-size:13px}
+@media (max-width:760px){ .bt-chipx{font-size:10px;padding:2px 4px} }
+@media (max-width:760px){ .bt-battle .bt-score{justify-content:flex-start;padding:0 150px 0 2px} }
