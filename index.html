@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap">
 <link rel="stylesheet" href="css/broadsheet.css">
-<link rel="stylesheet" href="css/app.css?v=20261008g">
+<link rel="stylesheet" href="css/app.css?v=20261008h">
 
 <!-- 描画エンジン（React は dc-runtime より先に読み込むと CDN を使わずローカルで動く） -->
 <script src="js/vendor/react.production.min.js"></script>
@@ -20,14 +20,15 @@
 
 <!-- データ（第5弾以降のリーダー・装備はここに追記） -->
 <script src="js/data/leaders.js"></script>
-<script src="js/data/images.js?v=20261008g"></script>
+<script src="js/data/images.js?v=20261008h"></script>
 <script src="js/data/effects.js"></script>
 
 <!-- カスタマイズ内容の保存（IndexedDB）と画像圧縮 -->
 <script src="js/storage.js"></script>
+<script src="js/deckbuilder/deckcode.js?v=20261008h"></script>
 
 <!-- アプリ本体 -->
-<script src="js/app.js?v=20261008g"></script>
+<script src="js/app.js?v=20261008h"></script>
 </head>
 <body>
 <x-dc>
@@ -41,6 +42,7 @@
     <span style="flex:none;margin-left:auto;font-size:11px;color:#8fa3c4">
       <span style="color:#62c5ee">−</span> 回復 &nbsp; <span style="color:#ff90b1">＋</span> ダメージ
     </span>
+    <button sc-camel-on-click="{{ openImporter }}" style="flex:none;align-self:center;min-height:28px;padding:0 10px;border:1px solid #62c5ee;border-radius:2px;background:rgba(98,197,238,.12);color:#eef4ff;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:.06em;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" style-hover="background:#004961" style-active="background:#006786">デッキ読込</button>
     <button sc-camel-on-click="{{ askResetAll }}" style="flex:none;align-self:center;min-height:28px;padding:0 10px;border:1px solid #3a5283;border-radius:2px;background:transparent;color:#eef4ff;font-family:var(--font-heading);font-weight:600;font-size:11px;letter-spacing:.06em;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent" style-hover="background:#12213f" style-active="background:#24365e">全員HPリセット</button>
   </div>
 
@@ -347,6 +349,23 @@
         </div>
 
         <div style="font-size:11px;color:#6f85aa">直前の操作：{{ sheet.lastLabel }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ importer }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:44;display:grid;place-items:center;padding:20px;background:rgba(8,14,30,.72)">
+      <div style="width:100%;max-width:420px;background:#12213f;border:1px solid #3a5283;border-top:3px solid #62c5ee;border-radius:2px;padding:20px;display:flex;flex-direction:column;gap:14px">
+        <div style="font-family:var(--font-heading);font-weight:600;font-size:19px">デッキコードでリーダーを読み込む</div>
+        <div style="font-size:13px;line-height:1.6;color:#8fa3c4">{{ importer.note }}</div>
+        <input type="text" value="{{ importer.text }}" sc-camel-on-change="{{ onImportText }}" placeholder="https://.../deckbuilder.html#d=..." autocomplete="off" spellcheck="false" style="min-height:44px;padding:0 12px;border:1px solid #3a5283;border-radius:2px;background:#0b1730;color:#eef4ff;font-size:14px;outline:none">
+        <sc-if value="{{ importer.error }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12px;color:#ff90b1">{{ importer.error }}</div>
+        </sc-if>
+        <div style="display:flex;gap:8px">
+          <button sc-camel-on-click="{{ closeImporter }}" style="flex:1;min-height:46px;border:1px solid #3a5283;border-radius:2px;background:transparent;color:#eef4ff;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="background:#24365e">キャンセル</button>
+          <button sc-camel-on-click="{{ doImport }}" style="flex:1;min-height:46px;border:0;border-radius:2px;background:linear-gradient(135deg,#1aa3d9,#3b6cff);color:#fff;font-family:var(--font-heading);font-weight:600;font-size:15px;cursor:pointer" style-hover="filter:brightness(1.1)">読み込む</button>
+        </div>
       </div>
     </div>
   </sc-if>

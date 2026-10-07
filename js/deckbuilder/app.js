@@ -276,12 +276,18 @@
     return 'battle.html#d=' + window.XS_DECK_CODE.encode(buildDeckObject()) + '&go=cpu';
   }
 
+  // リーダー4体がそろっていれば、HP管理にもデッキコードで持っていく（リーダー4体をまとめてセット）
+  function hpHref() {
+    if (state.leaders.filter(Boolean).length !== 4) return 'index.html';
+    return 'index.html#d=' + window.XS_DECK_CODE.encode(buildDeckObject());
+  }
+
   function renderHeader() {
     return '' +
       '<div class="db-header">' +
         '<h1><span class="db-logo-x">XROSS</span> <span class="db-logo-s">STARS</span><small>デッキビルダー</small></h1>' +
         '<a class="db-back" href="battle.html">メニュー</a>' +
-        '<a class="db-back" href="index.html">HP管理</a>' +
+        '<a class="db-back db-back-hp" href="' + esc(hpHref()) + '" title="' + (state.leaders.filter(Boolean).length === 4 ? 'このデッキのリーダー4体をセットしてHP管理を開く' : 'HP管理を開く') + '">HP管理</a>' +
         '<a class="db-back db-back-go" href="' + esc(battleHref()) + '" title="' + (state.leaders.filter(Boolean).length === 4 ? 'このデッキでCPU対戦の準備画面を開く' : '対戦画面を開く（リーダー4体を選ぶと、このデッキを持っていけます）') + '">対戦する →</a>' +
         '<input class="db-name-input" id="db-deck-name" type="text" placeholder="デッキ名" value="' + esc(state.deckName) + '">' +
         '<button class="db-btn primary" data-act="save">保存</button>' +
@@ -678,6 +684,8 @@
 
     var goLink = root.querySelector('.db-back-go');
     if (goLink) goLink.addEventListener('click', function () { goLink.href = battleHref(); }); // デッキ名の入力など最新の状態で持っていく
+    var hpLink = root.querySelector('.db-back-hp');
+    if (hpLink) hpLink.addEventListener('click', function () { hpLink.href = hpHref(); });
 
     var nameInput = document.getElementById('db-deck-name');
     if (nameInput) nameInput.addEventListener('input', function (e) { state.deckName = e.target.value; });

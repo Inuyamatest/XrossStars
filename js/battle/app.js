@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008g';
+  var APP_VERSION = '20261008h';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;

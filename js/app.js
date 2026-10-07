@@ -5,6 +5,7 @@
 const STEP_MAX_HP = 10;
 const HISTORY_LIMIT = 30;
 const SLOT_COUNT = 4;
+const SESSION_KEY = 'xs-hp-session'; // 試合中の状態（リーダー・HP・装備・覚醒・履歴）。再読み込みしても続きから使えるように端末へ保存
 
 window.XSComponent = class extends window.DCLogic {
   state = {
@@ -12,28 +13,122 @@ window.XSComponent = class extends window.DCLogic {
     custom: '20', equipName: '', equipHp: '0', cols: 2,
     query: '', booster: 'ALL', color: 'ALL',
     // カスタマイズ：overrides = { [leaderId]: {name, awakeningEffect, hp, ..., imageUrl, awakenedImageUrl} }
-    overrides: {}, editMode: false, editor: null, editorBusy: false
+    overrides: {}, editMode: false, editor: null, editorBusy: false,
+    importer: null // デッキコード読み込み { text, error }
   };
 
   componentDidMount() {
     this.reload();
     if (window.XS_STORE) {
-      window.XS_STORE.loadAll().then(overrides => this.setState({ overrides }));
+      // カスタマイズ（HPなど）が後から読み込まれたら、枠に入っているリーダーにも反映し直す
+      window.XS_STORE.loadAll().then(overrides => this.setState(s => ({ overrides, slots: s.slots.map((l, i) => this.rehydrate(l, i, overrides)) })));
     }
     if (window.XS_VERIFY_IMAGES) window.XS_VERIFY_IMAGES();
     document.addEventListener('xs-leaders-ready', this.reload);
     window.addEventListener('resize', this.onResize);
     this.onResize();
+    this.importFromHash();
+    window.addEventListener('hashchange', this.importFromHash);
+  }
+  componentDidUpdate() {
+    if (this.state.slots !== this.savedSlots) { this.savedSlots = this.state.slots; this.saveSession(); }
   }
   componentWillUnmount() {
     document.removeEventListener('xs-leaders-ready', this.reload);
     window.removeEventListener('resize', this.onResize);
+    window.removeEventListener('hashchange', this.importFromHash);
   }
 
+  // 起動時（とリーダーデータの読み込み完了時）：保存してある試合があれば続きから、なければ空き枠
   reload = () => {
+    const saved = this.loadSession();
     this.setState({
-      slots: Array.from({ length: SLOT_COUNT }, (_, i) => this.emptySlot(i))
+      slots: Array.from({ length: SLOT_COUNT }, (_, i) => saved && saved[i] ? this.restoreSlot(saved[i], i) : this.emptySlot(i))
     });
+  };
+
+  // ---- 試合の自動保存 ----
+  saveSession() {
+    try {
+      const slots = this.state.slots.map(l => l.card ? {
+        leaderId: l.leaderId, damage: l.damage, manualMaxDelta: l.manualMaxDelta, equipment: l.equipment,
+        awakened: l.awakened, attack: l.attack, history: l.history, lastLabel: l.lastLabel
+      } : null);
+      if (slots.every(x => !x)) localStorage.removeItem(SESSION_KEY);
+      else localStorage.setItem(SESSION_KEY, JSON.stringify({ v: 1, savedAt: Date.now(), slots }));
+    } catch (e) { /* 保存できない環境（プライベートモード等）でもそのまま使える */ }
+  }
+  loadSession() {
+    try {
+      const o = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      return o && Array.isArray(o.slots) ? o.slots : null;
+    } catch (e) { return null; }
+  }
+  // 保存データ1枠分から、最大HP・現在HPなどを今のカタログの値で計算し直して復元する
+  restoreSlot(saved, i, overrides) {
+    const card = this.catalog(overrides).find(c => c.id === saved.leaderId);
+    if (!card) return this.emptySlot(i);
+    const equipment = saved.equipment || [];
+    const awakened = !!saved.awakened;
+    const manualMaxDelta = saved.manualMaxDelta || 0;
+    const maxHp = this.computeMaxHp(card, awakened, equipment, manualMaxDelta);
+    const damage = Math.max(0, Math.min(saved.damage || 0, maxHp));
+    const currentHp = Math.max(0, maxHp - damage);
+    return Object.assign({}, this.emptySlot(i), {
+      leaderId: card.id, card, equipment, awakened, manualMaxDelta, damage, maxHp, currentHp,
+      baseMaxHp: this.computeBase(card, awakened, equipment),
+      attack: saved.attack ?? (awakened ? card.awakenedAttack : card.attack) ?? 0,
+      isDown: currentHp <= 0,
+      history: Array.isArray(saved.history) ? saved.history.slice(-HISTORY_LIMIT) : [],
+      lastLabel: saved.lastLabel || 'なし'
+    });
+  }
+  rehydrate(l, i, overrides) { return l.card ? this.restoreSlot(l, i, overrides) : l; }
+
+  // ---- デッキコードからリーダー4体をまとめてセット ----
+  // デッキビルダーのカード番号 → このページのリーダーID（ST01/ST02 は ID が別名なので cardNumber で引く）
+  leaderIdFor(num) {
+    const n = String(num || '');
+    const c = this.catalog().find(l => l.id === n || l.cardNumber === n || String(l.cardNumber || '').indexOf(n + '/') === 0);
+    return c ? c.id : null;
+  }
+  decodeLeaders(text) {
+    let code = String(text || '').trim();
+    const m = code.match(/[#&]d=([^&\s]+)/);
+    if (m) code = m[1];
+    if (!code) throw new Error('デッキコードを貼り付けてください');
+    let deck;
+    try { deck = window.XS_DECK_CODE.decode(code); } catch (e) { throw new Error('デッキコードを読み込めませんでした'); }
+    const ids = (deck.leaders || []).slice(0, SLOT_COUNT).map(n => this.leaderIdFor(n));
+    if (!ids.length) throw new Error('このデッキコードにはリーダーが入っていません');
+    if (ids.some(x => !x)) throw new Error('このページに登録されていないリーダーが含まれています');
+    return { ids, name: deck.name || '' };
+  }
+  importLeaders(text) {
+    let r;
+    try { r = this.decodeLeaders(text); } catch (e) { this.setState(s => ({ importer: Object.assign({}, s.importer || { text }, { error: e.message }) })); return; }
+    const cat = this.catalog();
+    this.setState({
+      importer: null, picker: null, detail: null, sheet: null,
+      slots: Array.from({ length: SLOT_COUNT }, (_, i) => {
+        const card = r.ids[i] && cat.find(c => c.id === r.ids[i]);
+        if (!card) return this.emptySlot(i);
+        const hp = card.hp ?? window.XS_DEFAULT_HP ?? 100;
+        return Object.assign({}, this.emptySlot(i), {
+          leaderId: card.id, card, baseMaxHp: hp, maxHp: hp, currentHp: hp, damage: 0,
+          attack: card.attack ?? 0, lastLabel: (r.name ? '「' + r.name + '」から' : 'デッキコードから') + '読み込み'
+        });
+      })
+    });
+  }
+  // デッキビルダーの「HP管理」から来たとき（index.html#d=...）。試合中なら上書きせず確認画面を出す
+  importFromHash = () => {
+    const m = (location.hash || '').match(/[#&]d=([^&]+)/);
+    if (!m) return;
+    history.replaceState(null, '', location.pathname + location.search);
+    const inUse = (this.loadSession() || []).some(Boolean);
+    if (inUse) this.setState({ importer: { text: m[1], error: '', fromLink: true } });
+    else setTimeout(() => this.importLeaders(m[1]), 0);
   };
 
   emptySlot(i) {
@@ -53,8 +148,8 @@ window.XSComponent = class extends window.DCLogic {
   };
 
   // カタログ = 元データ ＋ この端末で保存したカスタマイズ（名前・テキスト・数値・画像）を重ねたもの
-  catalog() {
-    const ov = this.state.overrides || {};
+  catalog(overrides) {
+    const ov = overrides || this.state.overrides || {};
     return (window.XS_LEADERS || []).map(c => ov[c.id] ? Object.assign({}, c, ov[c.id]) : c);
   }
   baseCard(id) { return (window.XS_LEADERS || []).find(c => c.id === id); }
@@ -472,6 +567,14 @@ window.XSComponent = class extends window.DCLogic {
       stop: e => e.stopPropagation(),
       askResetAll: () => this.setState({ confirm: { index: null, detail: '4人全員のHPを全回復します。覚醒状態・装備・最大HPはそのまま残ります。' } }),
       cancelConfirm: () => this.setState({ confirm: null }),
+      importer: st.importer ? {
+        text: st.importer.text, error: st.importer.error || false,
+        note: st.importer.fromLink ? 'デッキビルダーから届いたデッキです。読み込むと、いまのリーダーとHPは置き換わります。' : 'デッキビルダーのデッキコードかURLを貼り付けると、リーダー4体をまとめてセットします（HPは満タンから）。'
+      } : false,
+      openImporter: () => this.setState({ importer: { text: '', error: '' } }),
+      closeImporter: () => this.setState({ importer: null }),
+      onImportText: e => this.setState({ importer: Object.assign({}, st.importer, { text: e.target.value, error: '' }) }),
+      doImport: () => this.importLeaders(st.importer && st.importer.text),
       doConfirm: this.runConfirm
     };
   }
