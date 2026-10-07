@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261007d';
+  var APP_VERSION = '20261007e';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -139,11 +139,15 @@
   var HAND_SORTS = { draw: '引いた順', cost: 'コスト順', type: '種類順' };
   var handSort = loadPref('xs-battle-hand-sort', Object.keys(HAND_SORTS), 'draw');
   var wideLogOpen = loadPref('xs-battle-wide-log', ['open', 'closed'], 'closed') === 'open'; // ワイド表示のバトルログ（押すと開く）
-  function isWide() { return layoutPref === 'wide' || (layoutPref === 'auto' && !!(wideMq && wideMq.matches)); }
-  if (wideMq) {
-    var onWideChange = function () { if (screen === 'battle') render(); };
-    if (wideMq.addEventListener) wideMq.addEventListener('change', onWideChange); else if (wideMq.addListener) wideMq.addListener(onWideChange);
-  }
+  // 横向きのスマホ（高さが低い横長の画面）：ワイド表示を小さくした版（bt-compact）
+  var compactMq = window.matchMedia ? window.matchMedia('(orientation: landscape) and (max-height: 520px) and (min-width: 560px)') : null;
+  function isCompact() { return !!(compactMq && compactMq.matches); }
+  function isWide() { return layoutPref === 'wide' || (layoutPref === 'auto' && (!!(wideMq && wideMq.matches) || isCompact())); }
+  [wideMq, compactMq].forEach(function (mq) {
+    if (!mq) return;
+    var onChange = function () { if (screen === 'battle') render(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+  });
   var setup = {
     savedDecks: loadSavedDecks(),
     playerA: { source: 'NONE', savedIndex: null, generatedDeck: null, codeDeck: null },
@@ -216,6 +220,7 @@
     if (screen === 'menu' && net) screen = 'setup'; // オンラインの部屋に入ったらセットアップ（部屋）の画面へ
     var wide = screen === 'battle' && isWide();
     document.body.classList.toggle('bt-wide', wide);
+    document.body.classList.toggle('bt-compact', wide && isCompact());
     document.body.classList.toggle('bt-on-menu', screen === 'menu');
     root.innerHTML = screen === 'menu' ? renderMenu() : (screen === 'setup' ? renderSetup() : renderBattle());
     bindEvents();
@@ -698,6 +703,7 @@
     if (isWide()) return renderWideBoard(state, readOnly, hideHand, top, bottom, deltas);
     return '' +
       '<div class="bt-battle">' +
+        '<div class="bt-rotate-tip">スマホを横向きにすると、1画面で見やすく遊べます</div>' +
         renderScore(state) +
         renderSide(state, top, readOnly, deltas, false, !isSpectate()) +
         renderCenter(state) +
@@ -725,7 +731,7 @@
             (wideLogOpen ? '<div class="bt-loglist">' + renderLogEntries(state, 120) + '</div>' : '<div class="bw-loglast">' + renderLogEntries(state, 1, true) + '</div>') +
           '</section>' +
           '<section class="bw-panel bw-hand bw-hand-' + Math.min(bottomPlayer.hand.length, 13) + '">' +
-            '<div class="bw-head">' + pBadge(bottom) + esc(PLAYER_LABEL[bottom]) + 'の手札 <b>' + bottomPlayer.hand.length + '</b>' + renderHandSort() + '</div>' +
+            '<div class="bw-head bw-handhead">' + pBadge(bottom) + '<span class="bw-hlabel">' + esc(PLAYER_LABEL[bottom]) + 'の</span>手札 <b>' + bottomPlayer.hand.length + '</b>' + renderHandSort() + '</div>' +
             renderHandHtml(state, bottom, hideHand, readOnly) +
           '</section>' +
         '</aside>' +
@@ -744,9 +750,9 @@
         '</main>' +
         '<aside class="bw-right">' +
           '<div class="bw-tools">' +
-            '<button class="bt-btn ghost" data-act="toggle-sound" title="効果音">' + (Fx.isSoundOn() ? '♪ 音ON' : '♪ 音OFF') + '</button>' +
-            '<button class="bt-btn ghost" data-act="toggle-layout" title="縦に並べる従来の表示にする">表示切替</button>' +
-            '<button class="bt-btn ghost" data-act="to-menu">メニューに戻る</button>' +
+            '<button class="bt-btn ghost" data-act="toggle-sound" title="効果音">' + (Fx.isSoundOn() ? '♪<span class="bw-long"> 音ON</span>' : '♪<span class="bw-long"> 音OFF</span>') + '</button>' +
+            '<button class="bt-btn ghost" data-act="toggle-layout" title="縦に並べる従来の表示にする">表示<span class="bw-long">切替</span></button>' +
+            '<button class="bt-btn ghost" data-act="to-menu">メニュー<span class="bw-long">に戻る</span></button>' +
           '</div>' +
           '<div class="bw-preview" id="bw-preview"></div>' +
           (readOnly ? '' : '<div class="bw-prompt">' + renderPrompt(state) + (hasCpu() ? renderCpuSpeed() : '') +
