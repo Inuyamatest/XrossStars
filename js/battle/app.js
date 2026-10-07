@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008e';
+  var APP_VERSION = '20261008f';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -222,6 +222,7 @@
     document.body.classList.toggle('bt-wide', wide);
     document.body.classList.toggle('bt-compact', wide && isCompact());
     document.body.classList.toggle('bt-on-menu', screen === 'menu');
+    document.body.classList.toggle('bt-on-setup', screen === 'setup');
     root.innerHTML = screen === 'menu' ? renderMenu() : (screen === 'setup' ? renderSetup() : renderBattle());
     bindEvents();
     syncDockHeight();
@@ -372,18 +373,29 @@
   }, MENU_FLIP_MS);
 
   // ================= セットアップ画面 =================
+  // セットアップ画面の見出し：いまの組み合わせ（人×CPU／人×人／CPU×CPU）に合わせて出し分ける
+  function renderSetupHero() {
+    var h = setup.aSide === 'CPU' && setup.opponent === 'CPU' ? ['SPECTATE', 'CPU同士の対戦を観戦']
+      : setup.opponent === 'CPU' || setup.aSide === 'CPU' ? ['VERSUS CPU', 'デッキを選んでCPUと対戦']
+      : ['LOCAL MATCH', '1台の端末で2人が交互に操作'];
+    var words = h[0].split(' ');
+    return '<div class="bt-hero"><div class="bt-hero-eyebrow">BATTLE SETUP</div>' +
+      '<h2>' + esc(words[0]) + (words[1] ? ' <span>' + esc(words[1]) + '</span>' : '') + '</h2><p>' + esc(h[1]) + '</p></div>';
+  }
+
   function renderSetup() {
     if (net) return renderOnlineSetup();
     return '' +
       '<div class="bt-setup">' +
         '<div class="bt-setup-back"><button class="bt-btn ghost" data-act="to-menu">← メニュー</button></div>' +
-        '<div class="bt-hero"><h2>BATTLE</h2><p>1台の端末で2人が交互に操作するローカル対戦、またはCPUとの対戦</p></div>' +
+        renderSetupHero() +
         '<div class="bt-setup-players">' +
           renderSetupPanel('playerA') +
-          '<div class="bt-vs">VS</div>' +
+          '<div class="bt-vs"><span>VS</span></div>' +
           renderSetupPanel('playerB') +
         '</div>' +
         '<div class="bt-setup-options">' +
+          '<div class="bt-opt-title">MATCH SETTINGS</div>' +
           '<div class="bt-opt">モード <span class="bt-seg">' +
             '<button data-act="set-mode" data-value="STANDARD" class="' + (setup.mode === 'STANDARD' ? 'on' : '') + '">スタンダード（2本先取）</button>' +
             '<button data-act="set-mode" data-value="QUICK" class="' + (setup.mode === 'QUICK' ? 'on' : '') + '">クイック（1本先取）</button>' +
@@ -405,7 +417,7 @@
           '</span></div>' +
           '<button class="bt-btn ghost" data-act="coinflip">ランダムで決める</button>' +
         '</div>' +
-        '<div class="bt-start-row"><button class="bt-btn primary big" data-act="start">' + (setup.aSide === 'CPU' && setup.opponent === 'CPU' ? '観戦開始' : '対戦開始') + '</button>' +
+        '<div class="bt-start-row"><button class="bt-btn primary big bt-go" data-act="start">' + (setup.aSide === 'CPU' && setup.opponent === 'CPU' ? '観戦開始' : '対戦開始') + '<i>▶</i></button>' +
           '<button class="bt-btn big" data-act="online-host">オンライン対戦（URLを送って対戦）</button></div>' +
         '<div class="bt-sim" id="bt-sim">' + renderSimPanel() + '</div>' +
         '<details class="bt-notes"><summary>この対戦画面について</summary>' +
@@ -598,7 +610,7 @@
     for (var i = 0; i < 4; i++) {
       var c = leaderCards[i];
       thumbs += c ? '<div class="bt-thumb" title="' + esc(c.name) + '">' + imgTag(c, false, 'bt-lnoimg') + '</div>'
-        : '<div class="bt-thumb empty">LEADER</div>';
+        : '<div class="bt-thumb empty"><span>＋</span>LEADER</div>';
     }
 
     var summary = '';
@@ -619,7 +631,7 @@
 
     return '' +
       '<div class="bt-setup-panel" data-side="' + side + '">' +
-        '<h3>' + pBadge(side) + esc(PLAYER_LABEL[side]) + (deck ? '<span style="color:var(--sub);font-weight:500;font-size:12px">— ' + esc(deck.name) + '</span>' : '') + '</h3>' +
+        '<h3>' + pBadge(side) + '<span class="bt-sp-name">' + esc(PLAYER_LABEL[side]) + '</span>' + (deck ? '<span class="bt-sp-deck">' + esc(deck.name) + '</span>' : '') + '</h3>' +
         '<div class="bt-deck-leaders">' + thumbs + '</div>' +
         '<div class="bt-setup-row">' +
           '<select class="bt-select" data-act="pick-saved" data-side="' + side + '">' +
