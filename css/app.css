@@ -78,3 +78,9 @@ button,input,select{font-family:inherit}
   .xs-logo{font-size:16px}
   .xs-pill{min-height:24px;padding:0 10px;font-size:10.5px}
 }
+@media (max-width:1000px){ .xs-sub{display:none} }
+@media (max-height:520px){
+  .xs-head{gap:4px 6px}
+  .xs-logo{font-size:16px}
+  .xs-pill{min-height:24px;padding:0 10px;font-size:10.5px}
+}
