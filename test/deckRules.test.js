@@ -188,6 +188,13 @@ test('タクティクス同名重複 → NG', () => {
   assert.ok(r.violations.some((v) => v.includes('重複しています（同名不可）')));
 });
 
+console.log('=== メインデッキに入れられるカード種類 ===');
+test('タクティクスカードをメインデッキに入れる → 違反', () => {
+  const tac = cards.find((c) => c.cardType === 'TACTICS' && !c.buildRule && (c.color === 'colorless' || c.color === 'red'));
+  const r = RULES.validateDeck(baseDeck({ cards: [{ cardNumber: tac.cardNumber, count: 1 }] }), cardIndex);
+  assert.ok(r.violations.some((v) => v.indexOf('メインデッキには入れられません') >= 0), JSON.stringify(r.violations));
+});
+
 console.log('=== 総合 ===');
 test('全条件を満たす完全なデッキ → valid=true', () => {
   const r = RULES.validateDeck(baseDeck({ cards: FULL_50, tactics: FULL_TACTICS }), cardIndex);

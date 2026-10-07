@@ -32,7 +32,7 @@
     return decodeURIComponent(percentEncoded);
   }
 
-  // deck = { name, leaders:[cardNumber x4], cards:[{cardNumber,count}], tactics:[cardNumber x5] }
+  // deck = { name, leaders:[cardNumber x4], cards:[{cardNumber,count}], tactics:[cardNumber x5], pp?:{card,ticket} }
   function encode(deck) {
     var compact = {
       n: deck.name || '',
@@ -41,6 +41,8 @@
       t: deck.tactics || [],
       v: 1,
     };
+    // PPカード／PPチケットのデザイン（任意。古いコードには無い）
+    if (deck.pp && (deck.pp.card || deck.pp.ticket)) compact.p = [deck.pp.card || '', deck.pp.ticket || ''];
     return utf8ToBase64Url(JSON.stringify(compact));
   }
 
@@ -51,6 +53,7 @@
       leaders: obj.l || [],
       cards: (obj.c || []).map(function (pair) { return { cardNumber: pair[0], count: pair[1] }; }),
       tactics: obj.t || [],
+      pp: obj.p ? { card: obj.p[0] || null, ticket: obj.p[1] || null } : null,
     };
   }
 
