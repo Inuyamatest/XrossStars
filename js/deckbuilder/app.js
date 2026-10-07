@@ -24,7 +24,7 @@
     tactics: [],                        // cardNumber[] (max5, no dup name)
     filters: {
       q: '', numberQ: '', set: 'ALL', cardType: 'ALL', color: 'ALL', rarity: 'ALL', cost: 'ALL',
-      aceOnly: false, leaderOnly: false, eligibleOnly: false, inDeckOnly: false,
+      aceOnly: false, leaderOnly: false, eligibleOnly: false, inDeckOnly: false, leaderName: '',
     },
     page: 0,
     activeTab: 'main', // 'main' | 'tactics'
@@ -88,6 +88,7 @@
     }
     if (f.aceOnly && card.ace !== true) return false;
     if (f.leaderOnly && !(card.buildRuleParsed && card.buildRuleParsed.kind === 'LEADER_NAME')) return false;
+    if (f.leaderName && !(card.buildRuleParsed && card.buildRuleParsed.kind === 'LEADER_NAME' && card.buildRuleParsed.leaderName === f.leaderName)) return false;
     if (f.eligibleOnly) {
       var e = gridEligibility(card);
       if (e.eligible !== true) return false;
@@ -241,6 +242,7 @@
 
   function render() {
     var leaderCards = selectedLeaderCards();
+    if (state.filters.leaderName && !leaderCards.some(function (l) { return l.name === state.filters.leaderName; })) state.filters.leaderName = '';
     var validation = currentValidation();
 
     root.innerHTML =
@@ -278,25 +280,60 @@
       '</div>';
   }
 
+  // リーダー名 → 専用カード（ビルドルール「リーダー：○○」）の種類数
+  var LEADER_CARD_COUNT = {};
+  CARDS.forEach(function (c) {
+    var r = c.buildRuleParsed;
+    if (r && r.kind === 'LEADER_NAME' && c.parallelGroupId === c.cardNumber) {
+      LEADER_CARD_COUNT[r.leaderName] = (LEADER_CARD_COUNT[r.leaderName] || 0) + 1;
+    }
+  });
+  // 色指定（「○のリーダー3体以上」）カードが要求する色と体数
+  var COLOR_GATES = {};
+  CARDS.forEach(function (c) {
+    var r = c.buildRuleParsed;
+    if (r && r.kind === 'COLOR_COUNT') COLOR_GATES[r.color] = Math.min(COLOR_GATES[r.color] || 99, r.min);
+  });
+
+  // リーダー欄：大きな画像ではなく、情報が一目でわかるコンパクトなバー
   function renderLeaderSlots(leaderCards) {
-    var usedNames = {};
-    leaderCards.forEach(function (l) { usedNames[l.name] = true; });
-    var html = '<div><div class="db-status-title" style="margin-bottom:6px">リーダーを4枚選択してください</div><div class="db-leaders">';
+    var colorCount = {};
+    leaderCards.forEach(function (l) { colorCount[l.color] = (colorCount[l.color] || 0) + 1; });
+    var summary = Object.keys(COLOR_JA).filter(function (c) { return colorCount[c]; }).map(function (c) {
+      var gate = COLOR_GATES[c];
+      var open = gate && colorCount[c] >= gate;
+      return '<span class="db-lb-color' + (open ? ' open' : '') + '" style="--c:' + COLOR_HEX[c] + '"' +
+        (open ? ' title="' + COLOR_JA[c] + 'リーダー' + gate + '体以上のカードが使えます"' : '') + '>' +
+        '<i></i>' + COLOR_JA[c] + ' ' + colorCount[c] + (open ? '<b>' + COLOR_JA[c] + gate + '解放</b>' : '') + '</span>';
+    }).join('');
+    var html = '<div class="db-lb">' +
+      '<div class="db-lb-head"><span class="db-status-title">LEADERS</span>' +
+        '<span class="db-lb-count' + (leaderCards.length === 4 ? ' ok' : '') + '">' + leaderCards.length + ' / 4</span>' +
+        '<span class="db-lb-colors">' + (summary || '<span class="db-lb-hint">枠をタップしてリーダーを選択</span>') + '</span>' +
+        (state.filters.leaderName ? '<button class="db-lb-clear" data-act="leader-cards" data-name="">専用カード絞り込みを解除 ✕</button>' : '') +
+      '</div><div class="db-leaders">';
     for (var i = 0; i < 4; i++) {
       var num = state.leaders[i];
       var card = num ? CARD_INDEX[num] : null;
       if (card) {
+        var img = cardImg(card);
+        var n = LEADER_CARD_COUNT[card.name] || 0;
+        var active = state.filters.leaderName === card.name;
         html += '' +
-          '<div class="db-leader-slot" data-act="open-picker" data-slot="' + i + '">' +
-            '<span class="db-swatch" style="background:' + (COLOR_HEX[card.color] || '#9b9797') + '"></span>' +
-            (cardImg(card) ? '<img src="' + esc(cardImg(card)) + '" alt="" loading="lazy">' : '<div class="db-leader-empty">' + esc(card.cardNumber) + '<br>' + esc(card.name) + '</div>') +
-            '<span class="db-leader-name">' + esc(card.name) + '</span>' +
+          '<div class="db-leader-slot filled" data-act="open-picker" data-slot="' + i + '" style="--c:' + (COLOR_HEX[card.color] || '#9b9797') + '" title="' + esc('覚醒時：' + (card.text || '')) + '">' +
+            '<div class="db-lb-thumb">' + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy">' : '') + '</div>' +
+            '<div class="db-lb-info">' +
+              '<div class="db-leader-name">' + esc(card.name) + '</div>' +
+              (card.hp != null ? '<div class="db-lb-stats"><span>HP <b>' + card.hp + '</b><i>→' + card.awakenHp + '</i></span><span>ATK <b>' + card.atk + '</b><i>→' + card.awakenAtk + '</i></span></div>' : '') +
+              '<div class="db-lb-text">' + esc(card.text || '') + '</div>' +
+            '</div>' +
+            (n ? '<button class="db-lb-own' + (active ? ' active' : '') + '" data-act="leader-cards" data-name="' + esc(active ? '' : card.name) + '" title="' + esc(card.name) + '専用カードだけを表示">専用<b>' + n + '</b></button>' : '') +
             '<button class="db-remove" data-act="remove-leader" data-slot="' + i + '" title="外す">✕</button>' +
           '</div>';
       } else {
         html += '' +
           '<div class="db-leader-slot" data-act="open-picker" data-slot="' + i + '">' +
-            '<div class="db-leader-empty">＋<br>リーダー ' + (i + 1) + '</div>' +
+            '<div class="db-leader-empty"><span>＋</span>リーダー ' + (i + 1) + '</div>' +
           '</div>';
       }
     }
@@ -569,6 +606,7 @@
     if (act === 'open-picker') { state.picker = { slot: Number(el.getAttribute('data-slot')) }; state.filters.pickerQ = ''; render(); return; }
     if (act === 'close-picker') { state.picker = null; render(); return; }
     if (act === 'pick-leader') { setLeader(state.picker.slot, el.getAttribute('data-number')); return; }
+    if (act === 'leader-cards') { e.stopPropagation(); state.filters.leaderName = el.getAttribute('data-name') || ''; state.activeTab = 'main'; state.page = 0; render(); return; }
     if (act === 'remove-leader') { removeLeader(Number(el.getAttribute('data-slot')), e); return; }
     if (act === 'tab') { state.activeTab = el.getAttribute('data-tab'); state.page = 0; render(); return; }
     if (act === 'toggle') { var f = el.getAttribute('data-f'); state.filters[f] = !state.filters[f]; state.page = 0; render(); return; }
