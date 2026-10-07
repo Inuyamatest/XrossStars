@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008n';
+  var APP_VERSION = '20261008o';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -225,6 +225,7 @@
     document.body.classList.toggle('bt-wide', wide);
     document.body.classList.toggle('bt-compact', wide && isCompact());
     document.body.classList.toggle('bt-tilt', wide && tiltPref === 'on');
+    if (screen === 'battle' && window.XS_BATTLE_FX3D) window.XS_BATTLE_FX3D.preload(); // 3D演出用の three.js は対戦画面に入ったときだけ読み込む
     document.body.classList.toggle('bt-on-menu', screen === 'menu');
     document.body.classList.toggle('bt-on-setup', screen === 'setup');
     root.innerHTML = screen === 'menu' ? renderMenu() : (screen === 'setup' ? renderSetup() + (setup.deckPicker ? renderDeckPicker(setup.deckPicker) : '') : renderBattle());
