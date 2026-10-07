@@ -68,7 +68,7 @@ window.XSComponent = class extends window.DCLogic {
   }
   colors() { return window.XS_COLORS || {}; }
   boosters() { return window.XS_BOOSTERS || []; }
-  colorHex(key) { return (this.colors()[key] || {}).hex || '#605d5d'; }
+  colorHex(key) { return (this.colors()[key] || {}).hex || '#3a5283'; }
   colorJa(key) { return (this.colors()[key] || {}).ja || '不明'; }
   boosterLabel(id) {
     const b = this.boosters().find(x => x.id === id);
@@ -294,7 +294,7 @@ window.XSComponent = class extends window.DCLogic {
         slotLabel: 'リーダー ' + (i + 1),
         empty: !c, filled: !!c,
         name: c ? c.name : '',
-        colorHex: c ? this.colorHex(c.color) : '#605d5d',
+        colorHex: c ? this.colorHex(c.color) : '#3a5283',
         initial: c ? c.name.replace(/\s/g, '').slice(0, 1) : '',
         imageSrc: img || '', hasImage: !!img,
         noImage: !img,
@@ -373,17 +373,17 @@ window.XSComponent = class extends window.DCLogic {
       .map(o => ({
         label: o.label,
         bg: st.booster === o.id ? '#006786' : 'transparent',
-        fg: st.booster === o.id ? '#e9f8ff' : '#f3f2f2',
+        fg: st.booster === o.id ? '#e9f8ff' : '#eef4ff',
         pick: () => this.setState({ booster: o.id })
       }));
 
-    const colorOpts = [{ id: 'ALL', label: 'すべての色', hex: '#605d5d' }]
+    const colorOpts = [{ id: 'ALL', label: 'すべての色', hex: '#3a5283' }]
       .concat(Object.keys(this.colors()).map(k => ({ id: k, label: this.colorJa(k), hex: this.colorHex(k) })))
       .map(o => ({
         label: o.label,
-        border: st.color === o.id ? o.hex : '#605d5d',
+        border: st.color === o.id ? o.hex : '#3a5283',
         bg: st.color === o.id ? o.hex : 'transparent',
-        fg: st.color === o.id ? '#201e1d' : '#f3f2f2',
+        fg: st.color === o.id ? '#0b1730' : '#eef4ff',
         pick: () => this.setState({ color: o.id })
       }));
 
@@ -454,7 +454,7 @@ window.XSComponent = class extends window.DCLogic {
       picker: st.picker ? { title: 'リーダー ' + (st.picker.index + 1) + ' を選択' } : false,
       editMode: st.editMode,
       editBg: st.editMode ? '#006786' : 'transparent',
-      editFg: st.editMode ? '#e9f8ff' : '#9b9797',
+      editFg: st.editMode ? '#e9f8ff' : '#8fa3c4',
       toggleEdit: () => this.setState(s => ({ editMode: !s.editMode })),
       closeEditor: () => this.setState({ editor: null }),
       noResults: !!st.picker && results.length === 0,
