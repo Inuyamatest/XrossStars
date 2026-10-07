@@ -1082,3 +1082,39 @@ body.bt-on-setup .bt-deck-actions .bt-deck-pick:hover{filter:brightness(1.1)}
 .bt-dp-code .bt-input{border-radius:10px;background:rgba(4,9,22,.8);border-color:rgba(120,180,255,.25)}
 .bt-dp-build{align-self:flex-end;font-size:13px;font-weight:700;color:var(--pc);text-decoration:none;margin-top:4px}
 .bt-dp-build:hover{text-decoration:underline}
+
+/* =========================================================
+   ワイド表示の3D：盤面（リーダー＋プレイエリア）を少し奥へ傾けてテーブルを見下ろす感じに
+   帯（PP・山札など）と手札・右パネルは平面のまま＝文字の読みやすさは保つ
+   ========================================================= */
+.bw-table{display:contents}
+body.bt-tilt .bw-center{perspective:1600px;perspective-origin:50% 30%}
+body.bt-tilt .bw-table{flex:1;min-height:0;display:flex;flex-direction:column;gap:8px;position:relative;
+  transform:rotateX(11deg) scale(.95);transform-origin:50% 50%;transform-style:preserve-3d;
+  padding:12px 16px;border-radius:20px;
+  background:
+    radial-gradient(80% 60% at 50% 50%, rgba(98,197,238,.10), transparent 70%),
+    linear-gradient(rgba(120,180,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120,180,255,.06) 1px, transparent 1px),
+    linear-gradient(180deg, #0f1f40, #0a1630);
+  background-size:auto, 36px 36px, 36px 36px, auto;
+  border:1px solid rgba(120,180,255,.22);
+  box-shadow:0 40px 60px -30px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 60px rgba(0,0,0,.35)}
+body.bt-tilt .bw-table::before{content:"";position:absolute;left:8%;right:8%;top:50%;height:1px;background:linear-gradient(90deg,transparent,rgba(120,180,255,.35),transparent);pointer-events:none}
+body.bt-tilt .bw-table .bw-mid{background:rgba(6,12,28,.35)}
+/* カードに厚みと影。狙える／選ばれたカードは手前に浮かせる */
+body.bt-tilt .bw-leaders{transform-style:preserve-3d}
+body.bt-tilt .bw-leaders .bt-leader{transform:translateZ(0);transition:transform .18s ease}
+body.bt-tilt .bw-leaders .bt-leader .bt-lcard{box-shadow:0 14px 22px -8px rgba(0,0,0,.75),0 2px 0 rgba(255,255,255,.06)}
+body.bt-tilt .bw-leaders .bt-leader.pickable:hover,
+body.bt-tilt .bw-leaders .bt-leader.is-attacker,
+body.bt-tilt .bw-leaders .bt-leader.is-target{transform:translateZ(26px) translateY(-4px)}
+.bw-tools .bt-btn.on{border-color:var(--blue);color:#fff;background:rgba(98,197,238,.16)}
+@media (prefers-reduced-motion:reduce){ body.bt-tilt .bw-leaders .bt-leader{transition:none} }
+body.bt-tilt.bt-compact .bw-table{transform:rotateX(9deg) scale(.9);padding:6px 10px;gap:4px;border-radius:14px}
+body.bt-tilt.bt-compact .bw-leaders .bt-leader.pickable:hover,
+body.bt-tilt.bt-compact .bw-leaders .bt-leader.is-attacker,
+body.bt-tilt.bt-compact .bw-leaders .bt-leader.is-target{transform:translateZ(14px) translateY(-2px)}
+/* 傾けたテーブルと同じ面にあるとクリックがテーブル側に取られるので、上に乗るものは少し浮かせる */
+body.bt-tilt .bw-table > .bw-leaders,body.bt-tilt .bw-table > .bw-mid{transform:translateZ(2px)}
+body.bt-tilt .bw-leaders .bt-leader{transform:translateZ(1px)}
