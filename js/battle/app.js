@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008m';
+  var APP_VERSION = '20261008n';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -843,8 +843,17 @@
     var hideBottomSecret = !!hideHand && !humanId() && !isSpectate();
     var bottomPlayer = state.players[bottom];
     var topPlayer = state.players[top];
+    // 手番でない側のプレイエリアは、ターン終了時にトラッシュへ行くのでふつうは空。空なら細く畳んで、空いた分リーダーを大きくする
+    // （エコー・パワーフィールドなどターンをまたいで残るカードがあるときは表示する）
+    var active = state.turn.activePlayer;
+    var foldTop = top !== active && topPlayer.playArea.length === 0;
+    var foldBottom = bottom !== active && bottomPlayer.playArea.length === 0;
+    function playZone(pid, player, folded) {
+      var keep = pid !== active && player.playArea.length > 0;
+      return '<div class="bw-play' + (folded ? ' folded' : '') + (keep ? ' keep' : '') + '"><span class="bw-play-label">' + pShort(pid) + ' PLAY' + (keep ? '<i>次のターンも残る</i>' : '') + '</span>' + (folded ? '' : renderPlayHtml(player)) + '</div>';
+    }
     return '' +
-      '<div class="bw">' +
+      '<div class="bw' + (foldTop || foldBottom ? ' bw-slim' : '') + '">' +
         '<aside class="bw-left">' +
           '<section class="bw-panel bw-opphand">' +
             '<div class="bw-head">' + pBadge(top) + esc(PLAYER_LABEL[top]) + 'の手札 <b>' + topPlayer.hand.length + '</b></div>' +
@@ -864,10 +873,10 @@
           renderWideStrip(state, top, readOnly, deltas, hideTopSecret) +
           '<div class="bw-table">' +
           '<div class="bw-leaders top">' + topPlayer.leaders.map(function (l, i) { return renderLeader(top, l, i, readOnly, deltas[top + ':' + i]); }).join('') + '</div>' +
-          '<div class="bw-mid">' +
-            '<div class="bw-play"><span class="bw-play-label">' + pShort(top) + ' PLAY</span>' + renderPlayHtml(topPlayer) + '</div>' +
+          '<div class="bw-mid' + (foldTop ? ' fold-top' : '') + (foldBottom ? ' fold-bottom' : '') + '">' +
+            playZone(top, topPlayer, foldTop) +
             renderCenter(state) +
-            '<div class="bw-play"><span class="bw-play-label">' + pShort(bottom) + ' PLAY</span>' + renderPlayHtml(bottomPlayer) + '</div>' +
+            playZone(bottom, bottomPlayer, foldBottom) +
           '</div>' +
           '<div class="bw-leaders bottom">' + bottomPlayer.leaders.map(function (l, i) { return renderLeader(bottom, l, i, readOnly, deltas[bottom + ':' + i]); }).join('') + '</div>' +
           '</div>' +
@@ -1159,10 +1168,14 @@
   }
 
   function renderField(state, playerId, isActive, readOnly, hideSecret) {
+    // 手番でない側の空のプレイエリアは出さない（ターン終了時にトラッシュへ行くので空のことがほとんど）
+    var player = state.players[playerId];
+    var showPlay = playerId === state.turn.activePlayer || player.playArea.length > 0;
+    var keep = playerId !== state.turn.activePlayer && player.playArea.length > 0;
     return '' +
-      '<div class="bt-field">' +
+      '<div class="bt-field' + (showPlay ? '' : ' no-play') + '">' +
         '<div><div class="bt-zone-label">TACTICS</div><div class="bt-zone">' + renderTacticsHtml(state, playerId, isActive, readOnly, hideSecret) + '</div></div>' +
-        '<div><div class="bt-zone-label">PLAY AREA</div><div class="bt-zone">' + renderPlayHtml(state.players[playerId]) + '</div></div>' +
+        (showPlay ? '<div><div class="bt-zone-label">PLAY AREA' + (keep ? '<i class="bt-keep">次のターンも残る</i>' : '') + '</div><div class="bt-zone">' + renderPlayHtml(player) + '</div></div>' : '') +
       '</div>';
   }
 
