@@ -244,8 +244,17 @@
   // ---------- レンダリング ----------
   var root = document.getElementById('db-root');
 
+  // リーダーが4体そろったら「採用可能カードのみ」を自動でオンにする（自分でボタンを押して切り替えた後は、その選択を優先）
+  var eligibleTouched = false, lastLeaderCount = -1;
+  function autoEligible(count) {
+    if (count === 4 && lastLeaderCount !== 4 && !eligibleTouched) state.filters.eligibleOnly = true;
+    if (count < 4 && lastLeaderCount === 4 && !eligibleTouched) state.filters.eligibleOnly = false;
+    lastLeaderCount = count;
+  }
+
   function render() {
     var leaderCards = selectedLeaderCards();
+    autoEligible(leaderCards.length);
     if (state.filters.leaderName && !leaderCards.some(function (l) { return l.name === state.filters.leaderName; })) state.filters.leaderName = '';
     var validation = currentValidation();
 
@@ -743,7 +752,7 @@
     if (act === 'pp-pick') { state.pp[el.getAttribute('data-kind')] = el.getAttribute('data-number') || null; render(); return; }
     if (act === 'remove-leader') { removeLeader(Number(el.getAttribute('data-slot')), e); return; }
     if (act === 'tab') { state.activeTab = el.getAttribute('data-tab'); state.page = 0; render(); return; }
-    if (act === 'toggle') { var f = el.getAttribute('data-f'); state.filters[f] = !state.filters[f]; state.page = 0; render(); return; }
+    if (act === 'toggle') { var f = el.getAttribute('data-f'); if (f === 'eligibleOnly') eligibleTouched = true; state.filters[f] = !state.filters[f]; state.page = 0; render(); return; }
     if (act === 'page') { state.page += Number(el.getAttribute('data-dir')); render(); return; }
     if (act === 'qty') { addCard(el.getAttribute('data-number'), Number(el.getAttribute('data-delta'))); return; }
     if (act === 'detail') { state.detailFrom = state.modal === 'draw' ? 'draw' : null; state.detailCard = CARD_INDEX[el.getAttribute('data-number')]; state.modal = 'detail'; render(); return; }

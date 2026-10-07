@@ -110,3 +110,8 @@ button,input,select{font-family:inherit}
   .xs-step-lbl{display:none}
   .xs-step-btn{min-width:26px;height:22px;font-size:13px;padding:0 4px}
 }
+
+/* スリープ防止ボタン */
+.xs-pill.xs-wake{gap:2px;color:#8fa3c4}
+.xs-pill.xs-wake.on{border-color:#f5c518;color:#ffe48a;background:rgba(245,197,24,.12)}
+@media (max-width:1000px){ .xs-wake-lbl{display:none} .xs-pill.xs-wake{padding:0 9px;font-size:13px} }

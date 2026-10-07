@@ -1139,3 +1139,11 @@ body.bt-tilt .bw-leaders .bt-leader{transform:translateZ(1px)}
 
 /* Three.js の3D演出を描く透明なキャンバス（演出中だけ置かれる） */
 .fx3d-canvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:61}
+
+/* 3D演出のオン／オフ（従来表示のスコア行。ワイド表示は右上のツール欄） */
+.bt-score .bt-fx3dbtn{position:absolute;left:0;top:50%;transform:translateY(-50%);min-height:32px;padding:0 10px}
+@media (min-width:900px){ .bt-score .bt-fx3dbtn{left:118px} }
+@media (max-width:760px){ .bt-score .bt-fx3dbtn{left:auto;right:122px;min-height:28px;padding:0 8px;font-size:12px} }
+.bw-center .bt-score .bt-fx3dbtn{display:none}
+.bt-btn.off[data-act="toggle-fx3d"]{opacity:.55;filter:grayscale(1)}
+.bw-tools .bt-btn.on[data-act="toggle-fx3d"],.bt-score .bt-fx3dbtn.on{border-color:var(--yellow);color:#fff;background:rgba(245,197,24,.14)}
