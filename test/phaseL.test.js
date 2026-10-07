@@ -68,12 +68,12 @@ const others = (s) => s.players.playerA.leaders.slice(1).map((l) => l.damage);
 // ============================================================
 console.log('=== 所属データ ===');
 // ============================================================
-test('VSPO! は27名、CR は25名。重なりは無い', () => {
+test('VSPO! は31名、CR は30名（第5弾の9名を含む）。重なりは無い', () => {
   const leaders = allCards.filter((c) => c.cardType === 'LEADER');
   const v = leaders.filter((c) => (c.affiliations || []).includes('VSPO!'));
   const cr = leaders.filter((c) => (c.affiliations || []).includes('CR'));
-  assert.strictEqual(v.length, 27);
-  assert.strictEqual(cr.length, 25);
+  assert.strictEqual(v.length, 31);
+  assert.strictEqual(cr.length, 30);
   assert.ok(!v.some((c) => cr.includes(c)));
   VSPO.forEach((n) => assert.ok(cardIndex[n].affiliations.includes('VSPO!'), n));
   CR.forEach((n) => assert.ok(cardIndex[n].affiliations.includes('CR'), n));
