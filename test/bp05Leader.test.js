@@ -117,6 +117,7 @@ test('8枚が名称・種類・色・コスト・ビルドルールつきで登�
     assert.deepStrictEqual([c.name, c.cardType, c.color, c.cost, c.set, c.ace], [name, type, color, cost, 'BP05', false], n);
     assert.strictEqual(c.buildRuleParsed && c.buildRuleParsed.leaderName, leader, n);
     assert.ok(CardEffectData.hasEffects(n), n);
+    assert.strictEqual(c.imageUrl, 'cards/' + n + '.webp', n + ' の画像');
   });
 });
 test('同じテキストの既存カードと、効果の種類（トリガー）が同じ', () => {
