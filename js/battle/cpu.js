@@ -54,12 +54,57 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
+  var TUNE = { smartTactics: true, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
   function isEquipmentByEffects(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && EQUIP_ACTION_TYPES.indexOf(e.action.type) >= 0; });
+  }
+
+  // ラウンド開始時に置くタクティクスの値打ち（ダメージ換算のおおよその点数）。
+  // 置いたタクティクスはそのラウンド中に使う前提で、今の盤面（減っている体力・ダウン数・相手の残り体力・ラウンド）から見積もる
+  function tacticsSetValue(state, playerId, cardId, cardIndex) {
+    var me = state.players[playerId];
+    var opp = state.players[GameState.getOpponentId(playerId)];
+    var round = state.match.roundNumber;
+    var card = cardIndex[cardId] || {};
+    var name = card.name || '';
+    var myAlive = me.leaders.filter(function (l) { return !l.isDown; });
+    var oppAlive = opp.leaders.filter(function (l) { return !l.isDown; });
+    var missing = myAlive.map(function (l) { return l.damage || 0; });
+    var totalMissing = missing.reduce(function (a, b) { return a + b; }, 0);
+    var maxMissing = missing.reduce(function (a, b) { return Math.max(a, b); }, 0);
+    // このラウンド中に受けるダメージも見込む（ラウンドが進むほど体力は減っている）
+    var expectMissing = function (cap) { return Math.min(cap, totalMissing + 30); };
+    var oppHp = oppAlive.map(function (l) { return GameState.getLeaderCurrentHp(cardIndex, l); });
+    var oppLow = oppHp.some(function (h) { return h <= 40; });
+    var myDowns = me.leaders.length - myAlive.length, oppDowns = opp.leaders.length - oppAlive.length;
+    if (isHpEquipment(cardId)) return round === 1 ? 100 : (round === 2 ? 70 : 45);
+    if (CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(cardId)) return myDowns > oppDowns ? 140 : 10; // 復活ポータル
+    switch (name) {
+      case '救急キット': return 15 + expectMissing(80) * 0.9;
+      case 'ヒーリングオーブ': return 25 + Math.min(60, maxMissing + 20) * 0.8 + (round < 3 ? 15 : 5);
+      case 'ドレインロッド': return 10 + Math.min(40, totalMissing) * 1.8;
+      case '攻撃要請': return oppLow ? 80 : 50;
+      case '一斉攻撃': return 45 + (me.trash.some(function (t) { return (cardIndex[t.card.cardId] || {}).name === '攻撃要請'; }) ? 35 : 0);
+      case 'ファイヤークラッカー': return 15 + 10 * oppAlive.length + (oppHp.some(function (h) { return h <= 10; }) ? 30 : 0);
+      case 'ストラテジックレーダー': return 40;
+      case 'アドレナリン': return 50;
+      case 'エナジーチャージャー': return 45;
+      case '特殊弾': return 60;
+      case '呪いの人形': return 50;
+      case 'ジャミングパルス': return 35;
+      case '追加マガジン': return 40 + (3 - round) * 5;
+      case 'パワーフィールド': return 10 * myAlive.length + 5;
+      case '討伐クエスト': return 35;
+      case 'アイテムショップ': return 35;
+      case 'メリケンサック': return round === 1 ? 50 : 35;
+      case '盗賊キット': return round === 1 ? 40 : 30;
+      case 'オートタレット': return round === 1 ? 45 : 30;
+      case 'ターゲットフラッグ': return 30;
+      default: return 30 + (card.cost || 0) * 5;
+    }
   }
 
   function ppLeft(player) { return player.ppCards.max - player.ppCards.tapped; }
@@ -699,16 +744,21 @@
         // 相手のタクティクスは裏向きなので、どれを選んでも同じ（ランダム）
         return [Math.floor(Math.random() * cards.length)];
       case 'SET_TACTICS': {
-        // ラウンド開始時のタクティクス。装備は試合の終わりまで残るので、体力を増やす装備（ライトシールド・
-        // サイバネアーマー等）は1ラウンド目に置いて早く使う（体力を増やして、相手の倒しきりの計算をずらす）。
-        // それ以外は、このラウンドのPPで使える中で一番コストの高いもの（無ければ一番安いもの）
+        // ラウンド開始時のタクティクス（そのラウンドに使える1枚を裏向きに置く）。TUNE.smartTactics のときは盤面を見て選ぶ
         var ppMax = player.ppCards.max;
         var round = state.match.roundNumber;
         var scored = cards.map(function (c, i) {
           var cost = cardCost(c, cardIndex);
-          var v = cost <= ppMax ? 30 + cost * 5 : 0;
-          if (TUNE.hpEquipFirst && isHpEquipment(c.cardId)) v = round === 1 ? 100 : 60;
-          if (TUNE.hpEquipFirst && CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(c.cardId)) v = Math.min(v, 20); // 復活ポータル等：条件を満たすまで使えない
+          var v;
+          if (TUNE.smartTactics) {
+            v = tacticsSetValue(state, playerId, c.cardId, cardIndex);
+            if (cost > ppMax) v = Math.min(v, 5);
+          } else {
+            // 旧：体力を増やす装備は1ラウンド目に置く。それ以外は、このラウンドのPPで使える中で一番コストの高いもの
+            v = cost <= ppMax ? 30 + cost * 5 : 0;
+            if (TUNE.hpEquipFirst && isHpEquipment(c.cardId)) v = round === 1 ? 100 : 60;
+            if (TUNE.hpEquipFirst && CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(c.cardId)) v = Math.min(v, 20); // 復活ポータル等：条件を満たすまで使えない
+          }
           return { i: i, v: v, cost: cost };
         }).sort(function (a, b) { return (b.v - a.v) || (a.cost - b.cost); });
         return [scored[0].i];
