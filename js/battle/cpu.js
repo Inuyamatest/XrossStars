@@ -614,6 +614,13 @@
     var cd = cardIndex[c.cardId];
     return cd && typeof cd.cost === 'number' ? cd.cost : 99; // コスト未確定（プレイできない）カードは真っ先に捨てる
   }
+  // 捨てる順：エース以外 → コストの低い順
+  function discardOrder(cards, cardIndex) {
+    return cards.map(function (c, i) { var cd = cardIndex[c.cardId]; return { i: i, ace: !!(cd && cd.ace), cost: cardCost(c, cardIndex) }; })
+      .sort(function (a, b) { return (a.ace - b.ace) || ((a.cost === 99 ? -1 : a.cost) - (b.cost === 99 ? -1 : b.cost)); })
+      .map(function (x) { return x.i; });
+  }
+
   function cheapestIndexes(cards, n, cardIndex) {
     return cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; })
       .sort(function (a, b) { return (a.cost === 99 ? -1 : a.cost) - (b.cost === 99 ? -1 : b.cost); })
@@ -710,7 +717,9 @@
       case 'HAND_LIMIT':
         return cheapestIndexes(cards, q.min, cardIndex);
       case 'ATTACK_DISCARD':
-        if (q.max >= 2) return cheapestIndexes(cards, Math.min(q.max, cards.length), cardIndex); // オーバードライブ：捨てるほど得
+        if (q.max >= 2) return discardOrder(cards, cardIndex).slice(0, Math.min(q.max, cards.length)); // オーバードライブ：捨てるほど得（エースは後回し）
+        // セルフ実況・対空射撃等「捨てたらカードを1枚引く」：手札の枚数が減らないので、エース以外があれば常に捨てる
+        if (q.draw > 0) { var nonAce = discardOrder(cards, cardIndex).filter(function (i) { var cd = cardIndex[cards[i].cardId]; return !(cd && cd.ace); }); return nonAce.length ? [nonAce[0]] : []; }
         return player.hand.length >= 3 ? cheapestIndexes(cards, 1, cardIndex) : [];
       case 'LOOK_TOP_TRASH': {
         // 運もミスもない：エースは残す。同じ種類のカードが手札に十分あれば（アタック3枚以上／メモリア2枚以上）トラッシュに置いて引き直す

@@ -1239,7 +1239,7 @@
             if (!(ctx.chooseConfirm && ctx.chooseConfirm({ kind: 'RANDOM_DISCARD', title: '手札を1枚ランダムに捨てますか？（捨てるとダメージ+' + a.bonus + '）' }, state))) return;
             ids = [cands[Math.floor(Math.random() * cands.length)].instanceId];
           } else {
-            ids = ctx.chooseAttackDiscard ? (ctx.chooseAttackDiscard(cands.slice(), { max: 1, bonus: a.bonus }, state) || []) : [];
+            ids = ctx.chooseAttackDiscard ? (ctx.chooseAttackDiscard(cands.slice(), { max: 1, bonus: a.bonus, draw: a.draw || 0 }, state) || []) : [];
             ids = ids.filter(function (id) { return cands.some(function (c) { return c.instanceId === id; }); }).slice(0, 1);
           }
           if (ids.length === 0) return;
