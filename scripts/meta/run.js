@@ -36,6 +36,10 @@ const log = (...a) => console.log('[meta ' + ((Date.now() - T0) / 60000).toFixed
 const cardIndex = CardLookup.loadDefaultCardIndexNode();
 const field = JSON.parse(fs.readFileSync(path.join(META, 'field.json'), 'utf8'));
 let pool = JSON.parse(fs.readFileSync(path.join(META, 'pool.json'), 'utf8'));
+// 前回の結果（時間切れで測れなかったデッキは前回の勝率を引き継ぐ。前回の上位から順に測る）
+const prevRanking = fs.existsSync(path.join(META, 'ranking.json')) ? JSON.parse(fs.readFileSync(path.join(META, 'ranking.json'), 'utf8')) : { decks: [] };
+const prevById = {};
+(prevRanking.decks || []).forEach((d) => { prevById[d.id] = d; });
 
 // 実行ごとに乱数を変える（同じ試合に合わせ込まないように）。同じ日に回し直したら同じ結果
 const day = Math.floor(Date.now() / 86400000);
@@ -120,13 +124,14 @@ async function evaluate(d, games, seed) {
 (async () => {
   log('workers', WORKERS, 'minutes', MINUTES, 'pool', pool.length, 'field', field.length, 'seed', SEED_A);
   pool = pool.filter((d) => { const ok = valid(d); if (!ok) log('ルール違反のため除外:', d.name); return ok; });
+  pool.sort((x, y) => ((prevById[y.id] && prevById[y.id].winRate) || 0) - ((prevById[x.id] && prevById[x.id].winRate) || 0));
 
   // 1. 全候補の勝率（VERIFY 戦 × 2つの乱数）
   for (const d of pool) {
     const a = await evaluate(d, VERIFY, SEED_A);
     const b = await evaluate(d, VERIFY, SEED_B);
     d.result = { wins: a.wins + b.wins, games: a.games + b.games, rate: (a.wins + b.wins) / (a.games + b.games), per: mergePer(a.per, b.per) };
-    d._a = a; d._b = b;
+    d._a = a; d._b = b; d.measuredAt = new Date().toISOString();
     log('評価', d.name, (d.result.rate * 100).toFixed(1) + '%');
     if (timeLeft() < RESERVE / 2) { log('時間切れのため評価を打ち切り'); break; }
   }
@@ -158,10 +163,10 @@ async function evaluate(d, games, seed) {
     accepted++;
     const child = {
       id: parent.id.replace(/~\d+$/, '') + '~' + (Date.now() % 100000000),
-      name: parent.name.replace(/ 改\d*$/, '') + ' 改' + accepted,
+      name: nextChildName(parent.name),
       origin: 'auto', parent: parent.name, change: (parent.change ? parent.change + ' ／ ' : '') + m.change,
       leaders: m.deck.leaders, cards: m.deck.cards, tactics: m.deck.tactics,
-      result: { wins: cw, games: ca.games + cb.games, rate: cw / (ca.games + cb.games), per: mergePer(ca.per, cb.per) }, _a: ca, _b: cb,
+      result: { wins: cw, games: ca.games + cb.games, rate: cw / (ca.games + cb.games), per: mergePer(ca.per, cb.per) }, _a: ca, _b: cb, measuredAt: new Date().toISOString(),
     };
     pool.push(child);
     pool.sort((x, y) => ((y.result && y.result.rate) || 0) - ((x.result && x.result.rate) || 0));
@@ -169,9 +174,17 @@ async function evaluate(d, games, seed) {
   }
 
   // 3. 書き出し。ユーザー・環境のデッキは残し、自動で作ったデッキは上位だけ残す
-  const evaluated = pool.filter((d) => d.result);
-  const autoKept = evaluated.filter((d) => d.origin === 'auto').slice(0, KEEP);
-  const newPool = pool.filter((d) => d.origin !== 'auto' || autoKept.indexOf(d) >= 0);
+  // 時間切れで測れなかったデッキは前回の結果を引き継ぐ（候補からは消さない）
+  pool.forEach((d) => {
+    if (d.result || !prevById[d.id]) return;
+    const pr = prevById[d.id];
+    d.result = { rate: pr.winRate / 100, games: pr.games, per: pr.perOpponent, carried: true };
+    d.measuredAt = pr.measuredAt || prevRanking.updatedAt;
+  });
+  pool.sort((x, y) => ((y.result && y.result.rate) || 0) - ((x.result && x.result.rate) || 0));
+  const autoRanked = pool.filter((d) => d.origin === 'auto' && d.result);
+  const autoKept = autoRanked.slice(0, KEEP);
+  const newPool = pool.filter((d) => d.origin !== 'auto' || !d.result || autoKept.indexOf(d) >= 0);
   const ranking = {
     updatedAt: new Date().toISOString(),
     minutes: Math.round((Date.now() - T0) / 60000),
@@ -180,12 +193,12 @@ async function evaluate(d, games, seed) {
     note: 'CPU（強）同士の対戦シミュレーションでの勝率。人間が使ったときの強さとはずれることがある',
     decks: newPool.filter((d) => d.result).map((d, i) => ({
       rank: i + 1, id: d.id, name: d.name, origin: d.origin, parent: d.parent || null, change: d.change || null,
-      winRate: Math.round(d.result.rate * 1000) / 10, games: d.result.games, perOpponent: d.result.per,
+      winRate: Math.round(d.result.rate * 1000) / 10, games: d.result.games, perOpponent: d.result.per, measuredAt: d.measuredAt || null,
       leaders: d.leaders, leaderNames: d.leaders.map(nameOf),
       code: DeckCode.encode({ name: d.name, leaders: d.leaders, cards: d.cards, tactics: d.tactics }),
     })),
   };
-  const cleanPool = newPool.map((d) => { const o = Object.assign({}, d); delete o.result; delete o._a; delete o._b; return o; });
+  const cleanPool = newPool.map((d) => { const o = Object.assign({}, d); delete o.result; delete o._a; delete o._b; delete o.measuredAt; return o; });
   if (!DRY) {
     fs.writeFileSync(path.join(META, 'ranking.json'), JSON.stringify(ranking, null, 1) + '\n');
     fs.writeFileSync(path.join(META, 'pool.json'), JSON.stringify(cleanPool, null, 1) + '\n');
@@ -194,6 +207,12 @@ async function evaluate(d, games, seed) {
   workers.forEach((w) => w.terminate());
 })().catch((e) => { console.error(e); process.exit(1); });
 
+function nextChildName(parentName) {
+  const base = parentName.replace(/ 改\d*$/, '');
+  let n = 0;
+  pool.forEach((d) => { const m = d.name.match(/ 改(\d+)$/); if (m && d.name.replace(/ 改\d+$/, '') === base) n = Math.max(n, +m[1]); });
+  return base + ' 改' + (n + 1);
+}
 function mergePer(a, b) {
   const out = {};
   Object.keys(a).forEach((k) => {

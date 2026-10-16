@@ -704,7 +704,8 @@
             '<span class="db-meta-rank">' + m.rank + '</span>' +
             '<div class="db-meta-main">' +
               '<div class="db-meta-name">' + esc(m.name) + ' <span class="db-meta-tag o-' + esc(m.origin) + '">' + esc(META_ORIGIN[m.origin] || m.origin) + '</span></div>' +
-              '<div class="db-meta-leaders">' + esc((m.leaderNames || []).join(' / ')) + '</div>' +
+              '<div class="db-meta-leaders">' + esc((m.leaderNames || []).join(' / ')) +
+                (m.measuredAt && (new Date(d.updatedAt) - new Date(m.measuredAt)) > 3600000 ? ' <span class="db-meta-old">（' + esc(new Date(m.measuredAt).toLocaleDateString('ja-JP')) + 'の測定）</span>' : '') + '</div>' +
               (m.change ? '<div class="db-meta-change">' + esc((m.parent ? m.parent + 'から：' : '') + m.change) + '</div>' : '') +
             '</div>' +
             '<span class="db-meta-rate" title="' + esc(Object.keys(m.perOpponent || {}).map(function (k) { return k + ' ' + m.perOpponent[k]; }).join('\n')) + '">' + esc(m.winRate) + '%</span>' +

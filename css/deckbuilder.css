@@ -257,3 +257,4 @@ html,body{font-family:'Noto Sans JP','Hiragino Sans','Hiragino Kaku Gothic ProN'
 .db-meta-leaders{font-size:11px;color:var(--xs-sub);margin-top:2px}
 .db-meta-change{font-size:11px;color:#ffd77a;margin-top:2px}
 .db-meta-rate{font-family:var(--db-num);font-weight:700;font-size:16px;color:#7be0a6;min-width:52px;text-align:right}
+.db-meta-old{color:#9aa8c0;font-size:10px}
