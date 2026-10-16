@@ -50,6 +50,10 @@
     return effectsOf(cardId).some(function (e) {
       var a = e.action;
       if (a && a.type === 'DISCARD_HAND' && (a.who === 'OPPONENT' || a.who === 'ALL') && oppHand === 0) return false;
+      // 復活ビーコン：ダウンしている自分のリーダーがいないなら得にならない。名誉のバッジ：覚醒させられるリーダーがいないなら得にならない
+      var mine = state.players[playerId].leaders;
+      if (a && a.type === 'REVIVE_LEADER' && !mine.some(function (l) { return l.isDown; })) return false;
+      if (a && a.type === 'AWAKEN_LEADER' && !mine.some(function (l) { return !l.isDown && !l.awakened; })) return false;
       return (e.trigger === 'ON_PLAY' && !(a && EQUIP_ACTION_TYPES.indexOf(a.type) >= 0)) || (e.trigger === 'AFTER_ATTACK');
     });
   }
@@ -80,6 +84,8 @@
     var oppHp = oppAlive.map(function (l) { return GameState.getLeaderCurrentHp(cardIndex, l); });
     var oppLow = oppHp.some(function (h) { return h <= 40; });
     var myDowns = me.leaders.length - myAlive.length, oppDowns = opp.leaders.length - oppAlive.length;
+    if (name === 'フォールダウンシールド') return state.match.previousRoundLoser === playerId ? 95 : 3; // 負けた次のラウンドならコスト0の体力+50
+    if (name === '復活ビーコン') return myDowns > 0 ? 130 : (round >= 2 ? 20 : 5);
     if (isHpEquipment(cardId)) return round === 1 ? 100 : (round === 2 ? 70 : 45);
     if (CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(cardId)) return myDowns > oppDowns ? 140 : 10; // 復活ポータル
     switch (name) {
@@ -103,6 +109,8 @@
       case '盗賊キット': return round === 1 ? 40 : 30;
       case 'オートタレット': return round === 1 ? 45 : 30;
       case 'ターゲットフラッグ': return 30;
+      case '名誉のバッジ': return myAlive.some(function (l) { return !l.awakened; }) ? 55 : 3; // 覚醒（体力・攻撃力が上がり、覚醒時の効果も出る）
+      case '電磁スモーク': return 42; // 1枚引く＋相手のタクティクスのコスト+1
       default: return 30 + (card.cost || 0) * 5;
     }
   }
@@ -304,11 +312,12 @@
       player.tacticsArea.forEach(function (t) {
         if (excluded[t.card.instanceId]) return;
         var card = cardIndex[t.card.cardId];
-        if (!card || typeof card.cost !== 'number' || card.cost > pp) return;
+        var tCost = card ? Resolver.getEffectivePlayCost(state, playerId, t.card.cardId, cardIndex) : null; // 盤面で変わるコスト（復活ビーコン等）
+        if (tCost == null || tCost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return; // 効果が未登録のタクティクスは使っても意味が無い
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return; // プレイ条件（復活ポータル）
         var equip = isEquipment(t.card.cardId);
-        plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: card.cost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityNow(state, playerId, t.card.cardId) || equip });
+        plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: tCost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityNow(state, playerId, t.card.cardId) || equip });
       });
     }
     function toAction(p) {
@@ -383,7 +392,8 @@
       player.tacticsArea.forEach(function (t) {
         if (excluded[t.card.instanceId]) return;
         var card = cardIndex[t.card.cardId];
-        if (!card || typeof card.cost !== 'number' || card.cost > pp) return;
+        var tCost = card ? Resolver.getEffectivePlayCost(state, playerId, t.card.cardId, cardIndex) : null;
+        if (tCost == null || tCost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return;
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return;
         if (isEquipment(t.card.cardId)) {
@@ -752,7 +762,9 @@
           var v;
           if (TUNE.smartTactics) {
             v = tacticsSetValue(state, playerId, c.cardId, cardIndex);
-            if (cost > ppMax) v = Math.min(v, 5);
+            var setCost = CardEffectData.getCostRule && CardEffectData.getCostRule(c.cardId) ? Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex) : cost;
+            if ((CardEffectData.getCostRule && CardEffectData.getCostRule(c.cardId) || {}).type === 'PER_OWN_PLAY_AREA') setCost = 1; // 復活ビーコン：プレイエリアにカードを並べれば1まで下がる
+            if (setCost > ppMax) v = Math.min(v, 5);
           } else {
             // 旧：体力を増やす装備は1ラウンド目に置く。それ以外は、このラウンドのPPで使える中で一番コストの高いもの
             v = cost <= ppMax ? 30 + cost * 5 : 0;

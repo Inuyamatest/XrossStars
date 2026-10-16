@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261008s';
+  var APP_VERSION = '20261016a';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -1158,10 +1158,12 @@
       }
       var card = cardOf(t.card.cardId);
       var equip = isEquipmentCard(t.card.cardId);
-      var affordable = card.cost != null && card.cost <= pp;
+      // コストは盤面で変わることがある（復活ビーコン・フォールダウンシールド・相手の電磁スモーク）
+      var tCost = card.cardType === 'TACTICS' ? Eng.Resolver.getEffectivePlayCost(state, playerId, t.card.cardId, cardIndex) : card.cost;
+      var affordable = tCost != null && tCost <= pp;
       var disabled = !canPlay || !affordable || !Eng.Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex);
       return '' +
-        '<div class="bt-mini tactics" title="' + esc(card.name) + '（C' + (card.cost != null ? card.cost : '?') + '・' + (equip ? '装備' : '消費') + '）">' +
+        '<div class="bt-mini tactics" title="' + esc(card.name) + '（C' + (tCost != null ? tCost : '?') + (tCost != null && tCost !== card.cost ? '／元' + card.cost : '') + '・' + (equip ? '装備' : '消費') + '）">' +
           '<div class="bt-mcard" data-act="show-detail" data-card="' + esc(t.card.cardId) + '" data-preview="' + esc(t.card.cardId) + '">' + imgTag((card.cardType === 'PP_TICKET' && ppDesign(playerId, 'ticket')) || card, false, 'bt-mnoimg') + '</div>' +
           (isActive && !readOnly ? '<button class="bt-mplay' + (disabled ? '' : ' ready') + '" data-act="play-tactics" data-instance="' + esc(t.card.instanceId) + '" data-equip="' + (equip ? 1 : 0) + '"' + (disabled ? ' disabled' : '') + '>' + (equip ? '装備' : '使う') + '</button>' : '') +
         '</div>';

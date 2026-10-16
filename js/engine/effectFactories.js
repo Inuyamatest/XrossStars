@@ -402,6 +402,18 @@
     };
   }
 
+  // 「自分のリーダー1体を覚醒させる」（名誉のバッジ）：ダウンしていない・まだ覚醒していない自分のリーダーから選ぶ
+  function makeOwnUnawakenedLeaderTarget() {
+    return function (state, ctx) {
+      var candidates = [];
+      state.players[ctx.ownerPlayerId].leaders.forEach(function (l, i) { if (!l.isDown && !l.awakened) candidates.push({ playerId: ctx.ownerPlayerId, leaderIndex: i }); });
+      if (!candidates.length) return [];
+      var pick = ctx.chooseTarget ? ctx.chooseTarget(candidates, state) : 0;
+      if (pick == null || pick < 0 || pick >= candidates.length) pick = 0;
+      return [candidates[pick]];
+    };
+  }
+
   // 「対戦相手よりダウンしているリーダーが多いなら」（復活ポータルのプレイ条件）
   function makeMoreDownedThanOpponentCondition() {
     return function (state, ctx) {
@@ -447,6 +459,7 @@
     countOwnLeadersWithAffiliation: countOwnLeadersWithAffiliation,
     makeAllOwnLeadersHaveAffiliationCondition: makeAllOwnLeadersHaveAffiliationCondition,
     makeOwnDownedLeaderTarget: makeOwnDownedLeaderTarget,
+    makeOwnUnawakenedLeaderTarget: makeOwnUnawakenedLeaderTarget,
     makeMoreDownedThanOpponentCondition: makeMoreDownedThanOpponentCondition,
     makeAfterAttackDamageDealtCondition: makeAfterAttackDamageDealtCondition,
   };
