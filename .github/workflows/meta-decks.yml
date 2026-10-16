@@ -1,0 +1,44 @@
+# おすすめデッキの自動探索（毎晩）。CPU同士の対戦シミュレーションで候補デッキの勝率を測り、
+# 1か所ずつ入れ替えて強くなったデッキを探して data/meta/ranking.json を更新する。Claude は使わない。
+name: おすすめデッキ探索
+
+on:
+  schedule:
+    - cron: '17 17 * * *' # 毎日 2:17（日本時間）
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: '探索する時間（分）'
+        required: false
+        default: '300'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: meta-decks
+  cancel-in-progress: false
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 探索
+        run: node scripts/meta/run.js --minutes "${{ github.event.inputs.minutes || '300' }}"
+      - name: 結果を保存
+        run: |
+          git config user.name 'meta-decks-bot'
+          git config user.email 'meta-decks-bot@users.noreply.github.com'
+          git add data/meta/ranking.json data/meta/pool.json
+          if git diff --cached --quiet; then echo '変更なし'; exit 0; fi
+          git commit -m 'おすすめデッキを更新（自動探索）'
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            sleep $((i * 10))
+          done
+          exit 1

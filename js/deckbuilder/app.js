@@ -303,6 +303,7 @@
         '<button class="db-btn" data-act="load">読み込み</button>' +
         '<button class="db-btn" data-act="gencode">デッキコード発行</button>' +
         '<button class="db-btn" data-act="loadcode">コード読み込み</button>' +
+        '<button class="db-btn db-btn-meta" data-act="meta" title="毎晩の自動探索で見つかった強いデッキ">🏆 おすすめ</button>' +
       '</div>';
   }
 
@@ -663,6 +664,7 @@
     if (state.modal === 'loadcode') {
       return modalWrap('デッキコード読み込み', '<p>URLまたはコードを貼り付けてください。</p><textarea class="db-code-box" id="code-input" placeholder="https://.../deckbuilder.html#d=..."></textarea><button class="db-btn primary" data-act="do-loadcode" style="margin-top:8px">読み込む</button>');
     }
+    if (state.modal === 'meta') return renderMetaModal();
     if (state.modal === 'draw' && state.draw) return renderDrawModal();
     if (state.modal === 'detail' && state.detailCard) {
       var c = state.detailCard;
@@ -677,6 +679,42 @@
     }
     return '';
   }
+  // ---------- おすすめデッキ（毎晩の自動探索の結果 data/meta/ranking.json） ----------
+  var meta = { loading: false, data: null, error: '' };
+  function loadMeta() {
+    if (meta.loading || meta.data) return;
+    meta.loading = true; meta.error = '';
+    fetch('data/meta/ranking.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { meta.data = d; })
+      .catch(function () { meta.error = 'まだ結果がありません（毎晩2時ごろに自動で探索します）'; })
+      .then(function () { meta.loading = false; if (state.modal === 'meta') render(); });
+  }
+  var META_ORIGIN = { auto: '自動探索', claude: 'Claude', user: '持ち込み', field: '環境' };
+  function renderMetaModal() {
+    var d = meta.data;
+    var body;
+    if (meta.loading && !d) body = '<div class="db-empty">読み込み中…</div>';
+    else if (!d) body = '<div class="db-empty">' + esc(meta.error || '読み込み中…') + '</div>';
+    else {
+      var when = new Date(d.updatedAt);
+      body = '<p class="db-meta-note">更新：' + esc(when.toLocaleString('ja-JP')) + '　／　環境の' + (d.field || []).length + 'デッキと、1つにつき' + esc(d.gamesPerOpponent) + '戦ずつ（CPU・強）。' + esc(d.note || '') + '</p>' +
+        '<div class="db-savedlist db-meta-list">' + (d.decks || []).map(function (m, i) {
+          return '<div class="row db-meta-row">' +
+            '<span class="db-meta-rank">' + m.rank + '</span>' +
+            '<div class="db-meta-main">' +
+              '<div class="db-meta-name">' + esc(m.name) + ' <span class="db-meta-tag o-' + esc(m.origin) + '">' + esc(META_ORIGIN[m.origin] || m.origin) + '</span></div>' +
+              '<div class="db-meta-leaders">' + esc((m.leaderNames || []).join(' / ')) + '</div>' +
+              (m.change ? '<div class="db-meta-change">' + esc((m.parent ? m.parent + 'から：' : '') + m.change) + '</div>' : '') +
+            '</div>' +
+            '<span class="db-meta-rate" title="' + esc(Object.keys(m.perOpponent || {}).map(function (k) { return k + ' ' + m.perOpponent[k]; }).join('\n')) + '">' + esc(m.winRate) + '%</span>' +
+            '<button class="db-btn" data-act="meta-load" data-index="' + i + '">読み込む</button>' +
+          '</div>';
+        }).join('') + '</div>';
+    }
+    return modalWrap('おすすめデッキ（自動探索）', body, 640);
+  }
+
   function modalWrap(title, body, width) {
     return '' +
       '<div class="db-modal-overlay" data-act="close-modal">' +
@@ -771,6 +809,12 @@
       return;
     }
     if (act === 'loadcode') { state.modal = 'loadcode'; render(); return; }
+    if (act === 'meta') { state.modal = 'meta'; loadMeta(); render(); return; }
+    if (act === 'meta-load') {
+      var md = meta.data && meta.data.decks[Number(el.getAttribute('data-index'))];
+      if (md) { state.modal = null; loadFromCodeString(md.code); }
+      return;
+    }
     if (act === 'do-loadcode') {
       var input = document.getElementById('code-input');
       if (input) loadFromCodeString(input.value);
