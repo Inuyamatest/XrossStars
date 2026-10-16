@@ -480,6 +480,20 @@
         return state;
       }
 
+      case 'AWAKEN_LEADER':
+        // 名誉のバッジ「自分のリーダー1体を覚醒させる。」覚醒したリーダーの〖覚醒時〗効果も発動する（アタックで覚醒したときと同じ）
+        (targets || []).forEach(function (ref) {
+          var leader = state.players[ref.playerId].leaders[ref.leaderIndex];
+          if (!leader || leader.isDown || leader.awakened) return;
+          leader.awakened = true;
+          Events.logEvent(state, 'LEADER_AWAKENED', { playerId: ref.playerId, leaderIndex: ref.leaderIndex });
+          var awakenCtx = Object.assign({}, ctx, { ownerPlayerId: ref.playerId, chooseTarget: ctx.chooseHealTarget || ctx.chooseTarget });
+          CardEffectData.getEffectsForCard(leader.cardId)
+            .filter(function (e) { return e.trigger === 'ON_AWAKEN'; })
+            .forEach(function (e) { ResolutionStack.push(state.resolutionStack, buildPendingEffect(e, awakenCtx, cardIndex)); });
+        });
+        return state;
+
       case 'REVIVE_LEADER':
         // 復活ポータル「ダウンしている自分のリーダー1体を、ダウンしていない状態に戻す。そのリーダーが装備している
         // カードすべてを表向きにトラッシュに置く。」対象はtarget（makeOwnDownedLeaderTarget）で選ぶ。
@@ -1147,7 +1161,8 @@
       throw new Error('このカードは今はプレイできません（プレイ条件を満たしていません）');
     }
 
-    var result = Phases.playTacticsCard(state, playerId, cardInstanceId, options, cardIndex);
+    var tacticsCost = cardId ? getEffectivePlayCost(state, playerId, cardId, cardIndex) : null;
+    var result = Phases.playTacticsCard(state, playerId, cardInstanceId, Object.assign({}, options, tacticsCost != null ? { costOverride: tacticsCost } : {}), cardIndex);
 
     if (options && options.subType === 'EQUIPMENT') {
       var leader = state.players[playerId].leaders[options.equipLeaderIndex];
@@ -1194,7 +1209,22 @@
   function getEffectivePlayCost(state, playerId, cardId, cardIndex) {
     var card = cardIndex[cardId];
     if (!card || typeof card.cost !== 'number') return null;
-    return isFreeBySameNameRule(state, playerId, cardId, cardIndex) ? 0 : card.cost;
+    if (isFreeBySameNameRule(state, playerId, cardId, cardIndex)) return 0;
+    var cost = card.cost;
+    var rule = CardEffectData.getCostRule && CardEffectData.getCostRule(cardId);
+    if (rule && rule.type === 'PER_OWN_PLAY_AREA') {
+      // 復活ビーコン「自分のプレイエリアのカード1枚につき、このカードのコストを-1する。このカードのコストは1までしか下がらない。」
+      cost = Math.max(rule.min != null ? rule.min : 0, cost + rule.amount * state.players[playerId].playArea.length);
+    } else if (rule && rule.type === 'PREVIOUS_ROUND_LOST') {
+      // フォールダウンシールド「直前のラウンドであなたが負けているなら、このカードのコストを-5する。」
+      if (state.match && state.match.previousRoundLoser === playerId) cost = Math.max(0, cost + rule.amount);
+    }
+    if (card.cardType === 'TACTICS') {
+      // 電磁スモーク「このラウンド、対戦相手のタクティクスカードのコストを+1する。」（相手のプレイエリアに残っている枚数分）
+      var opp = state.players[GameState.getOpponentId(playerId)];
+      opp.playArea.forEach(function (entry) { if (CardEffectData.hasKeyword(entry.card.cardId, 'OPPONENT_TACTICS_COST_PLUS_1')) cost += 1; });
+    }
+    return cost;
   }
 
   // ---- 〖アタックする〗のうち、ダメージを決める前に盤面を動かす処理（選択・公開・破棄を伴うもの）----
@@ -1239,7 +1269,7 @@
             if (!(ctx.chooseConfirm && ctx.chooseConfirm({ kind: 'RANDOM_DISCARD', title: '手札を1枚ランダムに捨てますか？（捨てるとダメージ+' + a.bonus + '）' }, state))) return;
             ids = [cands[Math.floor(Math.random() * cands.length)].instanceId];
           } else {
-            ids = ctx.chooseAttackDiscard ? (ctx.chooseAttackDiscard(cands.slice(), { max: 1, bonus: a.bonus }, state) || []) : [];
+            ids = ctx.chooseAttackDiscard ? (ctx.chooseAttackDiscard(cands.slice(), { max: 1, bonus: a.bonus, draw: a.draw || 0 }, state) || []) : [];
             ids = ids.filter(function (id) { return cands.some(function (c) { return c.instanceId === id; }); }).slice(0, 1);
           }
           if (ids.length === 0) return;

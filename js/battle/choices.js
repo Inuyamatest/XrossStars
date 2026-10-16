@@ -217,7 +217,7 @@
         var title = spec && spec.bonus
           ? '捨てるカードを選んでください（捨てるとダメージ+' + spec.bonus + '。捨てない場合は「しない」）'
           : '公開して捨てるカードを選んでください（最大' + spec.max + '枚。0枚でもよい）';
-        var a = ask(q({ kind: 'ATTACK_DISCARD', type: 'CARDS', title: title, cards: cardList(cands), min: 0, max: spec.max, declineLabel: spec && spec.bonus ? 'しない' : '捨てない' }));
+        var a = ask(q({ kind: 'ATTACK_DISCARD', type: 'CARDS', title: title, cards: cardList(cands), min: 0, max: spec.max, draw: (spec && spec.draw) || 0, declineLabel: spec && spec.bonus ? 'しない' : '捨てない' }));
         return a.map(function (i) { return cands[i].instanceId; });
       },
 

@@ -1677,6 +1677,25 @@
     'BP01-094': [E({ trigger: 'ON_PLAY', target: F.makeOwnDownedLeaderTarget(), action: { type: 'REVIVE_LEADER' } })],
     'BP02-075': [E({ trigger: 'ON_PLAY', target: F.makeOwnDownedLeaderTarget(), action: { type: 'REVIVE_LEADER' } })],
 
+    // ---- 第5弾タクティクス（カード画像で確認） ----
+    // BP05-076 電磁スモーク（タクティクス, 無, cost0, 消費）
+    // カードテキスト: "〖プレイ時〗カードを1枚引く。 〖ラウンド中〗このラウンド、対戦相手のタクティクスカードのコストを+1する。
+    //  （このカードはターン終了時にトラッシュに置かない。）"
+    // （コスト+1は effectResolver.js getEffectivePlayCost がKEYWORDSのOPPONENT_TACTICS_COST_PLUS_1を数えて反映）
+    'BP05-076': [E({ trigger: 'ON_PLAY', action: { type: 'DRAW', amount: 1 } })],
+    // BP05-077 名誉のバッジ（タクティクス, 無, cost0, 消費）
+    // カードテキスト: "〖プレイ時〗自分のリーダー1体を覚醒させる。"
+    'BP05-077': [E({ trigger: 'ON_PLAY', target: F.makeOwnUnawakenedLeaderTarget(), action: { type: 'AWAKEN_LEADER' } })],
+    // BP05-078 復活ビーコン（タクティクス, 無, cost5, 消費）
+    // カードテキスト: "このカードのコストは1までしか下がらない。 自分のプレイエリアのカード1枚につき、このカードのコストを-1する。
+    //  〖プレイ時〗ダウンしている自分のリーダー1体を、ダウンしていない状態に戻す。そのリーダーが装備しているカードすべてを表向きにトラッシュに置く。"
+    // （コストの増減はCOST_RULES。プレイ時の効果は復活ポータルと同じ）
+    'BP05-078': [E({ trigger: 'ON_PLAY', target: F.makeOwnDownedLeaderTarget(), action: { type: 'REVIVE_LEADER' } })],
+    // BP05-079 フォールダウンシールド（タクティクス, 無, cost5, 装備）
+    // カードテキスト: "直前のラウンドであなたが負けているなら、このカードのコストを-5する。 体力+50"
+    'BP05-079': [E({ trigger: 'ON_PLAY', duration: 'PERMANENT', action: { type: 'EQUIP_HP_MODIFIER', amount: 50 } })],
+
+
     // BP03-080 / BP04-073 サイバネアーマー（タクティクス, 無, cost0, 装備）
     // カードテキスト: "これを装備しているリーダーが覚醒していないなら、基本の体力は140になる。これを装備しているリーダーが
     //  覚醒しているなら、基本の体力は170になる。"（gameState.js getLeaderMaxHp が基本の体力を置き換える）
@@ -2012,7 +2031,20 @@
     'BP03-044': ['FREE_IF_ONE_SAME_NAME_IN_PLAY'], // ロケットシャワー
     'BP03-076': ['RETURN_TO_TACTICS_AREA'], // 追加マガジン：トラッシュに置く代わりにタクティクスエリアへ戻す
     'BP03-077': ['STAYS_IN_PLAY_THIS_ROUND'], // パワーフィールド：ターン終了時にトラッシュに置かない
+    'BP05-076': ['STAYS_IN_PLAY_THIS_ROUND', 'OPPONENT_TACTICS_COST_PLUS_1'], // 電磁スモーク：このラウンド、相手のタクティクスのコスト+1
   };
+
+  // コストが盤面で変わるカード（effectResolver.js getEffectivePlayCost が参照）
+  //   PER_OWN_PLAY_AREA: 自分のプレイエリアのカード1枚につき amount（min まで）
+  //   PREVIOUS_ROUND_LOST: 直前のラウンドで自分が負けているなら amount
+  var COST_RULES = {
+    'BP05-078': { type: 'PER_OWN_PLAY_AREA', amount: -1, min: 1 }, // 復活ビーコン
+    'BP05-079': { type: 'PREVIOUS_ROUND_LOST', amount: -5 },       // フォールダウンシールド
+  };
+  function getCostRule(cardId) {
+    var id = COST_RULES[cardId] ? cardId : ((ParallelAliases && ParallelAliases[cardId]) || cardId);
+    return COST_RULES[id] || null;
+  }
 
   // プレイ条件（満たさないとプレイできない）。(state, {ownerPlayerId, cardIndex}) => boolean
   var PLAY_CONDITIONS = {
@@ -2051,5 +2083,6 @@
     hasEffects: hasEffects,
     hasKeyword: hasKeyword,
     getPlayCondition: getPlayCondition,
+    getCostRule: getCostRule,
   };
 }));

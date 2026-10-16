@@ -166,7 +166,8 @@
 
     var entry = player.tacticsArea[areaIdx];
     var card = GameState.getCardData(cardIndex, entry.card.cardId);
-    var cost = requireKnownCost(card);
+    // costOverride：盤面で変わるコスト（復活ビーコン・フォールダウンシールド・電磁スモーク）。EffectResolverが計算して渡す
+    var cost = (options && typeof options.costOverride === 'number') ? options.costOverride : requireKnownCost(card);
     if (!payPP(player, cost)) {
       throw new Error('PPが不足しています（必要:' + cost + '）');
     }

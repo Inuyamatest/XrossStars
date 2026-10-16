@@ -50,16 +50,69 @@
     return effectsOf(cardId).some(function (e) {
       var a = e.action;
       if (a && a.type === 'DISCARD_HAND' && (a.who === 'OPPONENT' || a.who === 'ALL') && oppHand === 0) return false;
+      // 復活ビーコン：ダウンしている自分のリーダーがいないなら得にならない。名誉のバッジ：覚醒させられるリーダーがいないなら得にならない
+      var mine = state.players[playerId].leaders;
+      if (a && a.type === 'REVIVE_LEADER' && !mine.some(function (l) { return l.isDown; })) return false;
+      if (a && a.type === 'AWAKEN_LEADER' && !mine.some(function (l) { return !l.isDown && !l.awakened; })) return false;
       return (e.trigger === 'ON_PLAY' && !(a && EQUIP_ACTION_TYPES.indexOf(a.type) >= 0)) || (e.trigger === 'AFTER_ATTACK');
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3 };
+  var TUNE = { smartTactics: true, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
   function isEquipmentByEffects(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && EQUIP_ACTION_TYPES.indexOf(e.action.type) >= 0; });
+  }
+
+  // ラウンド開始時に置くタクティクスの値打ち（ダメージ換算のおおよその点数）。
+  // 置いたタクティクスはそのラウンド中に使う前提で、今の盤面（減っている体力・ダウン数・相手の残り体力・ラウンド）から見積もる
+  function tacticsSetValue(state, playerId, cardId, cardIndex) {
+    var me = state.players[playerId];
+    var opp = state.players[GameState.getOpponentId(playerId)];
+    var round = state.match.roundNumber;
+    var card = cardIndex[cardId] || {};
+    var name = card.name || '';
+    var myAlive = me.leaders.filter(function (l) { return !l.isDown; });
+    var oppAlive = opp.leaders.filter(function (l) { return !l.isDown; });
+    var missing = myAlive.map(function (l) { return l.damage || 0; });
+    var totalMissing = missing.reduce(function (a, b) { return a + b; }, 0);
+    var maxMissing = missing.reduce(function (a, b) { return Math.max(a, b); }, 0);
+    // このラウンド中に受けるダメージも見込む（ラウンドが進むほど体力は減っている）
+    var expectMissing = function (cap) { return Math.min(cap, totalMissing + 30); };
+    var oppHp = oppAlive.map(function (l) { return GameState.getLeaderCurrentHp(cardIndex, l); });
+    var oppLow = oppHp.some(function (h) { return h <= 40; });
+    var myDowns = me.leaders.length - myAlive.length, oppDowns = opp.leaders.length - oppAlive.length;
+    if (name === 'フォールダウンシールド') return state.match.previousRoundLoser === playerId ? 95 : 3; // 負けた次のラウンドならコスト0の体力+50
+    if (name === '復活ビーコン') return myDowns > 0 ? 130 : (round >= 2 ? 20 : 5);
+    if (isHpEquipment(cardId)) return round === 1 ? 100 : (round === 2 ? 70 : 45);
+    if (CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(cardId)) return myDowns > oppDowns ? 140 : 10; // 復活ポータル
+    switch (name) {
+      case '救急キット': return 15 + expectMissing(80) * 0.9;
+      case 'ヒーリングオーブ': return 25 + Math.min(60, maxMissing + 20) * 0.8 + (round < 3 ? 15 : 5);
+      case 'ドレインロッド': return 10 + Math.min(40, totalMissing) * 1.8;
+      case '攻撃要請': return oppLow ? 80 : 50;
+      case '一斉攻撃': return 45 + (me.trash.some(function (t) { return (cardIndex[t.card.cardId] || {}).name === '攻撃要請'; }) ? 35 : 0);
+      case 'ファイヤークラッカー': return 15 + 10 * oppAlive.length + (oppHp.some(function (h) { return h <= 10; }) ? 30 : 0);
+      case 'ストラテジックレーダー': return 40;
+      case 'アドレナリン': return 50;
+      case 'エナジーチャージャー': return 45;
+      case '特殊弾': return 60;
+      case '呪いの人形': return 50;
+      case 'ジャミングパルス': return 35;
+      case '追加マガジン': return 40 + (3 - round) * 5;
+      case 'パワーフィールド': return 10 * myAlive.length + 5;
+      case '討伐クエスト': return 35;
+      case 'アイテムショップ': return 35;
+      case 'メリケンサック': return round === 1 ? 50 : 35;
+      case '盗賊キット': return round === 1 ? 40 : 30;
+      case 'オートタレット': return round === 1 ? 45 : 30;
+      case 'ターゲットフラッグ': return 30;
+      case '名誉のバッジ': return myAlive.some(function (l) { return !l.awakened; }) ? 55 : 3; // 覚醒（体力・攻撃力が上がり、覚醒時の効果も出る）
+      case '電磁スモーク': return 42; // 1枚引く＋相手のタクティクスのコスト+1
+      default: return 30 + (card.cost || 0) * 5;
+    }
   }
 
   function ppLeft(player) { return player.ppCards.max - player.ppCards.tapped; }
@@ -86,6 +139,30 @@
     var count = Resolver.getMultiAttackCount(cardId) || 1;
     var dmg = downs ? hp : Math.max(0, atk + base) * count + boost;
     return { damage: dmg, hp: hp, kill: dmg >= hp };
+  }
+
+  // 複数回アタック（ストームラッシュ）の対象の割り振り：同じリーダーに全部撃つと、1回目でダウンさせた後の残りが無駄になる。
+  // 1回ずつ「この1回で倒せる相手（体力の多い順）」→いなければ「残り体力の一番少ない相手」を選ぶ（倒し切れる相手を順番に狙う）
+  function planMultiAttack(state, playerId, cardId, attackerIndex, count, cardIndex) {
+    var player = state.players[playerId];
+    var oppId = GameState.getOpponentId(playerId);
+    var targets = Resolver.getAllowedAttackTargets(state, playerId);
+    var remain = {};
+    targets.forEach(function (ti) { remain[ti] = GameState.getLeaderCurrentHp(cardIndex, state.players[oppId].leaders[ti]); });
+    var ctx = { ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: targets[0], cardIndex: cardIndex };
+    var per = Math.max(0, GameState.getLeaderCurrentAtk(cardIndex, player.leaders[attackerIndex]) + Resolver.computeAttackCardBaseDamage(cardId, state, ctx));
+    var first = per + (player.pendingAttackBoost || 0);
+    var out = [];
+    for (var k = 0; k < count; k++) {
+      var dmg = k === 0 ? first : per;
+      var alive = targets.filter(function (ti) { return remain[ti] > 0; });
+      if (!alive.length) alive = targets;
+      var killable = alive.filter(function (ti) { return remain[ti] <= dmg; }).sort(function (a, b) { return remain[b] - remain[a]; });
+      var ti = killable.length ? killable[0] : alive.slice().sort(function (a, b) { return remain[a] - remain[b]; })[0];
+      remain[ti] -= dmg;
+      out.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: ti });
+    }
+    return { attacks: out };
   }
 
   // アタック後効果の見積もり（中の判断と、強のターンの残りの見積もりで使う。強の1手目は盤面のコピーで実行して比べる）。
@@ -228,17 +305,19 @@
       if (!card || card.cardType !== 'MEMORIA') return;
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
+      if (TUNE.combo && !comboReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // コンボの準備カードは決め手を撃てるときまで温存
       plays.push({ kind: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId, cost: cost, boost: boostAmountOf(c.cardId), utility: hasUtilityNow(state, playerId, c.cardId) });
     });
     if (Phases.canPlayTactics(state)) {
       player.tacticsArea.forEach(function (t) {
         if (excluded[t.card.instanceId]) return;
         var card = cardIndex[t.card.cardId];
-        if (!card || typeof card.cost !== 'number' || card.cost > pp) return;
+        var tCost = card ? Resolver.getEffectivePlayCost(state, playerId, t.card.cardId, cardIndex) : null; // 盤面で変わるコスト（復活ビーコン等）
+        if (tCost == null || tCost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return; // 効果が未登録のタクティクスは使っても意味が無い
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return; // プレイ条件（復活ポータル）
         var equip = isEquipment(t.card.cardId);
-        plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: card.cost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityNow(state, playerId, t.card.cardId) || equip });
+        plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: tCost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityNow(state, playerId, t.card.cardId) || equip });
       });
     }
     function toAction(p) {
@@ -262,7 +341,8 @@
       var count = Resolver.getMultiAttackCount(attack.cardId);
       var oppId = GameState.getOpponentId(playerId);
       var options = { attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target };
-      if (count) {
+      if (count && TUNE.multiPlan) options = planMultiAttack(state, playerId, attack.cardId, attack.attacker, count, cardIndex);
+      else if (count) {
         options = { attacks: [] };
         for (var i = 0; i < count; i++) options.attacks.push({ attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target });
       }
@@ -290,9 +370,11 @@
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
       if (card.cardType === 'MEMORIA') {
+        if (TUNE.combo && !comboReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // コンボの準備カードは温存
         acts.push({ type: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId });
       } else if (card.cardType === 'ATTACK') {
         var count = Resolver.getMultiAttackCount(c.cardId);
+        if (count && TUNE.multiPlan) aliveIndexes(player).forEach(function (ai) { acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: planMultiAttack(state, playerId, c.cardId, ai, count, cardIndex) }); });
         aliveIndexes(player).forEach(function (ai) {
           Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
             var one = { attackerLeaderIndex: ai, targetPlayerId: oppId, targetLeaderIndex: ti };
@@ -310,7 +392,8 @@
       player.tacticsArea.forEach(function (t) {
         if (excluded[t.card.instanceId]) return;
         var card = cardIndex[t.card.cardId];
-        if (!card || typeof card.cost !== 'number' || card.cost > pp) return;
+        var tCost = card ? Resolver.getEffectivePlayCost(state, playerId, t.card.cardId, cardIndex) : null;
+        if (tCost == null || tCost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return;
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return;
         if (isEquipment(t.card.cardId)) {
@@ -437,6 +520,61 @@
     return score * TUNE.oppHand;
   }
 
+  // ---------- コンボ（揃えて同じターンに使うと強い組み合わせ）----------
+  // enabler（準備のメモリア）は、payoff（決め手のアタック）を同じターンに撃てるときまで手札に温存する。
+  // 名前で判定する（パラレル版も同じカードとして扱う）。hold＝揃っているときに手札に残す価値（evaluateの点数）
+  var COMBOS = [
+    { enabler: '先導者の証', payoffs: ['ストームラッシュ'], hold: 70 },                                        // 攻撃力+30 → 3回アタック
+    { enabler: 'グレイトフルファーマー', payoffs: ['ダブルダウン', 'ストームラッシュ', 'ロケットランチャー', '勝利の雄たけび'], hold: 50 }, // アタックをもう一度
+  ];
+  function nameOf(cardId, cardIndex) { var c = cardIndex[cardId]; return c ? c.name : ''; }
+  function countNames(list, names, cardIndex) {
+    return list.reduce(function (n, c) { return n + (names.indexOf(nameOf(c.cardId || (c.card && c.card.cardId), cardIndex)) >= 0 ? 1 : 0); }, 0);
+  }
+  function comboHoldScore(me, cardIndex) {
+    var score = 0;
+    COMBOS.forEach(function (cb) {
+      var en = countNames(me.hand, [cb.enabler], cardIndex);
+      if (!en) return;
+      var payHand = countNames(me.hand, cb.payoffs, cardIndex);
+      var payDeck = countNames(me.deck, cb.payoffs, cardIndex);
+      if (payHand) score += cb.hold * Math.min(en, payHand) + cb.hold * 0.4 * Math.max(0, en - payHand);
+      else if (payDeck) score += cb.hold * 0.4 * en;
+    });
+    return score;
+  }
+  // 準備カードを今プレイしてよいか：準備カードでなければ常にtrue。準備カードなら、手札の決め手を同じターンに撃てる（PPが足りる）ときだけ
+  function comboReady(state, playerId, cardId, cost, pp, cardIndex, excluded) {
+    var name = nameOf(cardId, cardIndex);
+    var cb = COMBOS.filter(function (x) { return x.enabler === name; })[0];
+    if (!cb) return true;
+    var me = state.players[playerId];
+    if (!countNames(me.hand, cb.payoffs, cardIndex) && !countNames(me.deck, cb.payoffs, cardIndex)) return true; // 決め手がもう残っていなければ普通に使う
+    return me.hand.some(function (h) {
+      if ((excluded && excluded[h.instanceId]) || cb.payoffs.indexOf(nameOf(h.cardId, cardIndex)) < 0) return false;
+      var pc = Resolver.getEffectivePlayCost(state, playerId, h.cardId, cardIndex);
+      return pc != null && cost + pc <= pp;
+    });
+  }
+  // このアクションが「手札に決め手があるときの準備カード」か（2手先まで必ず読む）
+  function isComboStarter(state, playerId, act, cardIndex) {
+    if (!act || act.type !== 'MEMORIA') return false;
+    var name = nameOf(act.cardId, cardIndex);
+    var hand = state.players[playerId].hand;
+    return COMBOS.some(function (cb) { return cb.enabler === name && countNames(hand, cb.payoffs, cardIndex) > 0; });
+  }
+  // 手札に加えるカードの選び方（討伐クエスト等）：足りないコンボパーツ＞ACE＞コストの高いカード
+  function addToHandValue(cardId, hand, cardIndex) {
+    var cd = cardIndex[cardId];
+    if (!cd) return 0;
+    var v = (typeof cd.cost === 'number' ? cd.cost : 0) * 8 + (cd.ace ? 20 : 0);
+    COMBOS.forEach(function (cb) {
+      if (cd.name === cb.enabler) v += countNames(hand, cb.payoffs, cardIndex) ? 120 : 40;
+      if (cb.payoffs.indexOf(cd.name) >= 0) v += countNames(hand, [cb.enabler], cardIndex) ? 120 : 30;
+    });
+    return v;
+  }
+
   function evaluate(s, playerId, cardIndex, base) {
     var oppId = GameState.getOpponentId(playerId);
     if (s.match.status === 'FINISHED') return s.match.winner === playerId ? 1e6 : (s.match.winner === 'DRAW' ? 0 : -1e6);
@@ -459,6 +597,7 @@
       score += (l.equipment || []).length * 18;
     });
     score += handScore(me, s.players[oppId], cardIndex);
+    if (TUNE.combo) score += comboHoldScore(me, cardIndex);
     score -= oppHandScore(s, base, playerId, cardIndex);
     score += (me.pendingAttackBoost || 0) * 0.5;
     score += me.tacticsArea.length * 4;
@@ -479,7 +618,9 @@
     // 2手先まで読む：点数の高い1手目（上位TUNE.depth2Top個）について、2手目もすべて試してからターンの残りを進める
     if (TUNE.depth2 && tried.length > 1) {
       tried.sort(function (a, b) { return b.score - a.score; });
-      tried.slice(0, TUNE.depth2Top).forEach(function (t) {
+      var explore = tried.slice(0, TUNE.depth2Top);
+      if (TUNE.combo) tried.slice(TUNE.depth2Top).forEach(function (t) { if (isComboStarter(state, playerId, t.act, cardIndex)) explore.push(t); }); // コンボの1手目は点数が低く見えても必ず続きを読む
+      explore.forEach(function (t) {
         if (turnOver(t.s1, playerId, base)) return;
         secondActions(t.s1, playerId, cardIndex, helpers).forEach(function (a2) {
           var s2 = simulate(t.s1, playerId, a2, cardIndex);
@@ -528,6 +669,13 @@
     var cd = cardIndex[c.cardId];
     return cd && typeof cd.cost === 'number' ? cd.cost : 99; // コスト未確定（プレイできない）カードは真っ先に捨てる
   }
+  // 捨てる順：エース以外 → コストの低い順
+  function discardOrder(cards, cardIndex) {
+    return cards.map(function (c, i) { var cd = cardIndex[c.cardId]; return { i: i, ace: !!(cd && cd.ace), cost: cardCost(c, cardIndex) }; })
+      .sort(function (a, b) { return (a.ace - b.ace) || ((a.cost === 99 ? -1 : a.cost) - (b.cost === 99 ? -1 : b.cost)); })
+      .map(function (x) { return x.i; });
+  }
+
   function cheapestIndexes(cards, n, cardIndex) {
     return cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; })
       .sort(function (a, b) { return (a.cost === 99 ? -1 : a.cost) - (b.cost === 99 ? -1 : b.cost); })
@@ -606,16 +754,23 @@
         // 相手のタクティクスは裏向きなので、どれを選んでも同じ（ランダム）
         return [Math.floor(Math.random() * cards.length)];
       case 'SET_TACTICS': {
-        // ラウンド開始時のタクティクス。装備は試合の終わりまで残るので、体力を増やす装備（ライトシールド・
-        // サイバネアーマー等）は1ラウンド目に置いて早く使う（体力を増やして、相手の倒しきりの計算をずらす）。
-        // それ以外は、このラウンドのPPで使える中で一番コストの高いもの（無ければ一番安いもの）
+        // ラウンド開始時のタクティクス（そのラウンドに使える1枚を裏向きに置く）。TUNE.smartTactics のときは盤面を見て選ぶ
         var ppMax = player.ppCards.max;
         var round = state.match.roundNumber;
         var scored = cards.map(function (c, i) {
           var cost = cardCost(c, cardIndex);
-          var v = cost <= ppMax ? 30 + cost * 5 : 0;
-          if (TUNE.hpEquipFirst && isHpEquipment(c.cardId)) v = round === 1 ? 100 : 60;
-          if (TUNE.hpEquipFirst && CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(c.cardId)) v = Math.min(v, 20); // 復活ポータル等：条件を満たすまで使えない
+          var v;
+          if (TUNE.smartTactics) {
+            v = tacticsSetValue(state, playerId, c.cardId, cardIndex);
+            var setCost = CardEffectData.getCostRule && CardEffectData.getCostRule(c.cardId) ? Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex) : cost;
+            if ((CardEffectData.getCostRule && CardEffectData.getCostRule(c.cardId) || {}).type === 'PER_OWN_PLAY_AREA') setCost = 1; // 復活ビーコン：プレイエリアにカードを並べれば1まで下がる
+            if (setCost > ppMax) v = Math.min(v, 5);
+          } else {
+            // 旧：体力を増やす装備は1ラウンド目に置く。それ以外は、このラウンドのPPで使える中で一番コストの高いもの
+            v = cost <= ppMax ? 30 + cost * 5 : 0;
+            if (TUNE.hpEquipFirst && isHpEquipment(c.cardId)) v = round === 1 ? 100 : 60;
+            if (TUNE.hpEquipFirst && CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(c.cardId)) v = Math.min(v, 20); // 復活ポータル等：条件を満たすまで使えない
+          }
           return { i: i, v: v, cost: cost };
         }).sort(function (a, b) { return (b.v - a.v) || (a.cost - b.cost); });
         return [scored[0].i];
@@ -624,7 +779,9 @@
       case 'HAND_LIMIT':
         return cheapestIndexes(cards, q.min, cardIndex);
       case 'ATTACK_DISCARD':
-        if (q.max >= 2) return cheapestIndexes(cards, Math.min(q.max, cards.length), cardIndex); // オーバードライブ：捨てるほど得
+        if (q.max >= 2) return discardOrder(cards, cardIndex).slice(0, Math.min(q.max, cards.length)); // オーバードライブ：捨てるほど得（エースは後回し）
+        // セルフ実況・対空射撃等「捨てたらカードを1枚引く」：手札の枚数が減らないので、エース以外があれば常に捨てる
+        if (q.draw > 0) { var nonAce = discardOrder(cards, cardIndex).filter(function (i) { var cd = cardIndex[cards[i].cardId]; return !(cd && cd.ace); }); return nonAce.length ? [nonAce[0]] : []; }
         return player.hand.length >= 3 ? cheapestIndexes(cards, 1, cardIndex) : [];
       case 'LOOK_TOP_TRASH': {
         // 運もミスもない：エースは残す。同じ種類のカードが手札に十分あれば（アタック3枚以上／メモリア2枚以上）トラッシュに置いて引き直す
@@ -678,6 +835,12 @@
           return [best.i];
         }
         return (q.preselect && q.preselect.length ? q.preselect : [0]).slice(0, q.max);
+      }
+      case 'ADD_TO_HAND': {
+        if (!TUNE.combo) return (q.preselect && q.preselect.length ? q.preselect : [0]).slice(0, q.max);
+        if (!cards.length || !(q.max > 0)) return [];
+        return cards.map(function (c, i) { return { i: i, v: addToHandValue(c.cardId, player.hand, cardIndex) }; })
+          .sort(function (a, b) { return b.v - a.v; }).slice(0, q.max).map(function (x) { return x.i; });
       }
       default:
         // 手札に加える等（選ぶほど得なもの）
