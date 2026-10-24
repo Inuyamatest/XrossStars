@@ -1,6 +1,6 @@
 {
- "updatedAt": "2026-10-23T01:15:58.609Z",
- "minutes": 280,
+ "updatedAt": "2026-10-24T01:11:59.233Z",
+ "minutes": 282,
  "gamesPerOpponent": 60,
  "field": [
   "アリア・クレイジーバースト",
@@ -15,23 +15,23 @@
  "decks": [
   {
    "rank": 1,
-   "id": "p-shadow-shield~11239109",
-   "name": "影アナイアレーション v2 盾型 改5",
+   "id": "p-shadow-shield~94280118",
+   "name": "影アナイアレーション v2 盾型 改1",
    "origin": "auto",
-   "parent": "影アナイアレーション v2 盾型 改1",
-   "change": "強さの証明×2 → インパクトショット×2 ／ ナイスキャッチ！×2 → デッドサイレンス×2",
-   "winRate": 76.4,
+   "parent": "影アナイアレーション v2 盾型",
+   "change": "強さの証明×2 → インパクトショット×2",
+   "winRate": 76.7,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "46/60",
-    "ttt・フラッシュバン": "44/60",
-    "デュアルハザード赤": "57/60",
-    "最強イエロー": "43/60",
-    "極致アナイヤ改": "43/60",
-    "頂点捕食者 改": "39/60",
+    "アリア・クレイジーバースト": "44/60",
+    "ttt・フラッシュバン": "45/60",
+    "デュアルハザード赤": "54/60",
+    "最強イエロー": "51/60",
+    "極致アナイヤ改": "42/60",
+    "頂点捕食者 改": "37/60",
     "最強イエロー 赤1タッチ": "49/60"
    },
-   "measuredAt": "2026-10-22T23:20:39.110Z",
+   "measuredAt": "2026-10-23T20:37:36.700Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -44,7 +44,7 @@
     "花芽すみれ (IGV)",
     "英リサ"
    ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk1IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDAzLTA0MCIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsMl0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLkxIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
   },
   {
    "rank": 2,
@@ -53,18 +53,18 @@
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型",
    "change": "喧嘩上等×2 → 登頂成功×2",
-   "winRate": 75.5,
+   "winRate": 75,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "42/60",
-    "ttt・フラッシュバン": "43/60",
-    "デュアルハザード赤": "56/60",
-    "最強イエロー": "50/60",
-    "極致アナイヤ改": "41/60",
-    "頂点捕食者 改": "37/60",
-    "最強イエロー 赤1タッチ": "48/60"
+    "アリア・クレイジーバースト": "47/60",
+    "ttt・フラッシュバン": "44/60",
+    "デュアルハザード赤": "53/60",
+    "最強イエロー": "47/60",
+    "極致アナイヤ改": "43/60",
+    "頂点捕食者 改": "39/60",
+    "最強イエロー 赤1タッチ": "42/60"
    },
-   "measuredAt": "2026-10-22T21:05:23.935Z",
+   "measuredAt": "2026-10-23T20:35:14.902Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -81,89 +81,23 @@
   },
   {
    "rank": 3,
-   "id": "p-shadow-shield~94280118",
-   "name": "影アナイアレーション v2 盾型 改1",
-   "origin": "auto",
-   "parent": "影アナイアレーション v2 盾型",
-   "change": "強さの証明×2 → インパクトショット×2",
-   "winRate": 74,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "40/60",
-    "ttt・フラッシュバン": "49/60",
-    "デュアルハザード赤": "52/60",
-    "最強イエロー": "45/60",
-    "極致アナイヤ改": "46/60",
-    "頂点捕食者 改": "34/60",
-    "最強イエロー 赤1タッチ": "45/60"
-   },
-   "measuredAt": "2026-10-22T20:40:42.131Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLkxIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
-  },
-  {
-   "rank": 4,
-   "id": "p-shadow-v2~85968787",
-   "name": "影アナイアレーション v2 改1",
-   "origin": "auto",
-   "parent": "影アナイアレーション v2",
-   "change": "強さの証明×2 → 駆け引き上手×2",
-   "winRate": 73.8,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "46/60",
-    "ttt・フラッシュバン": "46/60",
-    "デュアルハザード赤": "51/60",
-    "最強イエロー": "44/60",
-    "極致アナイヤ改": "47/60",
-    "頂点捕食者 改": "32/60",
-    "最強イエロー 赤1タッチ": "44/60"
-   },
-   "measuredAt": "2026-10-22T20:57:57.021Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOaUuTEiLCJsIjpbIkJQMDUtTDAyIiwiQlAwNS1MMTEiLCJCUDA1LUwxNCIsIkJQMDEtMDA4Il0sImMiOltbIkJQMDEtMDM0Iiw0XSxbIkJQMDEtMDM2IiwyXSxbIkJQMDEtMDcwIiw0XSxbIkJQMDEtMDgxIiwyXSxbIkJQMDMtMDMyIiwyXSxbIkJQMDQtMDM4Iiw0XSxbIkJQMDUtMDIxIiw0XSxbIkJQMDUtMDM2Iiw0XSxbIkJQMDUtMDQyIiw0XSxbIkJQMDUtMDQ5Iiw0XSxbIkJQMDUtMDU5Iiw0XSxbIkJQMDUtMDY0Iiw0XSxbIkJQMDUtMDcwIiw0XSxbIlNUMDEtMDA5IiwyXSxbIlNUMDEtMDEzIiwyXV0sInQiOlsiQlAwMS0wOTIiLCJCUDAzLTA3NCIsIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJCUDAzLTA3MyJdLCJ2IjoxfQ"
-  },
-  {
-   "rank": 5,
    "id": "p-shadow-smoke~85412159",
    "name": "影アナイアレーション v2 スモーク型 改1",
    "origin": "auto",
    "parent": "影アナイアレーション v2 スモーク型",
    "change": "喧嘩上等×2 → 大旋風×2",
-   "winRate": 73.1,
+   "winRate": 75,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "44/60",
-    "ttt・フラッシュバン": "39/60",
-    "デュアルハザード赤": "53/60",
-    "最強イエロー": "46/60",
-    "極致アナイヤ改": "46/60",
-    "頂点捕食者 改": "35/60",
-    "最強イエロー 赤1タッチ": "44/60"
+    "アリア・クレイジーバースト": "45/60",
+    "ttt・フラッシュバン": "43/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "47/60",
+    "極致アナイヤ改": "44/60",
+    "頂点捕食者 改": "34/60",
+    "最強イエロー 赤1タッチ": "47/60"
    },
-   "measuredAt": "2026-10-22T20:50:52.317Z",
+   "measuredAt": "2026-10-23T20:42:32.363Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -179,123 +113,57 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLkxIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA0LTAzOSIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNS0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 6,
-   "id": "p-shadow-v2",
-   "name": "影アナイアレーション v2",
-   "origin": "claude",
-   "parent": null,
-   "change": null,
-   "winRate": 72.9,
+   "rank": 4,
+   "id": "p-shadow-shield~11239109",
+   "name": "影アナイアレーション v2 盾型 改5",
+   "origin": "auto",
+   "parent": "影アナイアレーション v2 盾型 改1",
+   "change": "強さの証明×2 → インパクトショット×2 ／ ナイスキャッチ！×2 → デッドサイレンス×2",
+   "winRate": 74.8,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "39/60",
-    "ttt・フラッシュバン": "38/60",
-    "デュアルハザード赤": "57/60",
-    "最強イエロー": "48/60",
-    "極致アナイヤ改": "41/60",
-    "頂点捕食者 改": "35/60",
-    "最強イエロー 赤1タッチ": "48/60"
-   },
-   "measuredAt": "2026-10-22T21:00:27.044Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
-  },
-  {
-   "rank": 7,
-   "id": "p-shadow-smoke",
-   "name": "影アナイアレーション v2 スモーク型",
-   "origin": "claude",
-   "parent": null,
-   "change": null,
-   "winRate": 72.9,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "39/60",
-    "ttt・フラッシュバン": "38/60",
-    "デュアルハザード赤": "57/60",
-    "最強イエロー": "48/60",
-    "極致アナイヤ改": "41/60",
-    "頂点捕食者 改": "35/60",
-    "最強イエロー 赤1タッチ": "48/60"
-   },
-   "measuredAt": "2026-10-22T21:02:55.449Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyIsImwiOlsiQlAwNS1MMDIiLCJCUDA1LUwxMSIsIkJQMDUtTDE0IiwiQlAwMS0wMDgiXSwiYyI6W1siQlAwNC0wMzgiLDRdLFsiQlAwNS0wNDkiLDRdLFsiQlAwNS0wNjQiLDRdLFsiQlAwNS0wMzYiLDRdLFsiQlAwNS0wNzAiLDRdLFsiQlAwNS0wNDIiLDRdLFsiQlAwNS0wNTkiLDRdLFsiQlAwMS0wODEiLDJdLFsiU1QwMS0wMDkiLDRdLFsiQlAwMy0wMzIiLDJdLFsiQlAwNS0wMjEiLDRdLFsiQlAwMS0wNzAiLDRdLFsiQlAwMS0wMzQiLDRdLFsiQlAwMS0wMzYiLDJdXSwidCI6WyJCUDA0LTA3MyIsIkJQMDUtMDc2IiwiQlAwMi0wNzkiLCJCUDAzLTA3NCIsIkJQMDUtMDc4Il0sInYiOjF9"
-  },
-  {
-   "rank": 8,
-   "id": "p-shadow-saine",
-   "name": "影アナイアレーション（サイネ）",
-   "origin": "claude",
-   "parent": null,
-   "change": null,
-   "winRate": 72.1,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "41/60",
-    "ttt・フラッシュバン": "37/60",
-    "デュアルハザード赤": "54/60",
-    "最強イエロー": "48/60",
-    "極致アナイヤ改": "38/60",
-    "頂点捕食者 改": "40/60",
+    "アリア・クレイジーバースト": "47/60",
+    "ttt・フラッシュバン": "41/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "47/60",
+    "極致アナイヤ改": "43/60",
+    "頂点捕食者 改": "36/60",
     "最強イエロー 赤1タッチ": "45/60"
    },
-   "measuredAt": "2026-10-22T21:07:36.252Z",
+   "measuredAt": "2026-10-23T20:32:42.457Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
-    "BP04-014",
+    "BP05-L14",
     "BP01-008"
    ],
    "leaderNames": [
     "Selly (IGV)",
     "Cpt (IGV)",
-    "銀城サイネ",
+    "花芽すみれ (IGV)",
     "英リサ"
    ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44K144Kk44ON77yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNC0wMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA0LTA3MCIsNF0sWyJCUDA0LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk1IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDAzLTA0MCIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsMl0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 9,
+   "rank": 5,
    "id": "p-shadow-shield~49296829",
    "name": "影アナイアレーション v2 盾型 改2",
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型",
    "change": "鬼の猛追×2 → パン売りの少女×2",
-   "winRate": 71.4,
+   "winRate": 73.8,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "41/60",
-    "ttt・フラッシュバン": "43/60",
-    "デュアルハザード赤": "56/60",
-    "最強イエロー": "43/60",
-    "極致アナイヤ改": "42/60",
-    "頂点捕食者 改": "31/60",
+    "アリア・クレイジーバースト": "44/60",
+    "ttt・フラッシュバン": "47/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "49/60",
+    "極致アナイヤ改": "41/60",
+    "頂点捕食者 改": "30/60",
     "最強イエロー 赤1タッチ": "44/60"
    },
-   "measuredAt": "2026-10-22T20:38:18.954Z",
+   "measuredAt": "2026-10-23T20:52:25.749Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -311,24 +179,24 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLkyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDA0LTAzMyIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 10,
+   "rank": 6,
    "id": "p-shadow-shield",
    "name": "影アナイアレーション v2 盾型",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 71.4,
+   "winRate": 72.9,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "41/60",
-    "ttt・フラッシュバン": "41/60",
-    "デュアルハザード赤": "55/60",
-    "最強イエロー": "49/60",
-    "極致アナイヤ改": "38/60",
+    "アリア・クレイジーバースト": "44/60",
+    "ttt・フラッシュバン": "44/60",
+    "デュアルハザード赤": "57/60",
+    "最強イエロー": "44/60",
+    "極致アナイヤ改": "42/60",
     "頂点捕食者 改": "33/60",
-    "最強イエロー 赤1タッチ": "43/60"
+    "最強イエロー 赤1タッチ": "42/60"
    },
-   "measuredAt": "2026-10-22T20:43:14.870Z",
+   "measuredAt": "2026-10-23T20:54:55.758Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -344,24 +212,24 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyIsImwiOlsiQlAwNS1MMDIiLCJCUDA1LUwxMSIsIkJQMDUtTDE0IiwiQlAwMS0wMDgiXSwiYyI6W1siQlAwNC0wMzgiLDRdLFsiQlAwNS0wNDkiLDRdLFsiQlAwNS0wNjQiLDRdLFsiQlAwNS0wMzYiLDRdLFsiQlAwNS0wNzAiLDRdLFsiQlAwNS0wNDIiLDRdLFsiQlAwNS0wNTkiLDRdLFsiQlAwMS0wODEiLDJdLFsiU1QwMS0wMDkiLDRdLFsiQlAwMy0wMzIiLDJdLFsiQlAwNS0wMjEiLDRdLFsiQlAwMS0wNzAiLDRdLFsiQlAwMS0wMzQiLDRdLFsiQlAwMS0wMzYiLDJdXSwidCI6WyJCUDA0LTA3MyIsIkJQMDEtMDk1IiwiQlAwMi0wNzkiLCJCUDAzLTA3NCIsIkJQMDQtMDc4Il0sInYiOjF9"
   },
   {
-   "rank": 11,
+   "rank": 7,
    "id": "p-shadow-smoke~56135099",
    "name": "影アナイアレーション v2 スモーク型 改2",
    "origin": "auto",
    "parent": "影アナイアレーション v2 スモーク型",
    "change": "タクティクス：ヒーリングオーブ → ライトシールド",
-   "winRate": 71.4,
+   "winRate": 72.9,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "41/60",
-    "ttt・フラッシュバン": "41/60",
-    "デュアルハザード赤": "55/60",
-    "最強イエロー": "49/60",
-    "極致アナイヤ改": "38/60",
+    "アリア・クレイジーバースト": "44/60",
+    "ttt・フラッシュバン": "44/60",
+    "デュアルハザード赤": "57/60",
+    "最強イエロー": "44/60",
+    "極致アナイヤ改": "42/60",
     "頂点捕食者 改": "33/60",
-    "最強イエロー 赤1タッチ": "43/60"
+    "最強イエロー 赤1タッチ": "42/60"
    },
-   "measuredAt": "2026-10-22T20:45:46.909Z",
+   "measuredAt": "2026-10-23T20:57:24.221Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -377,24 +245,24 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLkyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJTVDAyLTAyMyIsIkJQMDMtMDc0IiwiQlAwNS0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 12,
+   "rank": 8,
    "id": "p-shadow-v2~66461946",
    "name": "影アナイアレーション v2 改2",
    "origin": "auto",
    "parent": "影アナイアレーション v2",
    "change": "タクティクス：救急キット → ライトシールド",
-   "winRate": 71.4,
+   "winRate": 72.9,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "41/60",
-    "ttt・フラッシュバン": "41/60",
-    "デュアルハザード赤": "55/60",
-    "最強イエロー": "49/60",
-    "極致アナイヤ改": "38/60",
+    "アリア・クレイジーバースト": "44/60",
+    "ttt・フラッシュバン": "44/60",
+    "デュアルハザード赤": "57/60",
+    "最強イエロー": "44/60",
+    "極致アナイヤ改": "42/60",
     "頂点捕食者 改": "33/60",
-    "最強イエロー 赤1タッチ": "43/60"
+    "最強イエロー 赤1タッチ": "42/60"
    },
-   "measuredAt": "2026-10-22T20:48:19.159Z",
+   "measuredAt": "2026-10-23T20:59:54.200Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -410,24 +278,156 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOaUuTIiLCJsIjpbIkJQMDUtTDAyIiwiQlAwNS1MMTEiLCJCUDA1LUwxNCIsIkJQMDEtMDA4Il0sImMiOltbIkJQMDQtMDM4Iiw0XSxbIkJQMDUtMDQ5Iiw0XSxbIkJQMDUtMDY0Iiw0XSxbIkJQMDUtMDM2Iiw0XSxbIkJQMDUtMDcwIiw0XSxbIkJQMDUtMDQyIiw0XSxbIkJQMDUtMDU5Iiw0XSxbIkJQMDEtMDgxIiwyXSxbIlNUMDEtMDA5Iiw0XSxbIkJQMDMtMDMyIiwyXSxbIkJQMDUtMDIxIiw0XSxbIkJQMDEtMDcwIiw0XSxbIkJQMDEtMDM0Iiw0XSxbIkJQMDEtMDM2IiwyXV0sInQiOlsiQlAwMS0wOTIiLCJCUDAzLTA3NCIsIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJTVDAxLTAyMyJdLCJ2IjoxfQ"
   },
   {
+   "rank": 9,
+   "id": "p-shadow-v2",
+   "name": "影アナイアレーション v2",
+   "origin": "claude",
+   "parent": null,
+   "change": null,
+   "winRate": 72.1,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "39/60",
+    "ttt・フラッシュバン": "42/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "48/60",
+    "極致アナイヤ改": "42/60",
+    "頂点捕食者 改": "33/60",
+    "最強イエロー 赤1タッチ": "44/60"
+   },
+   "measuredAt": "2026-10-23T20:45:09.047Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+  },
+  {
+   "rank": 10,
+   "id": "p-shadow-smoke",
+   "name": "影アナイアレーション v2 スモーク型",
+   "origin": "claude",
+   "parent": null,
+   "change": null,
+   "winRate": 72.1,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "39/60",
+    "ttt・フラッシュバン": "42/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "48/60",
+    "極致アナイヤ改": "42/60",
+    "頂点捕食者 改": "33/60",
+    "最強イエロー 赤1タッチ": "44/60"
+   },
+   "measuredAt": "2026-10-23T20:47:45.386Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyIsImwiOlsiQlAwNS1MMDIiLCJCUDA1LUwxMSIsIkJQMDUtTDE0IiwiQlAwMS0wMDgiXSwiYyI6W1siQlAwNC0wMzgiLDRdLFsiQlAwNS0wNDkiLDRdLFsiQlAwNS0wNjQiLDRdLFsiQlAwNS0wMzYiLDRdLFsiQlAwNS0wNzAiLDRdLFsiQlAwNS0wNDIiLDRdLFsiQlAwNS0wNTkiLDRdLFsiQlAwMS0wODEiLDJdLFsiU1QwMS0wMDkiLDRdLFsiQlAwMy0wMzIiLDJdLFsiQlAwNS0wMjEiLDRdLFsiQlAwMS0wNzAiLDRdLFsiQlAwMS0wMzQiLDRdLFsiQlAwMS0wMzYiLDJdXSwidCI6WyJCUDA0LTA3MyIsIkJQMDUtMDc2IiwiQlAwMi0wNzkiLCJCUDAzLTA3NCIsIkJQMDUtMDc4Il0sInYiOjF9"
+  },
+  {
+   "rank": 11,
+   "id": "p-shadow-v2~85968787",
+   "name": "影アナイアレーション v2 改1",
+   "origin": "auto",
+   "parent": "影アナイアレーション v2",
+   "change": "強さの証明×2 → 駆け引き上手×2",
+   "winRate": 71.2,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "39/60",
+    "ttt・フラッシュバン": "39/60",
+    "デュアルハザード赤": "53/60",
+    "最強イエロー": "48/60",
+    "極致アナイヤ改": "40/60",
+    "頂点捕食者 改": "35/60",
+    "最強イエロー 赤1タッチ": "45/60"
+   },
+   "measuredAt": "2026-10-23T20:39:57.741Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOaUuTEiLCJsIjpbIkJQMDUtTDAyIiwiQlAwNS1MMTEiLCJCUDA1LUwxNCIsIkJQMDEtMDA4Il0sImMiOltbIkJQMDEtMDM0Iiw0XSxbIkJQMDEtMDM2IiwyXSxbIkJQMDEtMDcwIiw0XSxbIkJQMDEtMDgxIiwyXSxbIkJQMDMtMDMyIiwyXSxbIkJQMDQtMDM4Iiw0XSxbIkJQMDUtMDIxIiw0XSxbIkJQMDUtMDM2Iiw0XSxbIkJQMDUtMDQyIiw0XSxbIkJQMDUtMDQ5Iiw0XSxbIkJQMDUtMDU5Iiw0XSxbIkJQMDUtMDY0Iiw0XSxbIkJQMDUtMDcwIiw0XSxbIlNUMDEtMDA5IiwyXSxbIlNUMDEtMDEzIiwyXV0sInQiOlsiQlAwMS0wOTIiLCJCUDAzLTA3NCIsIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJCUDAzLTA3MyJdLCJ2IjoxfQ"
+  },
+  {
+   "rank": 12,
+   "id": "p-shadow-saine",
+   "name": "影アナイアレーション（サイネ）",
+   "origin": "claude",
+   "parent": null,
+   "change": null,
+   "winRate": 70.5,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "43/60",
+    "ttt・フラッシュバン": "41/60",
+    "デュアルハザード赤": "50/60",
+    "最強イエロー": "44/60",
+    "極致アナイヤ改": "42/60",
+    "頂点捕食者 改": "27/60",
+    "最強イエロー 赤1タッチ": "49/60"
+   },
+   "measuredAt": "2026-10-23T20:50:04.494Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP04-014",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "銀城サイネ",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44K144Kk44ON77yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNC0wMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA0LTA3MCIsNF0sWyJCUDA0LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+  },
+  {
    "rank": 13,
    "id": "p-shadow-shield~56445305",
    "name": "影アナイアレーション v2 盾型 改4",
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型 改2",
    "change": "鬼の猛追×2 → パン売りの少女×2 ／ 巧みな裏取り×2 → ゾーン状態×2",
-   "winRate": 71.2,
+   "winRate": 69.8,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "40/60",
-    "ttt・フラッシュバン": "40/60",
-    "デュアルハザード赤": "58/60",
-    "最強イエロー": "42/60",
-    "極致アナイヤ改": "35/60",
-    "頂点捕食者 改": "35/60",
-    "最強イエロー 赤1タッチ": "49/60"
+    "アリア・クレイジーバースト": "35/60",
+    "ttt・フラッシュバン": "41/60",
+    "デュアルハザード赤": "51/60",
+    "最強イエロー": "41/60",
+    "極致アナイヤ改": "48/60",
+    "頂点捕食者 改": "36/60",
+    "最強イエロー 赤1タッチ": "41/60"
    },
-   "measuredAt": "2026-10-22T20:53:06.670Z",
+   "measuredAt": "2026-10-23T21:02:04.123Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -444,55 +444,23 @@
   },
   {
    "rank": 14,
-   "id": "p-apex",
-   "name": "頂点捕食者 改",
-   "origin": "field",
-   "parent": null,
-   "change": null,
-   "winRate": 69.4,
-   "games": 360,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "34/60",
-    "ttt・フラッシュバン": "42/60",
-    "デュアルハザード赤": "53/60",
-    "最強イエロー": "45/60",
-    "極致アナイヤ改": "31/60",
-    "最強イエロー 赤1タッチ": "45/60"
-   },
-   "measuredAt": "2026-10-22T21:09:03.597Z",
-   "leaders": [
-    "AN01-002",
-    "AN01-004",
-    "BP01-016",
-    "BP04-010"
-   ],
-   "leaderNames": [
-    "橘ひなの (AN1)",
-    "白雪レイド (AN1)",
-    "nqrse",
-    "千燈ゆうひ"
-   ],
-   "code": "eyJuIjoi6aCC54K55o2V6aOf6ICFIOaUuSIsImwiOlsiQU4wMS0wMDIiLCJBTjAxLTAwNCIsIkJQMDEtMDE2IiwiQlAwNC0wMTAiXSwiYyI6W1siQlAwMS0wODgiLDNdLFsiQlAwNC0wMzUiLDNdLFsiQlAwNC0wNjMiLDRdLFsiQU4wMS0wMTUiLDFdLFsiQU4wMS0wMDciLDNdLFsiQU4wMS0wMTciLDFdLFsiQU4wMS0wMTEiLDFdLFsiQlAwMS0wNTIiLDRdLFsiQlAwNS0wMzgiLDRdLFsiQlAwNC0xMDgiLDNdLFsiQlAwMi0wMzIiLDNdLFsiQlAwNC0wMjYiLDRdLFsiQlAwNC0wNDYiLDFdLFsiQlAwMi0wMjYiLDJdLFsiQlAwMy0wNDciLDJdLFsiQlAwMS0wMTkiLDRdLFsiQU4wMS0wMDUiLDNdLFsiU1QwMS0wMDkiLDJdLFsiQlAwMS0wMjgiLDFdLFsiQlAwMi0wMzEiLDFdXSwidCI6WyJCUDA0LTA3NSIsIkJQMDQtMDczIiwiQlAwNC0wNzkiLCJCUDAyLTA3OSIsIlNUMDEtMDIzIl0sInYiOjF9"
-  },
-  {
-   "rank": 15,
    "id": "p-shadow-moka",
    "name": "影アナイアレーション（もか）",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 69,
+   "winRate": 69.8,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "37/60",
-    "ttt・フラッシュバン": "39/60",
-    "デュアルハザード赤": "52/60",
-    "最強イエロー": "48/60",
-    "極致アナイヤ改": "37/60",
-    "頂点捕食者 改": "33/60",
-    "最強イエロー 赤1タッチ": "44/60"
+    "アリア・クレイジーバースト": "34/60",
+    "ttt・フラッシュバン": "41/60",
+    "デュアルハザード赤": "56/60",
+    "最強イエロー": "45/60",
+    "極致アナイヤ改": "42/60",
+    "頂点捕食者 改": "29/60",
+    "最強イエロー 赤1タッチ": "46/60"
    },
-   "measuredAt": "2026-10-22T20:55:31.923Z",
+   "measuredAt": "2026-10-23T21:05:51.392Z",
    "leaders": [
     "BP05-L02",
     "BP02-009",
@@ -508,24 +476,57 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44KC44GL77yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDItMDA5IiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDAyLTA2MiIsNF0sWyJCUDAyLTAzNCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
   },
   {
+   "rank": 15,
+   "id": "p-shadow-nazuna",
+   "name": "影アナイアレーション（なずな・ttt）",
+   "origin": "claude",
+   "parent": null,
+   "change": null,
+   "winRate": 68.6,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "42/60",
+    "ttt・フラッシュバン": "39/60",
+    "デュアルハザード赤": "50/60",
+    "最強イエロー": "45/60",
+    "極致アナイヤ改": "34/60",
+    "頂点捕食者 改": "29/60",
+    "最強イエロー 赤1タッチ": "49/60"
+   },
+   "measuredAt": "2026-10-23T21:13:05.092Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "ST01-004",
+    "BP05-L08"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽なずな",
+    "tttcheekyttt"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44Gq44Ga44Gq44O7dHR077yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiU1QwMS0wMDQiLCJCUDA1LUwwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDAxLTA4NiIsNF0sWyJCUDAxLTA1MCIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA1OCIsNF0sWyJCUDA1LTAzMCIsMl0sWyJCUDAxLTA4MSIsNF0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsNF0sWyJCUDA1LTAyMSIsNF1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+  },
+  {
    "rank": 16,
    "id": "p-shadow-burn",
    "name": "影バーン",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 66.9,
+   "winRate": 67.1,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "36/60",
-    "ttt・フラッシュバン": "41/60",
+    "アリア・クレイジーバースト": "44/60",
+    "ttt・フラッシュバン": "39/60",
     "デュアルハザード赤": "55/60",
-    "最強イエロー": "44/60",
-    "極致アナイヤ改": "35/60",
-    "頂点捕食者 改": "30/60",
-    "最強イエロー 赤1タッチ": "40/60"
+    "最強イエロー": "35/60",
+    "極致アナイヤ改": "41/60",
+    "頂点捕食者 改": "29/60",
+    "最強イエロー 赤1タッチ": "39/60"
    },
-   "measuredAt": "2026-10-22T21:16:21.158Z",
+   "measuredAt": "2026-10-23T21:08:03.947Z",
    "leaders": [
     "BP05-L02",
     "BP01-008",
@@ -547,18 +548,18 @@
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 66.7,
+   "winRate": 67.1,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "39/60",
-    "ttt・フラッシュバン": "36/60",
-    "デュアルハザード赤": "57/60",
-    "最強イエロー": "42/60",
-    "極致アナイヤ改": "33/60",
+    "アリア・クレイジーバースト": "36/60",
+    "ttt・フラッシュバン": "38/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "39/60",
+    "極致アナイヤ改": "39/60",
     "頂点捕食者 改": "33/60",
-    "最強イエロー 赤1タッチ": "40/60"
+    "最強イエロー 赤1タッチ": "42/60"
    },
-   "measuredAt": "2026-10-22T21:11:40.004Z",
+   "measuredAt": "2026-10-23T21:10:38.438Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -575,56 +576,23 @@
   },
   {
    "rank": 18,
-   "id": "p-shadow-nazuna",
-   "name": "影アナイアレーション（なずな・ttt）",
-   "origin": "claude",
-   "parent": null,
-   "change": null,
-   "winRate": 65.7,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "38/60",
-    "ttt・フラッシュバン": "39/60",
-    "デュアルハザード赤": "54/60",
-    "最強イエロー": "40/60",
-    "極致アナイヤ改": "35/60",
-    "頂点捕食者 改": "25/60",
-    "最強イエロー 赤1タッチ": "45/60"
-   },
-   "measuredAt": "2026-10-22T21:14:10.889Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "ST01-004",
-    "BP05-L08"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽なずな",
-    "tttcheekyttt"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44Gq44Ga44Gq44O7dHR077yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiU1QwMS0wMDQiLCJCUDA1LUwwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDAxLTA4NiIsNF0sWyJCUDAxLTA1MCIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA1OCIsNF0sWyJCUDA1LTAzMCIsMl0sWyJCUDAxLTA4MSIsNF0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsNF0sWyJCUDA1LTAyMSIsNF1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
-  },
-  {
-   "rank": 19,
    "id": "p-apex~24686000",
    "name": "頂点捕食者 改1",
    "origin": "auto",
    "parent": "頂点捕食者 改",
    "change": "ステークアウト×2 → ドレッドフォーム×2",
-   "winRate": 64.5,
+   "winRate": 66.9,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "31/60",
-    "ttt・フラッシュバン": "43/60",
-    "デュアルハザード赤": "53/60",
-    "最強イエロー": "44/60",
-    "極致アナイヤ改": "34/60",
-    "頂点捕食者 改": "28/60",
-    "最強イエロー 赤1タッチ": "38/60"
+    "アリア・クレイジーバースト": "33/60",
+    "ttt・フラッシュバン": "45/60",
+    "デュアルハザード赤": "52/60",
+    "最強イエロー": "45/60",
+    "極致アナイヤ改": "31/60",
+    "頂点捕食者 改": "35/60",
+    "最強イエロー 赤1タッチ": "40/60"
    },
-   "measuredAt": "2026-10-22T21:21:41.310Z",
+   "measuredAt": "2026-10-23T21:14:44.264Z",
    "leaders": [
     "AN01-002",
     "AN01-004",
@@ -640,24 +608,56 @@
    "code": "eyJuIjoi6aCC54K55o2V6aOf6ICFIOaUuTEiLCJsIjpbIkFOMDEtMDAyIiwiQU4wMS0wMDQiLCJCUDAxLTAxNiIsIkJQMDQtMDEwIl0sImMiOltbIkFOMDEtMDA1IiwxXSxbIkFOMDEtMDA3IiwzXSxbIkFOMDEtMDExIiwxXSxbIkFOMDEtMDE1IiwxXSxbIkFOMDEtMDE3IiwxXSxbIkJQMDEtMDE5Iiw0XSxbIkJQMDEtMDI4IiwxXSxbIkJQMDEtMDUyIiw0XSxbIkJQMDEtMDg4IiwzXSxbIkJQMDItMDI2Iiw0XSxbIkJQMDItMDMxIiwxXSxbIkJQMDItMDMyIiwzXSxbIkJQMDMtMDQ3IiwyXSxbIkJQMDQtMDI2Iiw0XSxbIkJQMDQtMDM1IiwzXSxbIkJQMDQtMDQ2IiwxXSxbIkJQMDQtMDYzIiw0XSxbIkJQMDQtMTA4IiwzXSxbIkJQMDUtMDM4Iiw0XSxbIlNUMDEtMDA5IiwyXV0sInQiOlsiQlAwNC0wNzUiLCJCUDA0LTA3MyIsIkJQMDQtMDc5IiwiQlAwMi0wNzkiLCJTVDAxLTAyMyJdLCJ2IjoxfQ"
   },
   {
+   "rank": 19,
+   "id": "p-apex",
+   "name": "頂点捕食者 改",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 64.2,
+   "games": 360,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "28/60",
+    "ttt・フラッシュバン": "39/60",
+    "デュアルハザード赤": "46/60",
+    "最強イエロー": "37/60",
+    "極致アナイヤ改": "35/60",
+    "最強イエロー 赤1タッチ": "46/60"
+   },
+   "measuredAt": "2026-10-23T21:03:29.773Z",
+   "leaders": [
+    "AN01-002",
+    "AN01-004",
+    "BP01-016",
+    "BP04-010"
+   ],
+   "leaderNames": [
+    "橘ひなの (AN1)",
+    "白雪レイド (AN1)",
+    "nqrse",
+    "千燈ゆうひ"
+   ],
+   "code": "eyJuIjoi6aCC54K55o2V6aOf6ICFIOaUuSIsImwiOlsiQU4wMS0wMDIiLCJBTjAxLTAwNCIsIkJQMDEtMDE2IiwiQlAwNC0wMTAiXSwiYyI6W1siQlAwMS0wODgiLDNdLFsiQlAwNC0wMzUiLDNdLFsiQlAwNC0wNjMiLDRdLFsiQU4wMS0wMTUiLDFdLFsiQU4wMS0wMDciLDNdLFsiQU4wMS0wMTciLDFdLFsiQU4wMS0wMTEiLDFdLFsiQlAwMS0wNTIiLDRdLFsiQlAwNS0wMzgiLDRdLFsiQlAwNC0xMDgiLDNdLFsiQlAwMi0wMzIiLDNdLFsiQlAwNC0wMjYiLDRdLFsiQlAwNC0wNDYiLDFdLFsiQlAwMi0wMjYiLDJdLFsiQlAwMy0wNDciLDJdLFsiQlAwMS0wMTkiLDRdLFsiQU4wMS0wMDUiLDNdLFsiU1QwMS0wMDkiLDJdLFsiQlAwMS0wMjgiLDFdLFsiQlAwMi0wMzEiLDFdXSwidCI6WyJCUDA0LTA3NSIsIkJQMDQtMDczIiwiQlAwNC0wNzkiLCJCUDAyLTA3OSIsIlNUMDEtMDIzIl0sInYiOjF9"
+  },
+  {
    "rank": 20,
    "id": "p-burn4",
    "name": "4色バーン",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 63.6,
+   "winRate": 59.8,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "35/60",
-    "ttt・フラッシュバン": "36/60",
-    "デュアルハザード赤": "56/60",
-    "最強イエロー": "41/60",
+    "アリア・クレイジーバースト": "29/60",
+    "ttt・フラッシュバン": "31/60",
+    "デュアルハザード赤": "57/60",
+    "最強イエロー": "39/60",
     "極致アナイヤ改": "32/60",
-    "頂点捕食者 改": "31/60",
-    "最強イエロー 赤1タッチ": "36/60"
+    "頂点捕食者 改": "20/60",
+    "最強イエロー 赤1タッチ": "43/60"
    },
-   "measuredAt": "2026-10-22T21:18:27.243Z",
+   "measuredAt": "2026-10-23T21:16:54.525Z",
    "leaders": [
     "BP05-L01",
     "BP01-008",
@@ -674,22 +674,55 @@
   },
   {
    "rank": 21,
+   "id": "p-doubledown",
+   "name": "ダブルダウンテスト改",
+   "origin": "user",
+   "parent": null,
+   "change": null,
+   "winRate": 59.3,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "32/60",
+    "ttt・フラッシュバン": "34/60",
+    "デュアルハザード赤": "47/60",
+    "最強イエロー": "36/60",
+    "極致アナイヤ改": "35/60",
+    "頂点捕食者 改": "31/60",
+    "最強イエロー 赤1タッチ": "34/60"
+   },
+   "measuredAt": "2026-10-23T21:23:18.542Z",
+   "leaders": [
+    "BP05-L14",
+    "BP02-010",
+    "BP05-L10",
+    "BP05-L09"
+   ],
+   "leaderNames": [
+    "花芽すみれ (IGV)",
+    "神成きゅぴ",
+    "胡桃のあ (IGV)",
+    "神成きゅぴ (IGV)"
+   ],
+   "code": "eyJuIjoi44OA44OW44Or44OA44Km44Oz44OG44K544OI5pS5IiwibCI6WyJCUDA1LUwxNCIsIkJQMDItMDEwIiwiQlAwNS1MMTAiLCJCUDA1LUwwOSJdLCJjIjpbWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA2MyIsNF0sWyJCUDA1LTAzNSIsNF0sWyJCUDA1LTA2MiIsNF0sWyJCUDA1LTAzNCIsNF0sWyJCUDAyLTAzNSIsNF0sWyJCUDAyLTA2MyIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDA1LTAzOCIsNF0sWyJCUDAxLTAzNyIsNF0sWyJCUDAyLTAzOSIsMV0sWyJTVDAyLTAxMSIsMl0sWyJCUDAzLTA0MCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJCUDAyLTA3NCIsIkJQMDItMDc1IiwiQlAwNC0wNzUiXSwidiI6MX0"
+  },
+  {
+   "rank": 22,
    "id": "p-aria",
    "name": "アリア・クレイジーバースト",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 58.3,
+   "winRate": 58.1,
    "games": 360,
    "perOpponent": {
-    "ttt・フラッシュバン": "35/60",
-    "デュアルハザード赤": "43/60",
-    "最強イエロー": "40/60",
-    "極致アナイヤ改": "29/60",
-    "頂点捕食者 改": "31/60",
-    "最強イエロー 赤1タッチ": "32/60"
+    "ttt・フラッシュバン": "32/60",
+    "デュアルハザード赤": "46/60",
+    "最強イエロー": "34/60",
+    "極致アナイヤ改": "35/60",
+    "頂点捕食者 改": "26/60",
+    "最強イエロー 赤1タッチ": "36/60"
    },
-   "measuredAt": "2026-10-22T21:28:05.063Z",
+   "measuredAt": "2026-10-23T21:18:21.198Z",
    "leaders": [
     "BP01-016",
     "ST01-003",
@@ -705,56 +738,23 @@
    "code": "eyJuIjoi44Ki44Oq44Ki44O744Kv44Os44Kk44K444O844OQ44O844K544OIIiwibCI6WyJCUDAxLTAxNiIsIlNUMDEtMDAzIiwiQlAwNS1MMTMiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTA0NSIsNF0sWyJCUDAxLTA1MiIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDA1LTAzOCIsNF0sWyJCUDA0LTA2MyIsNF0sWyJCUDAxLTA4NSIsNF0sWyJTVDAyLTAxNSIsMV0sWyJCUDAxLTA4OCIsNF0sWyJCUDA0LTAzNSIsM10sWyJCUDAxLTA0OSIsNF0sWyJTVDAyLTAxMSIsM10sWyJCUDA0LTA0MCIsMl0sWyJTVDAxLTAwOSIsM10sWyJCUDAzLTA0MCIsMl0sWyJCUDA1LTA2OSIsNF1dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
   },
   {
-   "rank": 22,
-   "id": "p-assault-2nd",
-   "name": "アサルトストーム（2026/08/09準優勝）",
-   "origin": "user",
-   "parent": null,
-   "change": null,
-   "winRate": 57.6,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "31/60",
-    "ttt・フラッシュバン": "33/60",
-    "デュアルハザード赤": "52/60",
-    "最強イエロー": "34/60",
-    "極致アナイヤ改": "28/60",
-    "頂点捕食者 改": "28/60",
-    "最強イエロー 赤1タッチ": "36/60"
-   },
-   "measuredAt": "2026-10-22T21:26:37.906Z",
-   "leaders": [
-    "ST02-002",
-    "BP01-003",
-    "BP01-016",
-    "BP03-004"
-   ],
-   "leaderNames": [
-    "Mondo",
-    "橘ひなの",
-    "nqrse",
-    "rion"
-   ],
-   "code": "eyJuIjoi44Ki44K144Or44OI44K544OI44O844Og77yIMjAyNi8wOC8wOea6luWEquWLne-8iSIsImwiOlsiU1QwMi0wMDIiLCJCUDAxLTAwMyIsIkJQMDEtMDE2IiwiQlAwMy0wMDQiXSwiYyI6W1siQlAwMS0wMjUiLDRdLFsiQlAwMS0wNjEiLDRdLFsiQlAwMS0xMzYiLDRdLFsiQlAwMi0wNjgiLDRdLFsiQlAwMS0wMTgiLDRdLFsiQlAwMS0wMjMiLDRdLFsiQlAwNC0xMTQiLDJdLFsiQlAwMy0wNTEiLDRdLFsiQlAwMS0wODgiLDRdLFsiQlAwMS0wNTkiLDRdLFsiQlAwMy0wMjMiLDRdLFsiQlAwMy0xMDYiLDRdLFsiQlAwMy0wMTgiLDNdLFsiQlAwMi0wMTgiLDFdXSwidCI6WyJCUDA0LTA3NSIsIkJQMDQtMDczIiwiQlAwMy0wNzQiLCJCUDAzLTA3NSIsIkJQMDMtMDc5Il0sInYiOjF9"
-  },
-  {
    "rank": 23,
    "id": "p-kyokuchi",
    "name": "極致アナイヤ改",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 57.2,
+   "winRate": 56.7,
    "games": 360,
    "perOpponent": {
-    "アリア・クレイジーバースト": "28/60",
-    "ttt・フラッシュバン": "39/60",
-    "デュアルハザード赤": "50/60",
-    "最強イエロー": "39/60",
-    "頂点捕食者 改": "17/60",
-    "最強イエロー 赤1タッチ": "33/60"
+    "アリア・クレイジーバースト": "23/60",
+    "ttt・フラッシュバン": "29/60",
+    "デュアルハザード赤": "52/60",
+    "最強イエロー": "38/60",
+    "頂点捕食者 改": "23/60",
+    "最強イエロー 赤1タッチ": "39/60"
    },
-   "measuredAt": "2026-10-22T21:20:00.943Z",
+   "measuredAt": "2026-10-23T21:21:26.519Z",
    "leaders": [
     "AN01-002",
     "AN01-004",
@@ -771,88 +771,23 @@
   },
   {
    "rank": 24,
-   "id": "p-doubledown",
-   "name": "ダブルダウンテスト改",
-   "origin": "user",
-   "parent": null,
-   "change": null,
-   "winRate": 56.7,
-   "games": 420,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "26/60",
-    "ttt・フラッシュバン": "34/60",
-    "デュアルハザード赤": "48/60",
-    "最強イエロー": "39/60",
-    "極致アナイヤ改": "34/60",
-    "頂点捕食者 改": "24/60",
-    "最強イエロー 赤1タッチ": "33/60"
-   },
-   "measuredAt": "2026-10-22T21:25:07.507Z",
-   "leaders": [
-    "BP05-L14",
-    "BP02-010",
-    "BP05-L10",
-    "BP05-L09"
-   ],
-   "leaderNames": [
-    "花芽すみれ (IGV)",
-    "神成きゅぴ",
-    "胡桃のあ (IGV)",
-    "神成きゅぴ (IGV)"
-   ],
-   "code": "eyJuIjoi44OA44OW44Or44OA44Km44Oz44OG44K544OI5pS5IiwibCI6WyJCUDA1LUwxNCIsIkJQMDItMDEwIiwiQlAwNS1MMTAiLCJCUDA1LUwwOSJdLCJjIjpbWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA2MyIsNF0sWyJCUDA1LTAzNSIsNF0sWyJCUDA1LTA2MiIsNF0sWyJCUDA1LTAzNCIsNF0sWyJCUDAyLTAzNSIsNF0sWyJCUDAyLTA2MyIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDA1LTAzOCIsNF0sWyJCUDAxLTAzNyIsNF0sWyJCUDAyLTAzOSIsMV0sWyJTVDAyLTAxMSIsMl0sWyJCUDAzLTA0MCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJCUDAyLTA3NCIsIkJQMDItMDc1IiwiQlAwNC0wNzUiXSwidiI6MX0"
-  },
-  {
-   "rank": 25,
-   "id": "p-flash",
-   "name": "ttt・フラッシュバン",
-   "origin": "field",
-   "parent": null,
-   "change": null,
-   "winRate": 54.4,
-   "games": 360,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "33/60",
-    "デュアルハザード赤": "47/60",
-    "最強イエロー": "33/60",
-    "極致アナイヤ改": "27/60",
-    "頂点捕食者 改": "22/60",
-    "最強イエロー 赤1タッチ": "34/60"
-   },
-   "measuredAt": "2026-10-22T21:29:25.549Z",
-   "leaders": [
-    "ST01-001",
-    "BP04-008",
-    "BP05-L08",
-    "BP04-010"
-   ],
-   "leaderNames": [
-    "一ノ瀬うるは",
-    "夜乃くろむ",
-    "tttcheekyttt",
-    "千燈ゆうひ"
-   ],
-   "code": "eyJuIjoidHR044O744OV44Op44OD44K344Ol44OQ44OzIiwibCI6WyJTVDAxLTAwMSIsIkJQMDQtMDA4IiwiQlAwNS1MMDgiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTAyNyIsNF0sWyJCUDAyLTAzMSIsM10sWyJCUDAzLTA1MiIsNF0sWyJCUDAxLTA2NSIsM10sWyJCUDA0LTA1OCIsNF0sWyJCUDA0LTA2MyIsMl0sWyJCUDAxLTAyOSIsNF0sWyJTVDAxLTAwNyIsM10sWyJCUDAzLTAyNiIsM10sWyJCUDA0LTAyNiIsMV0sWyJCUDA0LTAzMCIsM10sWyJCUDAyLTAyNiIsM10sWyJCUDAyLTA2MCIsMV0sWyJCUDA0LTAyNCIsMV0sWyJCUDA0LTA2MSIsMV0sWyJCUDAzLTAyNSIsMl0sWyJCUDAzLTA1MyIsMV0sWyJCUDA1LTA1OCIsNF0sWyJCUDA1LTAzMCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
-  },
-  {
-   "rank": 26,
    "id": "p-assault-win",
    "name": "4cODアナイアアサルト（2026/08/09優勝）",
    "origin": "user",
    "parent": null,
    "change": null,
-   "winRate": 53.6,
+   "winRate": 52.1,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "32/60",
-    "ttt・フラッシュバン": "34/60",
-    "デュアルハザード赤": "48/60",
-    "最強イエロー": "32/60",
-    "極致アナイヤ改": "25/60",
-    "頂点捕食者 改": "23/60",
-    "最強イエロー 赤1タッチ": "31/60"
+    "アリア・クレイジーバースト": "29/60",
+    "ttt・フラッシュバン": "30/60",
+    "デュアルハザード赤": "46/60",
+    "最強イエロー": "34/60",
+    "極致アナイヤ改": "27/60",
+    "頂点捕食者 改": "21/60",
+    "最強イエロー 赤1タッチ": "32/60"
    },
-   "measuredAt": "2026-10-22T21:23:13.647Z",
+   "measuredAt": "2026-10-23T21:26:17.067Z",
    "leaders": [
     "ST02-002",
     "BP04-008",
@@ -868,56 +803,89 @@
    "code": "eyJuIjoiNGNPROOCouODiuOCpOOCouOCouOCteODq-ODiO-8iDIwMjYvMDgvMDnlhKrli53vvIkiLCJsIjpbIlNUMDItMDAyIiwiQlAwNC0wMDgiLCJTVDAyLTAwNCIsIkJQMDMtMDE0Il0sImMiOltbIkJQMDEtMDI1Iiw0XSxbIkJQMDEtMDYxIiw0XSxbIkJQMDEtMDQzIiw0XSxbIkJQMDEtMDc5Iiw0XSxbIkJQMDMtMDQyIiw0XSxbIkJQMDQtMDU4Iiw0XSxbIkJQMDQtMDMwIiw0XSxbIkJQMDMtMDcwIiw0XSxbIkJQMDQtMTA4IiwzXSxbIkJQMDEtMTM2IiwxXSxbIkJQMDQtMTA2Iiw0XSxbIkJQMDItMDI2IiwxXSxbIkJQMDItMDMyIiwyXSxbIkJQMDMtMDMyIiwxXSxbIkJQMDItMDQ2IiwxXSxbIkJQMDMtMDUzIiwxXSxbIkJQMDItMDY4Iiw0XV0sInQiOlsiQlAwNC0wNzUiLCJCUDA0LTA3MyIsIkJQMDMtMDc0IiwiQlAwMy0wNzUiLCJCUDAzLTA3OSJdLCJ2IjoxfQ"
   },
   {
-   "rank": 27,
-   "id": "p-yellow",
-   "name": "最強イエロー",
+   "rank": 25,
+   "id": "p-assault-2nd",
+   "name": "アサルトストーム（2026/08/09準優勝）",
+   "origin": "user",
+   "parent": null,
+   "change": null,
+   "winRate": 51.7,
+   "games": 420,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "30/60",
+    "ttt・フラッシュバン": "27/60",
+    "デュアルハザード赤": "39/60",
+    "最強イエロー": "32/60",
+    "極致アナイヤ改": "32/60",
+    "頂点捕食者 改": "25/60",
+    "最強イエロー 赤1タッチ": "32/60"
+   },
+   "measuredAt": "2026-10-23T21:19:54.716Z",
+   "leaders": [
+    "ST02-002",
+    "BP01-003",
+    "BP01-016",
+    "BP03-004"
+   ],
+   "leaderNames": [
+    "Mondo",
+    "橘ひなの",
+    "nqrse",
+    "rion"
+   ],
+   "code": "eyJuIjoi44Ki44K144Or44OI44K544OI44O844Og77yIMjAyNi8wOC8wOea6luWEquWLne-8iSIsImwiOlsiU1QwMi0wMDIiLCJCUDAxLTAwMyIsIkJQMDEtMDE2IiwiQlAwMy0wMDQiXSwiYyI6W1siQlAwMS0wMjUiLDRdLFsiQlAwMS0wNjEiLDRdLFsiQlAwMS0xMzYiLDRdLFsiQlAwMi0wNjgiLDRdLFsiQlAwMS0wMTgiLDRdLFsiQlAwMS0wMjMiLDRdLFsiQlAwNC0xMTQiLDJdLFsiQlAwMy0wNTEiLDRdLFsiQlAwMS0wODgiLDRdLFsiQlAwMS0wNTkiLDRdLFsiQlAwMy0wMjMiLDRdLFsiQlAwMy0xMDYiLDRdLFsiQlAwMy0wMTgiLDNdLFsiQlAwMi0wMTgiLDFdXSwidCI6WyJCUDA0LTA3NSIsIkJQMDQtMDczIiwiQlAwMy0wNzQiLCJCUDAzLTA3NSIsIkJQMDMtMDc5Il0sInYiOjF9"
+  },
+  {
+   "rank": 26,
+   "id": "p-flash",
+   "name": "ttt・フラッシュバン",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 46.4,
+   "winRate": 49.7,
    "games": 360,
    "perOpponent": {
-    "アリア・クレイジーバースト": "26/60",
-    "ttt・フラッシュバン": "27/60",
-    "デュアルハザード赤": "39/60",
-    "極致アナイヤ改": "26/60",
-    "頂点捕食者 改": "15/60",
-    "最強イエロー 赤1タッチ": "34/60"
+    "アリア・クレイジーバースト": "23/60",
+    "デュアルハザード赤": "41/60",
+    "最強イエロー": "28/60",
+    "極致アナイヤ改": "31/60",
+    "頂点捕食者 改": "21/60",
+    "最強イエロー 赤1タッチ": "35/60"
    },
-   "measuredAt": "2026-10-22T21:35:36.552Z",
+   "measuredAt": "2026-10-23T21:24:44.066Z",
    "leaders": [
-    "BP03-010",
-    "BP02-011",
-    "BP02-012",
-    "BP05-L11"
+    "ST01-001",
+    "BP04-008",
+    "BP05-L08",
+    "BP04-010"
    ],
    "leaderNames": [
-    "鬼ヶ谷テン",
-    "kinako",
-    "わいわい",
-    "Cpt (IGV)"
+    "一ノ瀬うるは",
+    "夜乃くろむ",
+    "tttcheekyttt",
+    "千燈ゆうひ"
    ],
-   "code": "eyJuIjoi5pyA5by344Kk44Ko44Ot44O8IiwibCI6WyJCUDAzLTAxMCIsIkJQMDItMDExIiwiQlAwMi0wMTIiLCJCUDA1LUwxMSJdLCJjIjpbWyJTVDAyLTAxNSIsNF0sWyJCUDAzLTAzNSIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDAyLTAzNiIsM10sWyJCUDAyLTAzMyIsM10sWyJCUDAzLTAzMyIsM10sWyJCUDAxLTAzNiIsMV0sWyJCUDAyLTA1OSIsMl0sWyJTVDAyLTAxMSIsM10sWyJCUDAxLTAzNyIsNF0sWyJCUDAyLTA2NCIsM10sWyJCUDAyLTAzMiIsMl0sWyJCUDAxLTAzNSIsMV0sWyJCUDA0LTAzMyIsM10sWyJCUDAyLTA2NSIsMV0sWyJCUDA0LTA2MSIsMV0sWyJCUDA0LTA2MCIsMl0sWyJCUDAzLTA2MyIsMl0sWyJCUDA1LTA1OSIsMV0sWyJTVDAyLTAxMCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+   "code": "eyJuIjoidHR044O744OV44Op44OD44K344Ol44OQ44OzIiwibCI6WyJTVDAxLTAwMSIsIkJQMDQtMDA4IiwiQlAwNS1MMDgiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTAyNyIsNF0sWyJCUDAyLTAzMSIsM10sWyJCUDAzLTA1MiIsNF0sWyJCUDAxLTA2NSIsM10sWyJCUDA0LTA1OCIsNF0sWyJCUDA0LTA2MyIsMl0sWyJCUDAxLTAyOSIsNF0sWyJTVDAxLTAwNyIsM10sWyJCUDAzLTAyNiIsM10sWyJCUDA0LTAyNiIsMV0sWyJCUDA0LTAzMCIsM10sWyJCUDAyLTAyNiIsM10sWyJCUDAyLTA2MCIsMV0sWyJCUDA0LTAyNCIsMV0sWyJCUDA0LTA2MSIsMV0sWyJCUDAzLTAyNSIsMl0sWyJCUDAzLTA1MyIsMV0sWyJCUDA1LTA1OCIsNF0sWyJCUDA1LTAzMCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
   },
   {
-   "rank": 28,
+   "rank": 27,
    "id": "p-zero",
    "name": "新０コス",
    "origin": "user",
    "parent": null,
    "change": null,
-   "winRate": 45.5,
+   "winRate": 48.1,
    "games": 420,
    "perOpponent": {
-    "アリア・クレイジーバースト": "22/60",
-    "ttt・フラッシュバン": "23/60",
-    "デュアルハザード赤": "46/60",
-    "最強イエロー": "30/60",
-    "極致アナイヤ改": "21/60",
-    "頂点捕食者 改": "18/60",
-    "最強イエロー 赤1タッチ": "31/60"
+    "アリア・クレイジーバースト": "26/60",
+    "ttt・フラッシュバン": "30/60",
+    "デュアルハザード赤": "38/60",
+    "最強イエロー": "31/60",
+    "極致アナイヤ改": "26/60",
+    "頂点捕食者 改": "19/60",
+    "最強イエロー 赤1タッチ": "32/60"
    },
-   "measuredAt": "2026-10-22T21:32:39.559Z",
+   "measuredAt": "2026-10-23T21:31:03.479Z",
    "leaders": [
     "BP05-L14",
     "BP05-L01",
@@ -933,23 +901,23 @@
    "code": "eyJuIjoi5paw77yQ44Kz44K5IiwibCI6WyJCUDA1LUwxNCIsIkJQMDUtTDAxIiwiQlAwMy0wMDYiLCJCUDA1LUwxMSJdLCJjIjpbWyJCUDA1LTAyMCIsNF0sWyJCUDA1LTA0OCIsNF0sWyJCUDA1LTAyNCIsMl0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDAzLTAyOCIsNF0sWyJCUDAzLTA1NiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA0LTEwNiIsMl0sWyJCUDAxLTAyOCIsNF0sWyJCUDAyLTAzMyIsNF0sWyJCUDAyLTA1NCIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNC0wNzYiLCJCUDAyLTA3NCIsIkJQMDItMDc1IiwiU1QwMS0wMTkiXSwidiI6MX0"
   },
   {
-   "rank": 29,
+   "rank": 28,
    "id": "p-ysplash",
    "name": "最強イエロー 赤1タッチ",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 44.7,
+   "winRate": 44.4,
    "games": 360,
    "perOpponent": {
-    "アリア・クレイジーバースト": "25/60",
-    "ttt・フラッシュバン": "28/60",
-    "デュアルハザード赤": "39/60",
-    "最強イエロー": "31/60",
-    "極致アナイヤ改": "19/60",
-    "頂点捕食者 改": "19/60"
+    "アリア・クレイジーバースト": "20/60",
+    "ttt・フラッシュバン": "30/60",
+    "デュアルハザード赤": "44/60",
+    "最強イエロー": "25/60",
+    "極致アナイヤ改": "27/60",
+    "頂点捕食者 改": "14/60"
    },
-   "measuredAt": "2026-10-22T21:34:07.559Z",
+   "measuredAt": "2026-10-23T21:32:34.155Z",
    "leaders": [
     "BP03-010",
     "BP02-011",
@@ -965,23 +933,55 @@
    "code": "eyJuIjoi5pyA5by344Kk44Ko44Ot44O8IOi1pDHjgr_jg4Pjg4EiLCJsIjpbIkJQMDMtMDEwIiwiQlAwMi0wMTEiLCJCUDAyLTAxMiIsIkJQMDUtTDAyIl0sImMiOltbIlNUMDItMDE1Iiw0XSxbIkJQMDMtMDM1Iiw0XSxbIkJQMDItMDMxIiw0XSxbIkJQMDItMDM2IiwzXSxbIkJQMDItMDMzIiwzXSxbIkJQMDMtMDMzIiwzXSxbIkJQMDEtMDM2IiwxXSxbIkJQMDItMDU5IiwyXSxbIlNUMDItMDExIiwzXSxbIkJQMDEtMDM3Iiw0XSxbIkJQMDItMDY0IiwzXSxbIkJQMDItMDMyIiwyXSxbIkJQMDEtMDM1IiwxXSxbIkJQMDQtMDMzIiwzXSxbIkJQMDItMDY1IiwxXSxbIkJQMDQtMDYxIiwxXSxbIkJQMDQtMDYwIiwyXSxbIkJQMDMtMDYzIiwyXSxbIkJQMDUtMDU5IiwxXSxbIlNUMDItMDEwIiwzXV0sInQiOlsiQlAwMi0wNzkiLCJCUDAxLTA5NCIsIkJQMDEtMDkyIiwiQlAwNC0wNzMiLCJCUDAzLTA3MyJdLCJ2IjoxfQ"
   },
   {
+   "rank": 29,
+   "id": "p-yellow",
+   "name": "最強イエロー",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 43.9,
+   "games": 360,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "21/60",
+    "ttt・フラッシュバン": "26/60",
+    "デュアルハザード赤": "39/60",
+    "極致アナイヤ改": "22/60",
+    "頂点捕食者 改": "24/60",
+    "最強イエロー 赤1タッチ": "26/60"
+   },
+   "measuredAt": "2026-10-23T21:27:48.606Z",
+   "leaders": [
+    "BP03-010",
+    "BP02-011",
+    "BP02-012",
+    "BP05-L11"
+   ],
+   "leaderNames": [
+    "鬼ヶ谷テン",
+    "kinako",
+    "わいわい",
+    "Cpt (IGV)"
+   ],
+   "code": "eyJuIjoi5pyA5by344Kk44Ko44Ot44O8IiwibCI6WyJCUDAzLTAxMCIsIkJQMDItMDExIiwiQlAwMi0wMTIiLCJCUDA1LUwxMSJdLCJjIjpbWyJTVDAyLTAxNSIsNF0sWyJCUDAzLTAzNSIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDAyLTAzNiIsM10sWyJCUDAyLTAzMyIsM10sWyJCUDAzLTAzMyIsM10sWyJCUDAxLTAzNiIsMV0sWyJCUDAyLTA1OSIsMl0sWyJTVDAyLTAxMSIsM10sWyJCUDAxLTAzNyIsNF0sWyJCUDAyLTA2NCIsM10sWyJCUDAyLTAzMiIsMl0sWyJCUDAxLTAzNSIsMV0sWyJCUDA0LTAzMyIsM10sWyJCUDAyLTA2NSIsMV0sWyJCUDA0LTA2MSIsMV0sWyJCUDA0LTA2MCIsMl0sWyJCUDAzLTA2MyIsMl0sWyJCUDA1LTA1OSIsMV0sWyJTVDAyLTAxMCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+  },
+  {
    "rank": 30,
    "id": "p-dual",
    "name": "デュアルハザード赤",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 25.3,
+   "winRate": 19.4,
    "games": 360,
    "perOpponent": {
-    "アリア・クレイジーバースト": "15/60",
-    "ttt・フラッシュバン": "14/60",
-    "最強イエロー": "23/60",
-    "極致アナイヤ改": "13/60",
+    "アリア・クレイジーバースト": "8/60",
+    "ttt・フラッシュバン": "16/60",
+    "最強イエロー": "21/60",
+    "極致アナイヤ改": "7/60",
     "頂点捕食者 改": "8/60",
-    "最強イエロー 赤1タッチ": "18/60"
+    "最強イエロー 赤1タッチ": "10/60"
    },
-   "measuredAt": "2026-10-22T21:36:53.777Z",
+   "measuredAt": "2026-10-23T21:33:53.643Z",
    "leaders": [
     "BP01-004",
     "ST02-001",
