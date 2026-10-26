@@ -80,13 +80,14 @@ function setupForm() {
     if (q.key === 'CUSTOMER_ID') idItem = item;
   });
 
+  // addTextItem() が返すのは TextItem なので、そのまま createResponse できる
+  const prefill = form.createResponse()
+    .withItemResponse(idItem.createResponse(CFG.ID_PLACEHOLDER))
+    .toPrefilledUrl();
+
   form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
   SpreadsheetApp.flush();
   renameResponseSheet_(ss, form.getId());
-
-  const prefill = form.createResponse()
-    .withItemResponse(idItem.asTextItem().createResponse(CFG.ID_PLACEHOLDER))
-    .toPrefilledUrl();
   settings.getRange(CFG.SETTINGS_EDIT_URL).setValue(form.getEditUrl());
   settings.getRange(CFG.SETTINGS_FORM_URL).setValue(form.getPublishedUrl());
   settings.getRange(CFG.SETTINGS_PREFILL_URL).setValue(prefill);
