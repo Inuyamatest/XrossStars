@@ -112,8 +112,9 @@ function onFormSubmit(e) {
 
   const row = findCustomerRow_(id);
   if (row) {
-    const today = new Date(submittedAt.getFullYear(), submittedAt.getMonth(), submittedAt.getDate());
-    row.set('フォーム回答日', today);
+    // スクリプトとシートのタイムゾーンがずれても日付がずれないよう、シートのタイムゾーンで日付文字列にして書き込む
+    const tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+    row.set('フォーム回答日', Utilities.formatDate(submittedAt, tz, 'yyyy/MM/dd'));
     const status = row.get('制作ステータス');
     if (status === '' || status === '未着手' || status === 'ヒアリング依頼済') row.set('制作ステータス', 'フォーム回答済');
   }
