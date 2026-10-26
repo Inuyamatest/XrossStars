@@ -220,7 +220,7 @@ function upsertOrder_(id, a, submittedAt, customerRow) {
   ].join('\n');
 
   const note = customerRow ? '' : '　※顧客一覧にこのIDがありません';
-  const rowValues = [id + note, a.STORE_NAME, submittedAt, mode, text];
+  const rowValues = [asText_(id + note), asText_(a.STORE_NAME), submittedAt, mode, asText_(text)];
 
   const last = sheet.getLastRow();
   let target = -1;
@@ -234,4 +234,10 @@ function upsertOrder_(id, a, submittedAt, customerRow) {
   sheet.getRange(target, 3).setNumberFormat('yyyy/mm/dd hh:mm');
   sheet.getRange(target, 5).setWrap(true).setVerticalAlignment('top');
   sheet.getRange(target, 1, 1, 4).setVerticalAlignment('top');
+}
+
+/** = + - @ で始まる文字列が数式として解釈されないよう、先頭に ' を付けて文字列として書き込む */
+function asText_(v) {
+  const str = String(v);
+  return /^[=+\-@]/.test(str) ? "'" + str : str;
 }
