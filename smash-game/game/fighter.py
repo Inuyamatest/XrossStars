@@ -83,6 +83,8 @@ class Fighter:
         self.shake = 0
         self.dmg_flash = 0
         self.ai = None
+        self.tech_t = 0      # 受け身の受付残りフレーム
+        self.tech_lock = 0   # 受け身の再入力禁止（連打対策）
 
     # ------------------------------------------------------------ 入力
     def read_input(self, w):
@@ -165,6 +167,7 @@ class Fighter:
                 w.respawn(self)
             return
         self.read_input(w)
+        self.update_tech_input()
         if self.hitlag > 0:
             self.hitlag -= 1
             if self.shake > 0:
@@ -384,7 +387,7 @@ class Fighter:
             self.vx = d['dir'] * 7.2 if 3 <= self.timer <= 22 else approach(self.vx, 0, 1.5)
             if self.timer >= d['total']:
                 self.face = -d['dir']
-        elif d['kind'] == 'spot':
+        elif d['kind'] in ('spot', 'tech'):
             self.vx = approach(self.vx, 0, 1.5)
         else:
             if self.timer <= 16 and (d['dir'] or d['dy']):
@@ -393,6 +396,63 @@ class Fighter:
         if self.timer >= d['total']:
             self.dodge = None
             self.to_neutral()
+
+    # ------------------------------------------------------------ 受け身
+    TECH_WINDOW = 11   # 床・壁・天井に当たる何フレーム前までのガード入力を受け身にするか
+    TECH_LOCK = 40     # 一度押したら次に受け付けるまでのフレーム（連打では取れない）
+
+    def update_tech_input(self):
+        if self.tech_t > 0:
+            self.tech_t -= 1
+        if self.tech_lock > 0:
+            self.tech_lock -= 1
+        if self.inp.shield and not self.prev.shield and self.tech_lock == 0:
+            self.tech_t = self.TECH_WINDOW
+            self.tech_lock = self.TECH_LOCK
+
+    def can_tech(self):
+        return self.state == 'hitstun' and self.tech_t > 0
+
+    def tech_ground(self, w):
+        """床受け身: その場 or 左右に転がる。"""
+        self.tech_t = 0
+        self.tech_lock = 0
+        self.kx = self.ky = self.vx = self.vy = 0
+        self.hitstun = 0
+        self.tumble = False
+        d = sign(self.inp.x) if abs(self.inp.x) > 0.5 else 0
+        if d:
+            self.dodge = dict(kind='roll', total=38, inv=(0, 20), dir=d)
+        else:
+            self.dodge = dict(kind='tech', total=26, inv=(0, 20), dir=0)
+        self.set_state('dodge')
+        self.timer = 0
+        w.event('tech', self.x, self.y - self.h * 0.3, who=self, color=self.color)
+
+    def tech_wall(self, w, side, ceiling=False):
+        """壁・天井受け身: 一瞬はりついて無敵。壁ならジャンプ入力で壁ジャンプ。"""
+        self.tech_t = 0
+        self.tech_lock = 0
+        self.kx = self.ky = self.vx = self.vy = 0
+        self.hitstun = 0
+        self.tumble = False
+        self.inv = max(self.inv, 20)
+        self.set_state('walltech', 0)
+        self.wall_side = 0 if ceiling else side
+        w.event('tech', self.x + side * self.hw, self.y - self.h * 0.5, who=self, color=self.color)
+
+    def st_walltech(self, w):
+        self.timer += 1
+        self.vx = self.vy = 0
+        if self.wall_side and self.timer >= 4 and self.consume('jump'):
+            self.vy = -self.st['djump'] * 0.95
+            self.vx = -self.wall_side * self.st['air']
+            self.face = -self.wall_side
+            self.set_state('air')
+            w.event('djump', self.x, self.y, who=self)
+            return
+        if self.timer >= 12:
+            self.set_state('air')
 
     # ------------------------------------------------------------ 空中
     def air_drift(self, mul=1.0):
@@ -657,7 +717,7 @@ class Fighter:
         nograv = d is not None and d.in_window('nograv', self.move.f)
         if self.state == 'dodge' and self.dodge['kind'] == 'air' and self.timer <= 16 and (self.dodge['dir'] or self.dodge['dy']):
             nograv = True
-        if self.state == 'awaken':
+        if self.state in ('awaken', 'walltech'):
             nograv = True
         if not self.ground and not nograv:
             maxf = s['ffall'] if self.fastfall else s['fall']
@@ -688,6 +748,9 @@ class Fighter:
         self.used_up = self.used_side = self.used_dodge = self.ledge_inv_used = False
         st = self.state
         if st == 'hitstun':
+            if self.can_tech():
+                self.tech_ground(w)
+                return
             if self.ky > 7 or (self.tumble and self.vy + self.ky > 9):
                 # 叩きつけバウンド
                 self.ky = -abs(self.ky) * 0.6 - 2

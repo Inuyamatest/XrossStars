@@ -186,25 +186,41 @@ class World:
                 if oy - g.dy <= g.y + 1 and f.y >= g.y and g.x1 <= f.x <= g.x2:
                     self.land(f, g)
                     return
+        for _ in range(3):
+            if not self.collide_solids(f, m):
+                break
+
+    def collide_solids(self, f, m):
+        """ステージ本体（輪切りの矩形の列）との押し出し。押し出したら True。"""
         l, r, top, bot = f.x - f.hw, f.x + f.hw, f.y - f.h, f.y
-        if r > m.x1 and l < m.x2 and bot > m.y + 1 and top < m.y + m.depth:
-            pen = {'left': r - m.x1, 'right': m.x2 - l, 'down': m.y + m.depth - top, 'up': bot - m.y}
-            k = min(pen, key=pen.get)
-            if k == 'up':
+        for k, (sx1, sy1, sx2, sy2) in enumerate(m.solids):
+            if not (r > sx1 and l < sx2 and bot > sy1 + 1 and top < sy2):
+                continue
+            pen = {'left': r - sx1, 'right': sx2 - l, 'down': sy2 - top}
+            if k == 0:
+                pen['up'] = bot - sy1
+            side = min(pen, key=pen.get)
+            if side == 'up':
                 f.x = min(max(f.x, m.x1), m.x2)
                 self.land(f, m)
-            elif k == 'left':
-                f.x = m.x1 - f.hw
-                self.wall(f)
-            elif k == 'right':
-                f.x = m.x2 + f.hw
-                self.wall(f)
+                return True
+            if side == 'left':
+                f.x = sx1 - f.hw
+                self.wall(f, 1)
+            elif side == 'right':
+                f.x = sx2 + f.hw
+                self.wall(f, -1)
             else:
-                f.y = m.y + m.depth + f.h
+                f.y = sy2 + f.h
+                if f.can_tech():
+                    f.tech_wall(self, 0, ceiling=True)
+                    return True
                 if f.vy < 0:
                     f.vy = 0
                 if f.ky < 0:
                     f.ky = -f.ky * 0.5
+            return True
+        return False
 
     def land(self, f, g):
         f.y = g.y
@@ -214,7 +230,11 @@ class World:
         if f.ground is not None and f.ky > 0:
             f.ky = 0
 
-    def wall(self, f):
+    def wall(self, f, side=0):
+        """side: 壁がある向き（+1=右側に壁）。"""
+        if f.can_tech():
+            f.tech_wall(self, side)
+            return
         if f.state == 'hitstun' and abs(f.kx) > 6:
             f.kx = -f.kx * 0.5
             self.event('bounce', f.x, f.y - f.h / 2)
@@ -491,7 +511,7 @@ class World:
                         else:
                             p.dead = True
                         break
-            if m.x1 < p.x < m.x2 and m.y < p.y < m.y + m.depth:
+            if any(sx1 < p.x < sx2 and sy1 < p.y < sy2 for sx1, sy1, sx2, sy2 in m.solids):
                 p.dead = True
             if p.life <= 0 or not (bl < p.x < br and bt < p.y < bb):
                 p.dead = True

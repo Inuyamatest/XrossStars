@@ -46,6 +46,11 @@ class CpuController:
         if st == 'hold':
             return self.hold(w, f)
         if st in ('hitstun',):
+            # 受け身: 床・壁・天井に当たりそうなら、レベルに応じた確率でガードを押す
+            if f.tech_lock == 0 and self.near_surface(w, f) and self.rng.random() < 0.09 * self.level:
+                d = self.rng.choice((-1.0, 0.0, 0.0, 1.0)) if self.level >= 4 else 0.0
+                self.push(S(x=d), S(x=d))
+                return S(shield=True, x=d)
             # ずらし: 外側に飛ばされているならステージ側へ
             return S(x=-sgn(f.kx) if abs(f.kx) > 3 else 0.0, y=-1.0 if f.ky > 3 else 0.0)
         if self.offstage(w, f):
@@ -58,6 +63,20 @@ class CpuController:
         return self.fight(w, f)
 
     # ------------------------------------------------------------ 状況別
+    def near_surface(self, w, f):
+        """この先数フレームで床・壁・天井にぶつかりそうか。"""
+        m = w.stage.main
+        vx, vy = f.vx + f.kx, f.vy + f.ky
+        for k in (3, 6, 9):
+            nx, ny = f.x + vx * k, f.y + vy * k
+            if vy > 0:
+                for g in w.stage.surfaces():
+                    if g.x1 <= nx <= g.x2 and f.y <= g.y <= ny:
+                        return True
+            if m.x1 - f.hw < nx < m.x2 + f.hw and m.y + 4 < ny and ny - f.h < m.y + m.depth:
+                return True
+        return False
+
     def offstage(self, w, f):
         m = w.stage.main
         if f.ground is not None:

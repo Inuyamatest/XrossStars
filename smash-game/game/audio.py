@@ -156,7 +156,7 @@ class Audio:
             self.play('jump', 0.6)
         elif k == 'land':
             self.play('land', 0.5)
-        elif k in ('block', 'counter', 'reflect', 'armor'):
+        elif k in ('block', 'counter', 'reflect', 'armor', 'tech'):
             self.play('block')
         elif k == 'grab':
             self.play('grab')

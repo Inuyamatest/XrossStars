@@ -154,7 +154,7 @@ def compute_pose(f):
         p.drop = 12
         p.ff, p.fb = (12, 0), (-10, 0)
         p.hf, p.hb = (14, -24), (-12, -24)
-    elif st in ('air', 'helpless'):
+    elif st in ('air', 'helpless', 'walltech'):
         if f.vy < 0:
             p.ff, p.fb = (8, -14), (-7, -6)
             p.hf, p.hb = (12, -52), (-12, -46)
@@ -177,6 +177,10 @@ def compute_pose(f):
             p.drop = 18
             p.ff, p.fb = (8, -12), (-6, -10)
             p.hf, p.hb = (8, -36), (-6, -36)
+        elif d.get('kind') == 'tech':
+            p.drop = 12
+            p.ff, p.fb = (12, 0), (-10, 0)
+            p.hf, p.hb = (14, -24), (-12, -24)
         else:
             p.ff, p.fb = (6, -4), (-8, -2)
         inv = d.get('inv', (0, 0))
@@ -566,13 +570,13 @@ def sprite_state_key(f):
         return 'rise' if f.vy < 0 else 'fall'
     if st == 'dodge':
         k = (f.dodge or {}).get('kind')
-        return {'roll': 'roll', 'spot': 'spot'}.get(k, 'airdodge')
+        return {'roll': 'roll', 'spot': 'spot', 'tech': 'land'}.get(k, 'airdodge')
     if st == 'hitstun':
         return 'tumble' if f.tumble and f.ground is None else 'hit'
     if st == 'knockdown':
         return 'down'
     return {'shield': 'shield', 'grabbed': 'grabbed', 'hold': 'hold', 'ledge': 'ledge', 'climb': 'climb',
-            'dizzy': 'dizzy', 'helpless': 'helpless', 'awaken': 'awaken'}.get(st, 'stand')
+            'dizzy': 'dizzy', 'helpless': 'helpless', 'awaken': 'awaken', 'walltech': 'airdodge'}.get(st, 'stand')
 
 
 class SpriteArt:
@@ -887,6 +891,10 @@ class Renderer:
             elif k in ('counter', 'reflect'):
                 self.parts.append(Particle('hex', x, y, life=18, size=46, color=(160, 240, 255)))
                 self.banner('COUNTER!' if k == 'counter' else 'REFLECT!', (160, 240, 255), 40, y_off=-140)
+            elif k == 'tech':
+                self.parts.append(Particle('hex', x, y, life=16, size=40, color=(255, 255, 255)))
+                self.parts.append(Particle('ring', x, y, life=14, size=60, color=lighter(e['color'], 0.5)))
+                self.banner('受け身!', (255, 255, 255), 30, size=40, y_off=-150)
             elif k == 'armor':
                 self.parts.append(Particle('ring', x, y, life=10, size=40, color=(255, 200, 120)))
             elif k == 'warp':
@@ -959,33 +967,56 @@ class Renderer:
         z = self.zoom
         theme = st.theme
         top_col = {'dusk': (250, 220, 170), 'space': (170, 140, 255), 'sky': (255, 255, 255)}[theme]
-        body_col = {'dusk': (70, 50, 80), 'space': (40, 30, 80), 'sky': (110, 160, 90)}[theme]
-        a = self.to_screen(m.x1, m.y)
-        b = self.to_screen(m.x2, m.y)
-        c = self.to_screen(m.x2 - 70, m.y + m.depth)
-        d = self.to_screen(m.x1 + 70, m.y + m.depth)
-        mid1 = self.to_screen(m.x2 - 10, m.y + m.depth * 0.35)
-        mid2 = self.to_screen(m.x1 + 10, m.y + m.depth * 0.35)
-        pygame.draw.polygon(s, darker(body_col, 0.6), [a, b, mid1, c, d, mid2])
-        pygame.draw.polygon(s, body_col, [a, b, mid1, mid2])
-        # 模様
-        for i in range(1, 8):
-            x = lerp(m.x1, m.x2, i / 8)
-            p1 = self.to_screen(x, m.y + 6)
-            p2 = self.to_screen(lerp(m.x1 + 70, m.x2 - 70, i / 8), m.y + m.depth - 6)
-            pygame.draw.line(s, lighter(body_col, 0.12), p1, p2, max(1, int(2 * z)))
-        if theme == 'sky':
-            pygame.draw.polygon(s, (90, 200, 90), [a, b, self.to_screen(m.x2, m.y + 18), self.to_screen(m.x1, m.y + 18)])
-        pygame.draw.line(s, top_col, a, b, max(2, int(6 * z)))
-        pygame.draw.circle(s, top_col, a, max(2, int(5 * z)))
-        pygame.draw.circle(s, top_col, b, max(2, int(5 * z)))
+        body_col = {'dusk': (78, 58, 92), 'space': (44, 34, 86), 'sky': (120, 108, 96)}[theme]
+        lip_col = {'dusk': (120, 96, 120), 'space': (70, 60, 130), 'sky': (90, 190, 90)}[theme]
+        pts = [self.to_screen(x, y) for x, y in m.outline]
+        # 本体（下がえぐれた形）
+        pygame.draw.polygon(s, darker(body_col, 0.55), [(x, y + 6 * z) for x, y in pts])
+        pygame.draw.polygon(s, body_col, pts)
+        # 縦の陰影: 中心から外へ暗く
+        cx = (m.x1 + m.x2) / 2
+        w = (m.x2 - m.x1) / 2
+        from .stage import half_width
+        for k in range(1, 6):
+            dd = m.depth * (0.2 + k * 0.13)
+            hw = half_width(st.shape, w, m.depth, dd) * 0.92
+            if hw < 8:
+                continue
+            a = self.to_screen(cx - hw, m.y + dd)
+            b = self.to_screen(cx + hw, m.y + dd)
+            pygame.draw.line(s, lighter(body_col, 0.05 * (6 - k) / 5 + 0.03), a, b, max(1, int(2 * z)))
+        # 縁（リップ）: 上面から少し下まで色を変え、角は丸く
+        from .stage import LIP
+        lip = [p for p in m.outline if p[1] <= m.y + LIP + 0.1]
+        lip_pts = [self.to_screen(x, y) for x, y in lip]
+        bottom_r = self.to_screen(cx + w, m.y + LIP)
+        bottom_l = self.to_screen(cx - w, m.y + LIP)
+        band = lip_pts[:12] + [bottom_r, bottom_l]
+        if len(band) >= 3:
+            pygame.draw.polygon(s, lip_col, band)
+            pygame.draw.line(s, darker(lip_col, 0.6), bottom_l, bottom_r, max(1, int(3 * z)))
+        # 上面のハイライト（角の丸みに沿って）
+        pygame.draw.lines(s, top_col, False, lip_pts[:12], max(2, int(5 * z)))
+        # 崖の目印
+        for L in st.ledges:
+            lx, ly = self.to_screen(L.x, L.y)
+            pygame.draw.circle(s, lighter(top_col, 0.3), (int(lx), int(ly + 3 * z)), max(2, int(3 * z)))
+        # 底の飾り（戦場風は浮遊石の光、終点風は先端の光）
+        tipx, tipy = self.to_screen(cx, m.y + m.depth)
+        glow = {'dusk': (255, 170, 120), 'space': (190, 140, 255), 'sky': (160, 230, 255)}[theme]
+        g = pygame.Surface((int(80 * z) + 4, int(80 * z) + 4), pygame.SRCALPHA)
+        rr = int(40 * z)
+        pygame.draw.circle(g, (*glow, 70), (rr + 2, rr + 2), rr)
+        pygame.draw.circle(g, (*glow, 140), (rr + 2, rr + 2), max(2, rr // 3))
+        s.blit(g, (tipx - rr - 2, tipy - rr - 2))
         for p in st.plats:
             p1 = self.to_screen(p.x1, p.y)
             p2 = self.to_screen(p.x2, p.y)
-            th = max(4, int(14 * z))
+            th = max(4, int(12 * z))
             r = pygame.Rect(p1[0], p1[1], p2[0] - p1[0], th)
             pygame.draw.rect(s, darker(body_col, 0.8), r, border_radius=th // 2)
-            pygame.draw.line(s, top_col, p1, p2, max(2, int(4 * z)))
+            pygame.draw.rect(s, lip_col, r.inflate(0, -th // 2).move(0, -th // 4), border_radius=th // 3)
+            pygame.draw.line(s, top_col, p1, p2, max(2, int(3 * z)))
             if p.move:
                 for k in range(3):
                     pygame.draw.circle(s, lighter(top_col), (int(lerp(p1[0], p2[0], 0.3 + k * 0.2)), int(p1[1] + th)),
