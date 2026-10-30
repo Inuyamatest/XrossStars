@@ -1,0 +1,6 @@
+.godot/
+*.import
+export/
+# VRoid モデルや Mixamo のモーションは各自で置く（再配布できないものが多いため）
+characters/*/
+!characters/README.md

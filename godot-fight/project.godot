@@ -1,0 +1,20 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+config/name="Cross Fight 3D"
+config/description="スマブラ風 2.5D 対戦アクション（試作）"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[physics]
+common/physics_ticks_per_second=60
+
+[rendering]
+anti_aliasing/quality/msaa_3d=2
