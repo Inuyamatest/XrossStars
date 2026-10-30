@@ -5,6 +5,8 @@ from array import array
 
 import pygame
 
+VOICE_CHANNELS = 4
+
 RATE = 22050
 
 
@@ -13,10 +15,12 @@ class Audio:
         self.ok = False
         self.sounds = {}
         self.muted = False
+        self._played = {}
         try:
             if not pygame.mixer.get_init():
                 pygame.mixer.init(RATE, -16, 1, 512)
-            pygame.mixer.set_num_channels(24)
+            pygame.mixer.set_num_channels(32)
+            pygame.mixer.set_reserved(VOICE_CHANNELS)
             self.ok = True
         except pygame.error:
             return
@@ -57,8 +61,92 @@ class Audio:
             s.set_volume(vol)
             s.play()
 
+    # ------------------------------------------------------------ 画像キャラの声・効果音
+    def play_char(self, f, key, voice=None, vol=0.9, skip_if_busy=False):
+        bank = getattr(f.char, 'voices', None)
+        if not self.ok or self.muted or bank is None or key is None:
+            return
+        snd = bank.sound(key)
+        if snd is None:
+            return
+        snd.set_volume(vol)
+        if voice is None:
+            voice = not isinstance(key, tuple) or key[0] >= 100
+        if voice:
+            ch = pygame.mixer.Channel(f.idx % VOICE_CHANNELS)
+            if skip_if_busy and ch.get_busy():
+                return
+            ch.play(snd)
+        else:
+            snd.play()
+
+    def play_char_event(self, f, kind, **kw):
+        bank = getattr(f.char, 'voices', None)
+        if bank is None:
+            return
+        keys = bank.event_keys(kind)
+        if keys:
+            self.play_char(f, random.choice(keys), **kw)
+
+    def _cue_key(self, bank, c):
+        if c.s is None:
+            return random.choice(c.g) if isinstance(c.g, tuple) else c.g
+        return bank.pick(c.g, c.s, c.rnd)
+
+    def tick(self, world):
+        """ワザのフレームに合わせて、キャラの PlaySnd を鳴らす。"""
+        for f in world.fighters:
+            bank = getattr(f.char, 'voices', None)
+            if bank is None or f.state != 'move' or f.move is None:
+                continue
+            m = f.move
+            d = m.d
+            ref = getattr(d, 'spr', None)
+            cl = bank.cues.get(ref)
+            if not cl:
+                continue
+            st = self._played.get(f.idx)
+            if st is None or st[0] is not m:
+                st = [m, set()]
+                self._played[f.idx] = st
+            if getattr(d, 'spr_mode', 'warp') == 'direct':
+                tick = m.f - 1 - getattr(d, 'spr_delay', 0)
+            else:
+                anim = f.char.sprites.anim(ref) if f.char.sprites else None
+                ln = anim.length if anim else d.total
+                tick = int((m.f - 1) / max(1, d.total) * ln)
+            for i, c in enumerate(cl):
+                if c.on_hit or i in st[1] or tick < c.tick:
+                    continue
+                st[1].add(i)
+                if c.prob < 1 and random.random() > c.prob:
+                    continue
+                self.play_char(f, self._cue_key(bank, c))
+
+    def on_hit_voices(self, e):
+        t, a = e.get('who'), e.get('by')
+        if t is not None:
+            d = e.get('dmg', 0)
+            kind = 'hurt_s' if d < 5 else ('hurt_m' if d < 12 else 'hurt_l')
+            self.play_char_event(t, kind, skip_if_busy=d < 5)
+        bank = getattr(a.char, 'voices', None) if a is not None else None
+        if bank is not None and a.state == 'move' and a.move is not None:
+            for c in bank.cues.get(getattr(a.move.d, 'spr', None), ()):
+                if c.on_hit:
+                    self.play_char(a, self._cue_key(bank, c))
+
     def on_event(self, e):
         k = e['kind']
+        if k == 'hit':
+            self.on_hit_voices(e)
+        elif k == 'ko':
+            self.play_char_event(e['who'], 'ko')
+        elif k == 'awaken':
+            self.play_char_event(e['who'], 'awaken')
+        elif k == 'respawn':
+            self.play_char_event(e['who'], 'respawn')
+        elif k in ('jump', 'djump') and e.get('who') is not None:
+            self.play_char_event(e['who'], 'jump', voice=False, vol=0.6)
         if k == 'hit':
             d = e['dmg']
             self.play('hit_l' if d >= 12 or e['kb'] > 140 else ('hit_m' if d >= 5 else 'hit_s'))

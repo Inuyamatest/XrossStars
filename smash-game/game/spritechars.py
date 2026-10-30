@@ -13,6 +13,7 @@ import pygame
 from .chars import CharDef, CHAR_BY_KEY, _st
 from .moves import common_moves
 from . import sprites as S
+from . import voices as V
 
 TARGET_H = 92
 SPECIAL_DEPS = {'nspecial': [], 'sspecial': ['s_throw'], 'uspecial': [], 'dspecial': ['d_land', 'd_hit']}
@@ -209,8 +210,13 @@ def load_mugen(folder):
     hw = max(16, min(30, width * scale / 2))
     stats = _st(98, 4.4, 8.4, 6.0, 0.45, 0.56, 9.6, 14.2, 14.8, 9.7, 14.0, hw=hw, h=TARGET_H)
     key = 'mugen_' + re.sub(r'\W+', '_', os.path.basename(folder)).lower()
-    return SpriteCharDef(key, name, 'MUGENキャラ', '%s（作者: %s）' % (name, info.get('author', '不明')), look, stats,
+    ch = SpriteCharDef(key, name, 'MUGENキャラ', '%s（作者: %s）' % (name, info.get('author', '不明')), look, stats,
                          sprites, {s: 'blaze' for s in SPECIAL_SLOTS}, hook, '覚醒・%s' % name, source=folder)
+    try:
+        ch.voices = V.mugen_voices(folder, files, air)
+    except Exception as e:  # 音が読めなくても絵だけで遊べるようにする
+        print('[音の読み込み失敗] %s: %s' % (folder, e))
+    return ch
 
 
 # ================================================================ 連番画像
@@ -420,9 +426,11 @@ def load_pack(folder):
         look[k] = tuple(v) if isinstance(v, list) else v
     special_plan = {s: cfg.get('specials', {}).get(s, {}).get('base', 'blaze') for s in SPECIAL_SLOTS}
     key = 'pack_' + re.sub(r'\W+', '_', os.path.basename(folder)).lower()
-    return SpriteCharDef(key, cfg.get('name', os.path.basename(folder)), cfg.get('title', ''), cfg.get('desc', ''),
+    ch = SpriteCharDef(key, cfg.get('name', os.path.basename(folder)), cfg.get('title', ''), cfg.get('desc', ''),
                          look, stats, sprites, special_plan, hook, cfg.get('awaken', '覚醒'),
                          power=cfg.get('power', 1.0), source=folder)
+    ch.voices = V.pack_voices(folder, cfg)
+    return ch
 
 
 # ================================================================ 探す

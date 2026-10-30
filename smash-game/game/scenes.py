@@ -486,6 +486,7 @@ class BattleScene:
         # GAME! 直後はスローモーション
         if not (w.ending > 40 and self.tick % 3):
             w.step()
+        self.app.audio.tick(w)
         self.r.consume_events(w.events, self.app.audio)
         w.events.clear()
 
@@ -515,6 +516,7 @@ class ResultScene:
         self.w = world
         self.t = 0
         self.ranked = sorted(world.fighters, key=lambda f: (f.place or 99))
+        app.audio.play_char_event(self.ranked[0], 'win')
 
     def handle(self, e):
         if self.t < 40:

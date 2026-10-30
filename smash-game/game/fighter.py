@@ -298,7 +298,7 @@ class Fighter:
             self.vx += self.inp.x * 1.2
             self.ground = None
             self.set_state('air')
-            w.event('jump', self.x, self.y)
+            w.event('jump', self.x, self.y, who=self)
 
     def st_lag(self, w):
         self.vx = approach(self.vx, 0, self.st['friction'])
@@ -416,7 +416,7 @@ class Fighter:
             self.vy = -self.st['djump']
             self.vx = i.x * self.st['air']
             self.fastfall = False
-            w.event('djump', self.x, self.y)
+            w.event('djump', self.x, self.y, who=self)
             return
         if self.consume('shield') and not self.used_dodge:
             n = math.hypot(i.x, i.y)
@@ -558,7 +558,7 @@ class Fighter:
             self.vy = -15.5
             self.vx = toward * 2.6
             self.set_state('air')
-            w.event('jump', self.x, self.y)
+            w.event('jump', self.x, self.y, who=self)
         elif self.consume('attack') or self.consume('smash'):
             self.leave_ledge(w)
             self.place_on_ledge_top(L)
