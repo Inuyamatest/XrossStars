@@ -324,6 +324,10 @@ class FighterArt:
     def draw(surf, f, to_screen, zoom, glow=False):
         if f.hidden or f.state == 'dead':
             return
+        if getattr(f.char, 'sprites', None) is not None:
+            SpriteArt.draw(surf, f, to_screen, zoom)
+            FighterArt.overlays(surf, f, to_screen, zoom)
+            return
         look = f.char.look
         p = compute_pose(f)
         s = f.h / 84.0
@@ -417,7 +421,10 @@ class FighterArt:
         if layer is not None:
             layer.set_alpha(p.alpha)
             surf.blit(layer, (0, 0))
+        FighterArt.overlays(surf, f, to_screen, zoom)
 
+    @staticmethod
+    def overlays(surf, f, to_screen, zoom):
         # シールド
         if f.state == 'shield':
             cx, cy = to_screen(f.x, f.y - f.h * 0.5)
@@ -530,7 +537,137 @@ def star(surf, c, r, color):
 
 
 def draw_portrait(surf, char, cx, cy, r, face=1, eyes='open'):
+    sp = getattr(char, 'sprites', None)
+    if sp is not None:
+        img = sp.portrait(int(r * 2))
+        if img is not None:
+            pygame.draw.circle(surf, (18, 16, 26), (cx, cy), r + 3)
+            surf.blit(img, (cx - r, cy - r))
+            return
     FighterArt.head(surf, char.look, cx, cy, r, face, eyes, (18, 16, 26))
+
+
+def sprite_state_key(f):
+    st = f.state
+    if st in ('stand', 'respawn'):
+        if st == 'stand' and f.crouch:
+            return 'crouch'
+        sp = abs(f.vx)
+        if st == 'stand' and sp > f.st['walk'] + 0.5:
+            return 'run'
+        if st == 'stand' and sp > 0.6:
+            return 'walk'
+        return 'stand' if st == 'stand' else 'respawn'
+    if st == 'jumpsquat':
+        return 'jumpsquat'
+    if st == 'lag':
+        return 'land'
+    if st == 'air':
+        return 'rise' if f.vy < 0 else 'fall'
+    if st == 'dodge':
+        k = (f.dodge or {}).get('kind')
+        return {'roll': 'roll', 'spot': 'spot'}.get(k, 'airdodge')
+    if st == 'hitstun':
+        return 'tumble' if f.tumble and f.ground is None else 'hit'
+    if st == 'knockdown':
+        return 'down'
+    return {'shield': 'shield', 'grabbed': 'grabbed', 'hold': 'hold', 'ledge': 'ledge', 'climb': 'climb',
+            'dizzy': 'dizzy', 'helpless': 'helpless', 'awaken': 'awaken'}.get(st, 'stand')
+
+
+class SpriteArt:
+    track = {}
+
+    @staticmethod
+    def frame_for(f, sp):
+        """いま表示する (Frame, 反転するか)。"""
+        if f.state == 'move' and f.move is not None:
+            d = f.move.d
+            anim = sp.anim(getattr(d, 'spr', None))
+            if anim is not None and anim.frames:
+                if getattr(d, 'spr_mode', 'warp') == 'direct':
+                    idx = anim.index_at(max(0, f.move.f - 1 - getattr(d, 'spr_delay', 0)), loop=False)
+                else:
+                    idx = warp_index(d, f.move.f, len(anim.frames), getattr(d, 'spr_hit', None))
+                return anim.frames[idx], getattr(d, 'spr_flip', False)
+        key = getattr(f, 'pose_override', None) or sprite_state_key(f)
+        ref = sp.state_map.get(key) or sp.state_map.get('stand')
+        anim = sp.anim(ref)
+        if anim is None or not anim.frames:
+            return None, False
+        tid = getattr(f, 'track_id', None) or id(f)
+        cur = SpriteArt.track.get(tid)
+        if cur is None or cur[0] != key:
+            cur = (key, f.anim)
+            SpriteArt.track[tid] = cur
+        t = f.anim - cur[1]
+        loop = key in ('stand', 'walk', 'run', 'tumble', 'dizzy', 'respawn', 'shield', 'hold', 'grabbed', 'ledge',
+                       'fall', 'awaken', 'win')
+        return anim.frames[anim.index_at(t, loop=loop)], False
+
+    @staticmethod
+    def draw(surf, f, to_screen, zoom):
+        sp = f.char.sprites
+        fr, mflip = SpriteArt.frame_for(f, sp)
+        if fr is None:
+            return
+        k = sp.scale * zoom
+        flip = (f.face < 0) ^ bool(fr.flip) ^ bool(mflip)
+        res = sp.scaled(fr.key, k, flip)
+        if res is None:
+            return
+        img, ax, ay = res
+        sx = f.shake and ((f.anim % 2) * 2 - 1) * min(6, f.shake) or 0
+        px, py = to_screen(f.x + fr.ox * sp.scale * f.face + sx, f.y + fr.oy * sp.scale)
+        # 覚醒オーラ
+        if f.awakened > 0 or f.state == 'awaken':
+            cx, cy = to_screen(f.x, f.y - f.h / 2)
+            rr = int((f.h * 0.62 + math.sin(f.anim * 0.3) * 6) * zoom)
+            aura = pygame.Surface((rr * 2 + 4, rr * 2 + 4), pygame.SRCALPHA)
+            pygame.draw.circle(aura, (*f.char.look['accent'], 70), (rr + 2, rr + 2), rr)
+            pygame.draw.circle(aura, (*f.char.look['accent'], 150), (rr + 2, rr + 2), rr, max(1, int(3 * zoom)))
+            surf.blit(aura, (cx - rr - 2, cy - rr - 2))
+        alpha = 255
+        if f.state == 'dodge' and f.dodge and f.dodge['inv'][0] <= f.timer <= f.dodge['inv'][1]:
+            alpha = 130
+        tint = None
+        if f.dmg_flash > 6:
+            tint = (150, 150, 150)
+        elif f.state == 'helpless':
+            tint = 'dark'
+        elif f.state == 'move' and f.move.d.charge_at is not None and f.move.f == f.move.d.charge_at \
+                and f.move.charge > 0 and (f.anim // 4) % 2:
+            tint = (90, 90, 40)
+        if tint is not None or alpha < 255:
+            img = img.copy()
+            if tint == 'dark':
+                img.fill((120, 120, 150), special_flags=pygame.BLEND_RGB_MULT)
+            elif tint is not None:
+                img.fill(tint, special_flags=pygame.BLEND_RGB_ADD)
+            if alpha < 255:
+                img.set_alpha(alpha)
+        surf.blit(img, (px - ax, py - ay))
+
+
+def warp_index(d, mf, n, hit_idx=None):
+    """ワザの経過フレームを、画像の枚数に合わせて割り振る（攻撃判定の間は「当たる絵」を出す）。"""
+    total = max(1, d.total)
+    if n <= 1:
+        return 0
+    if not d.hits:
+        return min(n - 1, int(mf / total * n))
+    s = min(h['f'][0] for h in d.hits)
+    e = max(h['f'][1] for h in d.hits)
+    k = hit_idx if hit_idx is not None else n // 2
+    k = max(0, min(n - 1, k))
+    if mf < s:
+        return min(k, int(mf / max(1, s) * k)) if k else 0
+    if mf <= e:
+        return k
+    rest = n - k - 1
+    if rest <= 0:
+        return k
+    return min(n - 1, k + 1 + int((mf - e - 1) / max(1, total - e) * rest))
 
 
 def draw_full_body(surf, char, x, y, scale, face=1, anim=0, pose='idle'):
@@ -543,8 +680,15 @@ def draw_full_body(surf, char, x, y, scale, face=1, anim=0, pose='idle'):
     d.shake = d.dmg_flash = d.awakened = 0
     d.x, d.y, d.shield_hp, d.shieldstun, d.color = 0, 0, 50, 0, (255, 255, 255)
     d.timer = 0
+    d.move = None
+    d.inv = 0
+    d.dodge = None
+    d.st = char.stats
+    d.pose_override = None
+    d.track_id = ('menu', char.key, int(x), int(y))
     if pose == 'win':
         d.state = 'awaken'
+        d.pose_override = 'win'
     FighterArt.draw(surf, d, lambda wx, wy: (x + wx * scale, y + wy * scale), scale)
 
 
@@ -866,7 +1010,7 @@ class Renderer:
         # ワザの軌跡
         if f.state == 'move' and f.hitlag == 0 or (f.state == 'move' and f.hitlag > 0):
             m = f.move
-            for h in m.d.active(m.f):
+            for h in (m.d.active(m.f) if f.char.sprites is None else ()):
                 if h.get('grab'):
                     continue
                 boxes = [(f.x + h['x'] * f.face, f.y + h['y'])]

@@ -9,6 +9,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from game import config as C  # noqa: E402
 from game.audio import Audio  # noqa: E402
 from game.scenes import Settings, TitleScene  # noqa: E402
+from game.chars import CHARS, CHAR_BY_KEY  # noqa: E402
+from game.spritechars import discover  # noqa: E402
+
+
+def load_extra_chars():
+    """mugen/ と charpacks/ に置いたキャラを追加する。"""
+    found, errors = discover()
+    for c in found:
+        if c.key not in CHAR_BY_KEY:
+            CHARS.append(c)
+            CHAR_BY_KEY[c.key] = c
+    for folder, err in errors:
+        print('[キャラ読み込み失敗] %s: %s' % (folder, err))
 
 
 class App:
@@ -20,6 +33,7 @@ class App:
         self.screen = pygame.display.set_mode((C.W, C.H), flags, vsync=1)
         self.clock = pygame.time.Clock()
         self.audio = Audio()
+        load_extra_chars()
         self.settings = Settings()
         self.scene = TitleScene(self)
         self.running = True

@@ -2,3 +2,8 @@ __pycache__/
 build/
 dist/
 *.spec
+# 画像キャラの素材（著作物なのでリポジトリには入れない。割り当て表 char.json だけ入れる）
+mugen/
+charpacks/*/*/
+charpacks/**/*.bmp
+charpacks/**/*.png

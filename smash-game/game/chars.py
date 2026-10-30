@@ -296,6 +296,8 @@ class CharDef:
         self.awaken = awaken
         self.power = power
         self.hw = stats.get('hw', 22)
+        self.side_recover = key in ('blaze', 'aqua', 'volt')
+        self.sprites = None
         self.h = stats.get('h', 84)
 
     def build_moves(self):

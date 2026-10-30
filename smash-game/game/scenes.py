@@ -209,8 +209,12 @@ class SelectScene:
     def build(self):
         self.buttons = []
         self.card_rects = []
-        for i in range(len(CHARS)):
-            self.card_rects.append(pygame.Rect(70 + i * 232, 74, 212, 236))
+        n = len(CHARS)
+        gap = 20 if n <= 5 else 12
+        cw = min(212, (W - 100 - gap * (n - 1)) // n)
+        x0 = (W - (cw * n + gap * (n - 1))) // 2
+        for i in range(n):
+            self.card_rects.append(pygame.Rect(x0 + i * (cw + gap), 74, cw, 236))
         for i in range(4):
             x = 40 + i * 304
             y = 336
@@ -335,11 +339,10 @@ class SelectScene:
             pygame.draw.rect(s, lighter(ch.look['body'], 0.3) if hov else ch.look['body'], r, 4, border_radius=16)
             clip = s.get_clip()
             s.set_clip(r.inflate(-6, -6))
-            draw_full_body(s, ch, r.centerx, r.y + 190, 1.75 if ch.key != 'titan' else 1.55, 1,
-                           self.t if hov else 0)
+            draw_full_body(s, ch, r.centerx, r.y + 190, min(1.75, 150 / ch.h), 1, self.t if hov else 0)
             s.set_clip(clip)
-            blit_text(s, ch.name, 26, (r.centerx, r.bottom - 34), (255, 255, 255), 'center', bold=True, outline=(0, 0, 0))
-            blit_text(s, ch.title, 16, (r.centerx, r.bottom - 12), lighter(ch.look['accent'], 0.3), 'center', outline=(0, 0, 0))
+            blit_text(s, ch.name, 26 if r.width > 170 else 20, (r.centerx, r.bottom - 34), (255, 255, 255), 'center', bold=True, outline=(0, 0, 0))
+            blit_text(s, ch.title, 16 if r.width > 170 else 12, (r.centerx, r.bottom - 12), lighter(ch.look['accent'], 0.3), 'center', outline=(0, 0, 0))
             for k, sl in enumerate(self.st.slots):
                 if sl['type'] != 'なし' and sl['char'] == i:
                     c = C.PLAYER_COLORS[k]

@@ -256,7 +256,13 @@ class World:
                         continue
                     hb = hurtbox(t)
                     for cx, cy, dsg in boxes:
-                        if circle_rect(cx, cy, h['r'], hb):
+                        rc = h.get('rect')
+                        if rc is not None:
+                            x1, x2 = (rc[0], rc[2]) if dsg > 0 else (-rc[2], -rc[0])
+                            hit = rect_rect((a.x + x1, a.y + rc[1], a.x + x2, a.y + rc[3]), hb)
+                        else:
+                            hit = circle_rect(cx, cy, h['r'], hb)
+                        if hit:
                             if h['radial']:
                                 dsg = sign(t.x - a.x) or a.face
                             if self.apply_hit(a, t, h, dsg, m):

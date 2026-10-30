@@ -15,6 +15,11 @@ from game.chars import CHARS  # noqa: E402
 from game.stage import STAGE_KEYS  # noqa: E402
 from game.world import World, calc_kb  # noqa: E402
 from game.ai import CpuController  # noqa: E402
+from game.spritechars import discover  # noqa: E402
+
+import pygame  # noqa: E402
+pygame.init()
+EXTRA, EXTRA_ERRORS = discover()  # mugen/・charpacks/ に置いたキャラ（あれば）
 
 
 def run_match(chars, stage, level=7, seed=0, stocks=2, max_frames=60 * 60 * 6):
@@ -61,6 +66,15 @@ def test_matches():
         assert s in states, s
 
 
+def test_sprite_chars():
+    assert not EXTRA_ERRORS, EXTRA_ERRORS
+    for i, c in enumerate(EXTRA):
+        for j, o in enumerate(CHARS):
+            w, st = run_match([c, o], STAGE_KEYS[(i + j) % 3], seed=500 + i * 10 + j)
+            print('  %-14s vs %-6s %5.1fs winner=%s' % (c.key, o.key, w.frame / 60, w.winner.char.key if w.winner else '-'))
+            assert w.over
+
+
 def test_four_players():
     for seed in range(3):
         w, _ = run_match(CHARS[:4], 'battlefield', seed=100 + seed, stocks=2)
@@ -70,5 +84,6 @@ def test_four_players():
 if __name__ == '__main__':
     test_kb_formula()
     test_matches()
+    test_sprite_chars()
     test_four_players()
     print('ok')

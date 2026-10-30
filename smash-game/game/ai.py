@@ -86,7 +86,7 @@ class CpuController:
                 self.push(S(x=ux, y=min(uy, -0.6), special=True), S(x=ux, y=min(uy, -0.6)),
                           *[S(x=ux, y=uy) for _ in range(18)])
                 return S(x=ux, y=-1.0)
-            if not f.used_side and abs(dx) > 260 and dy < 90 and f.char.key in ('blaze', 'aqua', 'volt'):
+            if not f.used_side and abs(dx) > 260 and dy < 90 and f.char.side_recover:
                 self.push(S(x=x, special=True), S(x=x))
                 return S(x=x)
         return S(x=x)
@@ -210,8 +210,9 @@ class CpuController:
                 self.push(S(jump=True), S(jump=True), S(jump=True), S())
                 return S(jump=True)
             if adx > 280 and f.face == dirx and rnd() < 0.03 * lv:
-                self.push(S(special=True), S(), S(special=True) if f.char.key == 'aqua' else S())
-                if f.char.key == 'aqua':
+                chg = f.moves['nspecial'].charge_at is not None
+                self.push(S(special=True), S(), S(special=True) if chg else S())
+                if chg:
                     self.push(*[S(special=True) for _ in range(self.rng.randint(5, 50))], S())
                 return S()
             # 移動（相手が場外なら崖際で待つ）
