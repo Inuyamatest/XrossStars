@@ -541,8 +541,6 @@ func _handle_events(events: Array) -> void:
 					_flash(Color(1, 1, 1, 0.5), 6)
 			"block", "tech", "counter":
 				_spawn_fx("ring", pos, Color(0.7, 0.9, 1.0), 1.0, 14)
-				if e.kind == "tech":
-					_show_banner("受け身!", 30)
 			"jump", "land", "djump":
 				for i in [-1, 1]:
 					_spawn_fx("puff", pos + Vector3(i * 0.15, 0.05, 0), Color(0.92, 0.92, 0.95), 0.25, 18, Vector3(i * 0.02, 0.005, 0))

@@ -894,7 +894,6 @@ class Renderer:
             elif k == 'tech':
                 self.parts.append(Particle('hex', x, y, life=16, size=40, color=(255, 255, 255)))
                 self.parts.append(Particle('ring', x, y, life=14, size=60, color=lighter(e['color'], 0.5)))
-                self.banner('受け身!', (255, 255, 255), 30, size=40, y_off=-150)
             elif k == 'armor':
                 self.parts.append(Particle('ring', x, y, life=10, size=40, color=(255, 200, 120)))
             elif k == 'warp':
