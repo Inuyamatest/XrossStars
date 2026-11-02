@@ -8,6 +8,9 @@ var puppets: Array = []
 var stage_key := "battlefield"
 var cpu_level := 5
 var p2_human := false
+var roster: Array = []
+var p1_char := -1
+var p2_char := 0
 var paused := false
 
 var cam: Camera3D
@@ -62,9 +65,15 @@ func start_match() -> void:
 	proj_nodes.clear()
 	var rng := RandomNumberGenerator.new()
 	rng.randomize()
-	var a := Chars.blaze()
-	var b := Chars.blaze()
-	b.colors = {"body": Color(0.2, 0.42, 0.85), "accent": Color(0.55, 0.9, 1.0), "skin": Color(1.0, 0.86, 0.76), "hair": Color(0.12, 0.2, 0.45)}
+	roster = Chars.all()
+	if p1_char < 0:
+		p1_char = 1 if roster.size() > 1 else 0   # モデルがあれば1Pはモデルキャラ
+	p1_char %= roster.size()
+	p2_char %= roster.size()
+	var a: Dictionary = roster[p1_char].duplicate(true)
+	var b: Dictionary = roster[p2_char].duplicate(true)
+	if not b.has("model"):
+		b.colors = {"body": Color(0.2, 0.42, 0.85), "accent": Color(0.55, 0.9, 1.0), "skin": Color(1.0, 0.86, 0.76), "hair": Color(0.12, 0.2, 0.45)}
 	var c2 = HumanController.new(1) if p2_human else CpuController.new(cpu_level, rng)
 	var c1 = CpuController.new(7, rng) if demo else HumanController.new(0)
 	if demo:
@@ -72,7 +81,7 @@ func start_match() -> void:
 	world = World.new(stage_key, [[a, c1, demo], [b, c2, demo or not p2_human]], 3, rng.randi(), true)
 	_build_stage()
 	for f in world.fighters:
-		var pp := Puppet.new()
+		var pp: Puppet = ModelView.new() if f.ch.has("model") else Puppet.new()
 		add_child(pp)
 		pp.setup(f)
 		puppets.append(pp)
@@ -125,6 +134,12 @@ func _unhandled_input(e: InputEvent) -> void:
 				start_match()
 			KEY_F3:
 				p2_human = not p2_human
+				start_match()
+			KEY_F4:
+				p1_char += 1
+				start_match()
+			KEY_F5:
+				p2_char += 1
 				start_match()
 			KEY_F11:
 				var full := DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN
@@ -527,7 +542,7 @@ func _build_hud() -> void:
 
 func _update_info() -> void:
 	info.text = "1P: WASD移動 / Space ジャンプ / J 攻撃 / K 必殺 / L ガード / U つかみ / O スマッシュ / P 覚醒\n" + \
-		"2P: %s　F3: 2P切替　F2: CPUレベル %d　Tab: ステージ切替（%s）　Esc: ポーズ　Enter: やり直し" % [
+		"2P: %s　F3: 2P切替　F2: CPUレベル %d　Tab: ステージ切替（%s）　F4/F5: 1P/2Pキャラ切替　Esc: ポーズ　Enter: やり直し" % [
 		"人間（矢印キー＋テンキー）" if p2_human else "CPU", cpu_level, world.stage.label]
 
 

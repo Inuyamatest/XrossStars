@@ -45,6 +45,11 @@ func setup(fighter: Fighter) -> void:
 	_set_mat(["foot_f", "foot_b", "belt"], mats.accent)
 	_set_mat(["hair"], mats.hair)
 	_set_mat(["eye_l", "eye_r"], mats.eye)
+	_build_overlays()
+
+
+func _build_overlays() -> void:
+	var cols: Dictionary = f.ch.colors
 	shield_mesh = MeshInstance3D.new()
 	var s := SphereMesh.new()
 	shield_mesh.mesh = s
@@ -319,6 +324,10 @@ func refresh() -> void:
 		mi.transparency = 1.0 - alpha
 		mi.material_overlay = _flash_mat() if flash else null
 
+	_update_overlays()
+
+
+func _update_overlays() -> void:
 	shield_mesh.visible = f.state == "shield"
 	if shield_mesh.visible:
 		var r: float = (f.h * 0.62 * max(0.25, f.shield_hp / C.SHIELD_MAX) + 8) * K

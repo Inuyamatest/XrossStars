@@ -35,5 +35,15 @@ Esc: ポーズ / Enter: やり直し / Tab: ステージ切替（戦場・終点
 - `tests/test_sim.gd` … CPU同士を戦わせる自動テスト
   `godot --headless --path godot-fight --script res://tests/test_sim.gd`
 
-## VRoid / Mixamo モデルについて
-今は全キャラ仮の人形です。モデルの入れ方は `characters/README.md` を参照してください。
+## モデルを入れる（MMD の .pmx はそのまま使える）
+`characters/<好きな名前>/` に MMD モデルのフォルダ（`.pmx` とテクスチャ一式）をそのまま置くと、キャラとして追加されます。
+Blender での変換は不要です（exe 版では exe と同じ場所の `characters/`）。
+
+- F4 / F5 で 1P / 2P のキャラを切り替え（モデルがあれば 1P は最初のモデルキャラ）
+- フォルダに .pmx が複数あるときは、名前がいちばん短いものを使います
+- 読むもの: メッシュ・テクスチャ・材質（アニメ調の陰影）・ボーン。髪や服の揺れ（物理）と表情はまだ
+- 動きは今は仮人形と同じ手続きアニメを MMD の骨（腕・ひじ・足・ひざ・上半身・センター）に当てています。
+  Mixamo のモーション対応はこのあと（`characters/README.md`）
+- 性能（ワザ・重さ）は今はブレイズと同じです
+
+確認用: `godot --headless --path godot-fight --script res://tests/test_pmx.gd -- <pmxのパス>` で頂点数・ポリゴン数・ボーン数を表示

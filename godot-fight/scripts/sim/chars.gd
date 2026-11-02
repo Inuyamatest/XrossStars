@@ -26,5 +26,35 @@ static func build_moves(ch: Dictionary) -> Dictionary:
 	return mv
 
 
+## characters/<フォルダ>/ に置いたモデル（いまは .pmx）をキャラとして追加する。
+## 性能はブレイズと同じで、見た目だけモデルになる。
+static func model_dir() -> String:
+	if OS.has_feature("editor"):
+		return ProjectSettings.globalize_path("res://characters")
+	return OS.get_executable_path().get_base_dir().path_join("characters")
+
+
+static func model_chars() -> Array:
+	var out := []
+	var base := model_dir()
+	var d := DirAccess.open(base)
+	if d == null:
+		return out
+	for sub in d.get_directories():
+		var dir := base.path_join(sub)
+		var files := Array(DirAccess.get_files_at(dir)).filter(func(n): return n.get_extension().to_lower() == "pmx")
+		if files.is_empty():
+			continue
+		files.sort_custom(func(a, b): return a.length() < b.length())
+		var ch := blaze()
+		ch.id = "model_" + sub
+		ch.name = files[0].get_basename()
+		ch.title = "モデル"
+		ch.model = dir.path_join(files[0])
+		ch.stats.h = 88.0
+		out.append(ch)
+	return out
+
+
 static func all() -> Array:
-	return [blaze()]
+	return [blaze()] + model_chars()
