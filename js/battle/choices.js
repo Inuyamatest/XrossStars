@@ -221,6 +221,12 @@
         return a.map(function (i) { return cands[i].instanceId; });
       },
 
+      // 手札のカードを1枚公開する（キャプテンズ・リターン：公開したカードのコストと同じ数を引く）。「しない」なら空
+      chooseRevealCard: function (cands, spec) {
+        var a = ask(q({ kind: 'REVEAL_FOR_DRAW', type: 'CARDS', title: '公開するカードを選んでください（コスト' + spec.maxCost + '以下。公開したカードのコストと同じ枚数を引く）', cards: cardList(cands), min: 0, max: 1, declineLabel: '公開しない' }));
+        return a.map(function (i) { return cands[i].instanceId; });
+      },
+
       // はい／いいえ（仁義なき抗争「手札を1枚ランダムに捨ててもよい」）
       chooseConfirm: function (info) {
         var a = ask(q({ kind: 'CONFIRM', type: 'OPTIONS', title: info.title, options: [{ label: 'はい' }, { label: 'いいえ' }] }));

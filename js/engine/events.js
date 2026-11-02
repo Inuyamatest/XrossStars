@@ -55,6 +55,7 @@
     FREE_ATTACK_PLAYED_BY_EFFECT: 'FREE_ATTACK_PLAYED_BY_EFFECT', // カード効果でアタックカードをコストを支払わずにプレイ（頂点捕食者）
     ECHO_TURNED_HORIZONTAL: 'ECHO_TURNED_HORIZONTAL', // エコー：ターン終了時にトラッシュに置く代わりに横向きにした
     LEADER_REVIVED: 'LEADER_REVIVED', // ダウンしたリーダーをダウンしていない状態に戻した（復活ポータル）
+    CARD_REVEALED: 'CARD_REVEALED', // 手札のカードを公開した（キャプテンズ・リターン）
     TACTICS_RETURNED_TO_AREA: 'TACTICS_RETURNED_TO_AREA', // トラッシュに置く代わりにタクティクスエリアへ戻した（追加マガジン）
         CARD_MILLED_BY_EFFECT: 'CARD_MILLED_BY_EFFECT', // デッキの上から公開してトラッシュに置いた（神速フリック・テラーエンゲージ等）
     CARD_REVEALED_BY_EFFECT: 'CARD_REVEALED_BY_EFFECT', // デッキの上を公開した（運命のルーレット）
