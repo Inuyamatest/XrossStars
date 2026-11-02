@@ -481,23 +481,79 @@ func _update_projs() -> void:
 	for p in world.projs:
 		alive[p] = true
 		if not proj_nodes.has(p):
-			var mi := MeshInstance3D.new()
-			mi.mesh = SphereMesh.new()
-			mi.material_override = _unshaded(Color(1.0, 0.5, 0.15), 6.0)
-			var pl := OmniLight3D.new()
-			pl.light_color = Color(1.0, 0.5, 0.2)
-			pl.light_energy = 2.5
-			pl.omni_range = 3.5
-			mi.add_child(pl)
-			add_child(mi)
-			proj_nodes[p] = mi
-		var n: MeshInstance3D = proj_nodes[p]
+			proj_nodes[p] = _make_proj_node(p)
+		var n: Node3D = proj_nodes[p]
 		n.position = Vector3(p.x * K, -p.y * K, 0)
-		n.scale = Vector3.ONE * p.r * 2 * K * (1.0 + 0.15 * sin(world.frame * 0.8))
+		match p.kind:
+			"spear":
+				n.rotation.z = atan2(-p.vy, p.vx)
+				n.scale = Vector3.ONE
+			"slash":
+				n.rotation.z = 0.0 if p.vx > 0 else PI
+				n.scale = Vector3(1.0, 1.0 + 0.1 * sin(world.frame * 0.9), 1.0) * p.r * 2 * K
+			"wave":
+				n.scale = Vector3(1.4, 0.8 + 0.2 * sin(world.frame * 0.7), 1.0) * p.r * 2 * K
+			_:
+				n.rotation.z += 0.2
+				n.scale = Vector3.ONE * p.r * 2 * K * (1.0 + 0.12 * sin(world.frame * 0.8))
 	for p in proj_nodes.keys():
 		if not alive.has(p):
 			proj_nodes[p].queue_free()
 			proj_nodes.erase(p)
+
+
+func _make_proj_node(p) -> Node3D:
+	var c: Color = p.color
+	var mi := MeshInstance3D.new()
+	match p.kind:
+		"spear":
+			# 投げた槍: 細長い柄と穂先
+			var root := Node3D.new()
+			var shaft := MeshInstance3D.new()
+			var b := BoxMesh.new()
+			b.size = Vector3(1.6, 0.06, 0.06)
+			shaft.mesh = b
+			shaft.material_override = Toon.material(Color(0.55, 0.38, 0.22), null, false, false)
+			root.add_child(shaft)
+			var tip := MeshInstance3D.new()
+			var pm := PrismMesh.new()
+			pm.size = Vector3(0.2, 0.36, 0.08)
+			tip.mesh = pm
+			tip.rotation_degrees = Vector3(0, 0, -90)
+			tip.position = Vector3(0.95, 0, 0)
+			tip.material_override = _unshaded(c, 3.0)
+			root.add_child(tip)
+			add_child(root)
+			return root
+		"slash":
+			# 三日月形の斬撃（平たい半透明の輪）
+			var tm := TorusMesh.new()
+			tm.inner_radius = 0.38
+			tm.outer_radius = 0.5
+			tm.rings = 24
+			mi.mesh = tm
+			mi.rotation_degrees = Vector3(90, 0, 0)
+			mi.material_override = _unshaded(c, 4.0, 0.85)
+			var holder := Node3D.new()
+			holder.add_child(mi)
+			add_child(holder)
+			return holder
+		"snow":
+			mi.mesh = SphereMesh.new()
+			mi.material_override = Toon.material(c, null, false, true, Color(0.7, 0.8, 1.0))
+		"wave":
+			mi.mesh = SphereMesh.new()
+			mi.material_override = _unshaded(c, 2.5, 0.8)
+		_:
+			mi.mesh = SphereMesh.new()
+			mi.material_override = _unshaded(c, 6.0)
+	var pl := OmniLight3D.new()
+	pl.light_color = c
+	pl.light_energy = 2.0
+	pl.omni_range = 3.0
+	mi.add_child(pl)
+	add_child(mi)
+	return mi
 
 
 func _spawn_fx(kind: String, pos: Vector3, color: Color, size: float, life: int, vel := Vector3.ZERO) -> void:

@@ -59,6 +59,8 @@ const SLOT_CLIPS := {
 	"swing": ["sword_regular_a"],
 	"swing2": ["sword_regular_b"],
 	"heavy": ["sword_attack", "sword_regular_c"],
+	"sworddash": ["sword_dash"],
+	"swordcombo": ["sword_regular_combo"],
 	"throw": ["throw", "overhandthrow"],
 	"magic": ["magic", "spell_simple_shoot"],
 	"hit": ["hit", "hit_chest"],

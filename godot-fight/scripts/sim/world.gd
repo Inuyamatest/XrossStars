@@ -23,6 +23,8 @@ class Proj:
 	var hit := {}
 	var dead := false
 	var t := 0
+	var color := Color(1.0, 0.5, 0.15)
+	var ground_wave := false
 
 
 var rng := RandomNumberGenerator.new()
@@ -491,7 +493,9 @@ func update_projs() -> void:
 			for g in stage.surfaces():
 				if p.vy > 0 and oy + p.r <= g.y + 1 and g.y + 1 <= p.y + p.r + 1 and p.x >= g.x1 and p.x <= g.x2:
 					p.y = g.y - p.r
-					if p.bounce > 0:
+					if p.ground_wave:
+						p.vy = 0
+					elif p.bounce > 0:
 						p.vy = -6
 						p.bounce -= 1
 					else:
@@ -509,6 +513,15 @@ func update_projs() -> void:
 				continue
 			if not circle_rect(p.x, p.y, p.r, hurtbox(t)) or t.invincible():
 				continue
+			# 反射（リフレクター）
+			if t.state == "move" and t.move.d.reflect and t.move.d.in_window("counter", t.move.f):
+				p.owner = t
+				p.vx = -p.vx * 1.3
+				p.dmg *= 1.3
+				p.hit = {}
+				p.life = max(p.life, 60)
+				event("reflect", p.x, p.y, {"who": t})
+				break
 			var h := {"dmg": p.dmg, "ang": p.ang, "bkb": p.bkb, "kbg": p.kbg, "fx": p.kind}
 			var dsg := Fighter.sgn(p.vx)
 			if dsg == 0:

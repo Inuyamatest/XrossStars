@@ -1,0 +1,32 @@
+{
+  "muzan": {
+    "name": "鬼舞辻無惨",
+    "type": "brawler"
+  },
+  "fubuki": {
+    "name": "白上フブキ",
+    "type": "speed"
+  },
+  "iroha": {
+    "name": "風真いろは",
+    "type": "sword",
+    "weapon": {
+      "kind": "katana"
+    }
+  },
+  "astolfo": {
+    "name": "アストルフォ",
+    "type": "spear",
+    "pmx": "アストルフォ.pmx",
+    "weapon": {
+      "pmx": "触れれば転倒！.pmx",
+      "grip": 0.22,
+      "scale": 0.62,
+      "hold": "forward"
+    }
+  },
+  "yukari": {
+    "name": "結月ゆかり",
+    "type": "magic"
+  }
+}

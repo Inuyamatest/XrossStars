@@ -44,6 +44,9 @@ Blender での変換は不要です（exe 版では exe と同じ場所の `char
 - 読むもの: メッシュ・テクスチャ・材質（アニメ調の陰影）・ボーン。髪や服の揺れ（物理）と表情はまだ
 - 動きは今は仮人形と同じ手続きアニメを MMD の骨（腕・ひじ・足・ひざ・上半身・センター）に当てています。
   Mixamo のモーション対応はこのあと（`characters/README.md`）
-- 性能（ワザ・重さ）は今はブレイズと同じです
+- キャラのタイプ・名前・武器は `characters/roster.json` で決めます（フォルダ名ごと）:
+  - タイプ: `brawler`（格闘・パワー）/ `speed`（スピード）/ `sword`（剣）/ `spear`（槍）/ `magic`（魔法）
+  - タイプで重さ・速さ・リーチ・必殺ワザ・使うモーションが変わります
+  - 武器: `{"kind": "katana"}`（刀を作って持たせる）、`{"pmx": "槍.pmx", "grip": 0.2, "scale": 0.6, "hold": "forward"}`（PMXの武器を持たせる）
 
 確認用: `godot --headless --path godot-fight --script res://tests/test_pmx.gd -- <pmxのパス>` で頂点数・ポリゴン数・ボーン数を表示

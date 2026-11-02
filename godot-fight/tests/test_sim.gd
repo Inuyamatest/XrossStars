@@ -13,16 +13,23 @@ func _init() -> void:
 	var total_frames := 0
 	var events := {}
 	var ko_pcts := []
-	for seed in range(8):
+	var types := ["blaze"] + Chars.TYPES.keys()
+	var names := {}
+	for seed in range(12):
 		var rng := RandomNumberGenerator.new()
 		rng.seed = seed
-		var ch := Chars.blaze()
+		var ta: String = types[seed % types.size()]
+		var tb: String = types[(seed * 2 + 1) % types.size()]
+		var ch := Chars.blaze() if ta == "blaze" else Chars.typed(ta, ta)
+		var ch2 := Chars.blaze() if tb == "blaze" else Chars.typed(tb, tb)
 		var stage_key := "battlefield" if seed % 2 == 0 else "final"
-		var w := World.new(stage_key, [[ch, CpuController.new(7, rng), true], [ch, CpuController.new(7, rng), true]], 2, seed, false)
+		var w := World.new(stage_key, [[ch, CpuController.new(7, rng), true], [ch2, CpuController.new(7, rng), true]], 2, seed, false)
 		while not w.over and w.frame < 60 * 60 * 6:
 			w.step()
 			for e in w.events:
 				events[e.kind] = events.get(e.kind, 0) + 1
+				if e.kind == "swing":
+					names[e.key] = true
 				if e.kind == "ko":
 					ko_pcts.append(e.who.damage)
 			w.events.clear()
@@ -33,15 +40,16 @@ func _init() -> void:
 						ok = false
 				states[f.state] = true
 		total_frames += w.frame
-		print("  seed %d @%s %.1fs over=%s  %s" % [seed, stage_key, w.frame / 60.0, w.over,
+		print("  %-7s vs %-7s @%s %.1fs over=%s  %s" % [ta, tb, stage_key, w.frame / 60.0, w.over,
 			", ".join(w.fighters.map(func(f): return "%s ko%d/fall%d" % [f.tag, f.kos, f.falls]))])
 		if not w.over:
 			ok = false
 	var avg := 0.0
 	for p in ko_pcts:
 		avg += p
-	print("  平均 %.1f秒 / 撃墜%%平均 %.0f / 状態 %s" % [total_frames / 8.0 / 60.0, avg / max(1, ko_pcts.size()), states.keys()])
+	print("  平均 %.1f秒 / 撃墜%%平均 %.0f / 状態 %s" % [total_frames / 12.0 / 60.0, avg / max(1, ko_pcts.size()), states.keys()])
 	print("  イベント ", events)
+	print("  出たワザ ", names.keys())
 	for s in ["hitstun", "shield", "hold", "grabbed", "ledge", "move", "dodge"]:
 		if not states.has(s):
 			print("NG state missing ", s)

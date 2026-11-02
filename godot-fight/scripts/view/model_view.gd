@@ -21,6 +21,19 @@ const MOVE_SLOTS := {
 	"ledgeatk": ["kick", "swing"], "getupatk": ["sweep"], "nspecial": ["magic"], "sspecial": ["flykick"],
 	"uspecial": ["uppercut", "swing2"], "dspecial": ["heavy"], "dspecial_air": ["kick"], "d_land": ["heavy"],
 }
+# タイプ別に上書きするワザのモーション
+const TYPE_MOVE_SLOTS := {
+	"sword": {"jab": ["swing"], "jab2": ["swing2"], "jab3": ["heavy"], "ftilt": ["swing2"], "fsmash": ["heavy"],
+		"dash": ["sworddash", "flykick"], "utilt": ["swing"], "usmash": ["swing2"], "fair": ["swing"], "nspecial": ["swing"],
+		"sspecial": ["sworddash"], "uspecial": ["swing2"], "dspecial": ["block"], "d_hit": ["heavy"], "ledgeatk": ["swing"]},
+	"spear": {"jab": ["jab"], "jab2": ["jab2"], "jab3": ["heavy"], "ftilt": ["jab2"], "fsmash": ["heavy"],
+		"dash": ["sworddash", "flykick"], "fair": ["jab2"], "nspecial": ["throw"], "sspecial": ["sworddash"],
+		"uspecial": ["swing2"], "dspecial": ["sweep"]},
+	"magic": {"nspecial": ["magic"], "sspecial": ["flykick"], "uspecial": ["awaken"], "dspecial": ["block"],
+		"d_hit": ["magic"], "fsmash": ["magic", "heavy"]},
+	"brawler": {"sspecial": ["jab2"], "s_throw": ["throw"], "nspecial": ["heavy"], "uspecial": ["jab2"]},
+	"speed": {"nspecial": ["throw"], "sspecial": ["flykick"], "dspecial": ["magic"]},
+}
 const STATE_SLOTS := {
 	"stand": ["idle"], "walk": ["walk"], "run": ["run"], "crouch": ["crouch"], "jumpsquat": ["crouch"],
 	"rise": ["jump"], "fall": ["fall"], "land": ["land"], "shield": ["block"], "hit": ["hit", "hit2"],
@@ -40,6 +53,8 @@ var _overlay: StandardMaterial3D
 var cur_key := ""
 var cur_start := 0
 var hip_h := 1.0
+var weapon_holder: Node3D
+var weapon_hand := -1
 
 
 func setup(fighter: Fighter) -> void:
@@ -60,7 +75,92 @@ func setup(fighter: Fighter) -> void:
 	if bi.l_leg >= 0:
 		hip_h = max(0.1, rest_pos[bi.l_leg].y)
 	root3d.scale = Vector3.ONE * mscale
+	_attach_weapon()
 	_build_overlays()
+
+
+# ------------------------------------------------------------ 武器（右手に持たせる）
+func _attach_weapon() -> void:
+	var wcfg: Dictionary = f.ch.get("weapon", {})
+	var hand: int = model.bones.get("右手首", -1)
+	var elbow: int = model.bones.get("右ひじ", -1)
+	if wcfg.is_empty() or hand < 0 or elbow < 0:
+		return
+	var node: Node3D = null
+	var length := 0.0
+	var grip_y := 0.0
+	if wcfg.get("kind", "") == "katana":
+		node = _make_katana()
+		grip_y = 0.06
+	elif wcfg.has("pmx"):
+		var r := PmxLoader.load_model(String(f.ch.folder).path_join(wcfg.pmx))
+		if r.has("error"):
+			return
+		node = r.root
+		var mi: MeshInstance3D = r.skeleton.get_node("Mesh")
+		var aabb := mi.mesh.get_aabb()
+		grip_y = aabb.position.y + aabb.size.y * float(wcfg.get("grip", 0.1))
+	if node == null:
+		return
+	var holder := Node3D.new()
+	if wcfg.get("hold", "arm") == "forward":
+		# 槍など長い武器: 手の位置にだけ付け、向きは状況で決める（_update_weapon）
+		skel.add_child(holder)
+		weapon_holder = holder
+		weapon_hand = hand
+	else:
+		# 刀など: 前腕の延長（ひじ→手首）の向きに持つ
+		var att := BoneAttachment3D.new()
+		att.bone_name = "右手首"
+		skel.add_child(att)
+		att.add_child(holder)
+		var d: Vector3 = (rest_pos[hand] - rest_pos[elbow]).normalized()
+		holder.basis = Basis(Quaternion(Vector3.UP, d))
+		holder.position = d * 0.05
+	var sc: float = float(wcfg.get("scale", 1.0))
+	node.scale = Vector3.ONE * sc
+	node.position = Vector3(0, -grip_y * sc, 0)
+	holder.add_child(node)
+
+
+func _update_weapon() -> void:
+	if weapon_holder == null:
+		return
+	var gp := skel.get_bone_global_pose(weapon_hand)
+	var dir := Vector3(0, 0.75, 0.66)   # 構え: 斜め上
+	if f.state == "move" and f.move != null:
+		var k: String = f.move.d.key
+		if k in ["utilt", "usmash", "uair", "uspecial"]:
+			dir = Vector3(0, 1, 0.15)
+		elif k in ["dtilt", "dsmash", "dair", "dspecial", "d_land"]:
+			dir = Vector3(0, -0.35, 1)
+		elif k == "bair":
+			dir = Vector3(0, 0.1, -1)
+		else:
+			dir = Vector3(0, 0.05, 1)   # 突き: 前に水平
+	elif f.state in ["hitstun", "knockdown", "grabbed"]:
+		dir = Vector3(0, 0.3, -1)
+	weapon_holder.transform = Transform3D(Basis(Quaternion(Vector3.UP, dir.normalized())), gp.origin)
+
+
+func _make_katana() -> Node3D:
+	## 刀（刃・鍔・柄）。長さ約1m
+	var k := Node3D.new()
+	var parts := [
+		[Vector3(0.026, 0.78, 0.007), Vector3(0, 0.56, 0), Color(0.86, 0.9, 0.96)],   # 刃
+		[Vector3(0.012, 0.78, 0.012), Vector3(-0.012, 0.56, 0), Color(0.62, 0.66, 0.74)], # 峰
+		[Vector3(0.08, 0.018, 0.06), Vector3(0, 0.16, 0), Color(0.75, 0.6, 0.25)],     # 鍔
+		[Vector3(0.032, 0.2, 0.03), Vector3(0, 0.05, 0), Color(0.12, 0.1, 0.16)],      # 柄
+	]
+	for p in parts:
+		var mi := MeshInstance3D.new()
+		var b := BoxMesh.new()
+		b.size = p[0]
+		mi.mesh = b
+		mi.position = p[1]
+		mi.material_override = Toon.material(p[2], null, false, false)
+		k.add_child(mi)
+	return k
 
 
 func refresh() -> void:
@@ -113,6 +213,7 @@ func _finish(p: Dictionary) -> void:
 	for inh in model.inherits:
 		var q := skel.get_bone_pose_rotation(inh[1])
 		skel.set_bone_pose_rotation(inh[0], Quaternion.IDENTITY.slerp(q, inh[2]))
+	_update_weapon()
 	var alpha := 0.45 if p.fade else 1.0
 	mesh_inst.transparency = 1.0 - alpha
 	mesh_inst.material_overlay = _flash_mat() if p.flash else null
@@ -181,7 +282,8 @@ func _pick(slots: Array) -> Dictionary:
 func _slot_now() -> Array:
 	## [クリップ, 経過秒, ループするか]
 	if f.state == "move" and f.move != null:
-		var c := _pick(MOVE_SLOTS.get(f.move.d.key, []))
+		var tslots: Dictionary = TYPE_MOVE_SLOTS.get(f.ch.get("type", ""), {})
+		var c := _pick(tslots.get(f.move.d.key, MOVE_SLOTS.get(f.move.d.key, [])))
 		if c.is_empty():
 			return [null, 0.0, false]
 		var prog: float = float(f.move.f) / max(1, f.move.d.total)
