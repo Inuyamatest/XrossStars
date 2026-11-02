@@ -90,6 +90,17 @@ test('SRP（絵柄違い）8枚は元のSRと同名・同じ効果・ACEで、�
   assert.ok(!v.valid && v.violations.some((x) => x.indexOf('魔王再臨') >= 0), '魔王再臨（通常3＋SRP2）は5枚で違反');
 });
 
+test('CP（サイコフォートレス・闇の加護）とPPR（PPカード2枚）は元のカードと同名・同じ効果で、画像がある', () => {
+  [['BP05-111', 'BP02-018'], ['BP05-112', 'BP03-054'], ['BP05-113', 'BP01-098'], ['BP05-114', 'BP01-098']].forEach(([n, base]) => {
+    const c = cardIndex[n];
+    assert.ok(c && c.isParallel, n);
+    assert.strictEqual(c.name, cardIndex[base].name, n);
+    assert.strictEqual(c.cardType, cardIndex[base].cardType, n);
+    assert.deepStrictEqual(CardEffectData.getEffectsForCard(n), CardEffectData.getEffectsForCard(base), n);
+    assert.ok(fs.existsSync(path.join(__dirname, '..', c.imageUrl)), n + ' の画像');
+  });
+});
+
 console.log('=== アタック ===');
 test('恐怖の一突き：プレイエリアにコスト2のカードがあるときだけ、他のリーダー1体に20ダメージ', () => {
   const a = makeState();

@@ -1753,5 +1753,57 @@
   "baseCardNumber": "BP05-066",
   "note": "カード画像でBP05-110/SRPとして確認。BP05-066の絵柄違い（効果はBP05-066と同一）。",
   "confirmStatus": "カード画像で確認（公式ページ未確認）"
+ },
+ {
+  "cardNumber": "BP05-111",
+  "name": "サイコフォートレス",
+  "set": "BP05",
+  "cardType": "アタックカード",
+  "color": "赤",
+  "rarity": "CP",
+  "ace": false,
+  "officialUrl": null,
+  "baseCardNumber": "BP02-018",
+  "note": "カード画像でBP05-111/CPとして確認。BP02-018と同名の絵柄違い（効果はBP02-018と同一）。",
+  "confirmStatus": "カード画像で確認（公式ページ未確認）"
+ },
+ {
+  "cardNumber": "BP05-112",
+  "name": "闇の加護",
+  "set": "BP05",
+  "cardType": "メモリアカード",
+  "color": "青",
+  "rarity": "CP",
+  "ace": false,
+  "officialUrl": null,
+  "baseCardNumber": "BP03-054",
+  "note": "カード画像でBP05-112/CPとして確認。BP03-054と同名の絵柄違い（効果はBP03-054と同一）。",
+  "confirmStatus": "カード画像で確認（公式ページ未確認）"
+ },
+ {
+  "cardNumber": "BP05-113",
+  "name": "PPカード",
+  "set": "BP05",
+  "cardType": "PPカード",
+  "color": "無色",
+  "rarity": "PPR",
+  "ace": false,
+  "officialUrl": null,
+  "baseCardNumber": "BP01-098",
+  "note": "カード画像でBP05-113/PPRとして確認。BP01-098と同名のレアリティ違い（効果はBP01-098と同一）。",
+  "confirmStatus": "カード画像で確認（公式ページ未確認）"
+ },
+ {
+  "cardNumber": "BP05-114",
+  "name": "PPカード",
+  "set": "BP05",
+  "cardType": "PPカード",
+  "color": "無色",
+  "rarity": "PPR",
+  "ace": false,
+  "officialUrl": null,
+  "baseCardNumber": "BP01-098",
+  "note": "カード画像でBP05-114/PPRとして確認。BP01-098と同名のレアリティ違い（効果はBP01-098と同一）。",
+  "confirmStatus": "カード画像で確認（公式ページ未確認）"
  }
 ]
