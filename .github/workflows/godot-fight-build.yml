@@ -1,0 +1,59 @@
+# Cross Fight 3D（godot-fight/）のテストと Windows 用 exe の作成
+name: Cross Fight 3D exe ビルド
+
+on:
+  push:
+    paths:
+      - 'godot-fight/**'
+      - '.github/workflows/godot-fight-build.yml'
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: '4.3'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Godot とエクスポートテンプレートを用意
+        run: |
+          set -e
+          V=${GODOT_VERSION}-stable
+          curl -sSL -o godot.zip https://github.com/godotengine/godot/releases/download/${V}/Godot_v${V}_linux.x86_64.zip
+          unzip -q godot.zip
+          mv Godot_v${V}_linux.x86_64 godot
+          chmod +x godot
+          curl -sSL -o tpl.tpz https://github.com/godotengine/godot/releases/download/${V}/Godot_v${V}_export_templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          unzip -q -j tpl.tpz templates/windows_release_x86_64.exe templates/version.txt -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          rm tpl.tpz godot.zip
+
+      - name: インポート
+        run: timeout 600 ./godot --headless --path godot-fight --editor --quit || true
+
+      - name: テスト（CPU同士の試合）
+        run: ./godot --headless --path godot-fight --script res://tests/test_sim.gd
+
+      - name: Windows 用に書き出し
+        run: |
+          mkdir -p godot-fight/export/windows
+          ./godot --headless --path godot-fight --export-release "Windows Desktop" export/windows/CrossFight3D.exe
+          test -s godot-fight/export/windows/CrossFight3D.exe
+
+      - name: 配布用フォルダを作る
+        run: |
+          set -e
+          D=CrossFight3D
+          mkdir -p $D/characters/_motions
+          cp godot-fight/export/windows/CrossFight3D.exe $D/
+          cp godot-fight/dist/README.txt $D/
+          cp godot-fight/characters/roster.json $D/characters/
+          cp godot-fight/characters/README.md $D/characters/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CrossFight3D-windows
+          path: CrossFight3D

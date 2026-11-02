@@ -85,7 +85,10 @@ static func build_moves(ch: Dictionary) -> Dictionary:
 
 ## characters/roster.json: フォルダ名 → {"name", "type", "pmx"(省略可), "weapon": {...}}
 static func roster() -> Dictionary:
+	# exe の横の characters/roster.json を優先し、無ければ同梱の設定を使う
 	var p := model_dir().path_join("roster.json")
+	if not FileAccess.file_exists(p):
+		p = "res://characters/roster.json"
 	if not FileAccess.file_exists(p):
 		return {}
 	var j = JSON.parse_string(FileAccess.get_file_as_string(p))
