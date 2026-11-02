@@ -30,11 +30,11 @@ func _init() -> void:
 		print("モデルなし")
 		quit(1)
 		return
-	var poses := [["stand", null], ["run", null], ["move", "jab"], ["move", "ftilt"], ["move", "fsmash"], ["move", "uair"],
+	var poses := [["stand", 0], ["stand", 25], ["stand", 50], ["stand", 75], ["run", null], ["move", "jab"], ["move", "ftilt"], ["move", "fsmash"], ["move", "uair"],
 		["shield", null], ["hitstun", null], ["ledge", null], ["move", "dsmash"]]
 	for i in range(poses.size()):
 		var f := Fighter.new(0, chars[0], null, 3, true)
-		f.x = (i - (poses.size() - 1) / 2.0) * 58.0
+		f.x = (i - (poses.size() - 1) / 2.0) * 50.0
 		f.y = 40.0
 		f.face = 1 if i % 2 == 0 else -1
 		var st: String = poses[i][0]
@@ -58,7 +58,10 @@ func _init() -> void:
 		root.add_child(v)
 		v.setup(f)
 		v.refresh()
-	cam.position = Vector3(0, 0.2, 14)
+		if st == "stand" and poses[i][1] != null:
+			f.anim += int(poses[i][1])
+			v.refresh()
+	cam.position = Vector3(0, 0.2, 15.5)
 
 
 class DummyW:

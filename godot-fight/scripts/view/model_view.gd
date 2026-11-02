@@ -8,6 +8,23 @@ const B := {
 	"center": "センター", "upper": "上半身", "upper2": "上半身2", "lower": "下半身", "neck": "首", "head": "頭",
 	"l_arm": "左腕", "l_elbow": "左ひじ", "l_wrist": "左手首", "r_arm": "右腕", "r_elbow": "右ひじ", "r_wrist": "右手首",
 	"l_leg": "左足", "l_knee": "左ひざ", "l_ankle": "左足首", "r_leg": "右足", "r_knee": "右ひざ", "r_ankle": "右足首",
+	"l_shoulder": "左肩", "r_shoulder": "右肩", "l_toe": "左つま先", "r_toe": "右つま先",
+}
+
+# ワザ → モーションの使い道（無ければ手続きアニメ）
+const MOVE_SLOTS := {
+	"jab": "jab", "jab2": "jab", "jab3": "kick", "ftilt": "kick", "utilt": "uppercut", "dtilt": "sweep",
+	"dash": "flykick", "fsmash": "smash", "usmash": "uppercut", "dsmash": "sweep", "nair": "flip", "fair": "flykick",
+	"bair": "kick", "uair": "flip", "dair": "kick", "grab": "throw", "dashgrab": "throw", "fthrow": "throw",
+	"bthrow": "throw", "uthrow": "throw", "dthrow": "throw", "ledgeatk": "kick", "getupatk": "sweep",
+	"nspecial": "magic", "sspecial": "flykick", "uspecial": "uppercut", "dspecial": "smash", "dspecial_air": "kick",
+	"d_land": "smash",
+}
+const STATE_SLOTS := {
+	"stand": "idle", "walk": "walk", "run": "run", "crouch": "crouch", "jumpsquat": "crouch", "rise": "jump",
+	"fall": "fall", "land": "land", "shield": "block", "hit": "hit", "tumble": "knockdown", "down": "knockdown",
+	"ledge": "hang", "climb": "climb", "roll": "roll", "awaken": "victory", "respawn": "idle", "grabbed": "hit",
+	"hold": "throw", "dizzy": "hit",
 }
 
 var model := {}
@@ -18,6 +35,10 @@ var rest_pos := []   # ボーン番号 -> 初期位置（モデル座標）
 var mscale := 1.0
 var mesh_inst: MeshInstance3D
 var _overlay: StandardMaterial3D
+var clips := {}
+var cur_key := ""
+var cur_start := 0
+var hip_h := 1.0
 
 
 func setup(fighter: Fighter) -> void:
@@ -35,6 +56,9 @@ func setup(fighter: Fighter) -> void:
 	for k in B:
 		bi[k] = model.bones.get(B[k], -1)
 	mscale = (f.h * K * 1.08) / max(0.1, model.height)
+	clips = MotionLib.clips()
+	if bi.l_leg >= 0:
+		hip_h = max(0.1, rest_pos[bi.l_leg].y)
 	root3d.scale = Vector3.ONE * mscale
 	_build_overlays()
 
@@ -63,6 +87,9 @@ func refresh() -> void:
 	root3d.transform = t
 
 	skel.reset_bone_poses()
+	if _play_motion():
+		_finish(p)
+		return
 	# 沈み込み（しゃがみ・着地など）はセンターを下げる
 	if bi.center >= 0:
 		var drop: float = p.drop * sc * K / mscale
@@ -78,11 +105,14 @@ func refresh() -> void:
 	_aim_limb(back + "_arm", back + "_elbow", back + "_wrist", shoulder, p.hb, 24.0, 1)
 	_aim_limb(front + "_leg", front + "_knee", front + "_ankle", hip, p.ff, 28.0, -1)
 	_aim_limb(back + "_leg", back + "_knee", back + "_ankle", hip, p.fb, 28.0, -1)
+	_finish(p)
+
+
+func _finish(p: Dictionary) -> void:
 	# 回転付与（足D・腕捩など）
 	for inh in model.inherits:
 		var q := skel.get_bone_pose_rotation(inh[1])
 		skel.set_bone_pose_rotation(inh[0], Quaternion.IDENTITY.slerp(q, inh[2]))
-
 	var alpha := 0.45 if p.fade else 1.0
 	mesh_inst.transparency = 1.0 - alpha
 	mesh_inst.material_overlay = _flash_mat() if p.flash else null
@@ -137,3 +167,76 @@ func _aim_limb(r1: String, r2: String, r3: String, root2d: Vector2, end2d: Vecto
 	var lat2: float = (rest_pos[c] - rest_pos[b]).normalized().x * 0.2 * length
 	_aim(a, b, _to_model(elbow - root2d, lat1))
 	_aim(b, c, _to_model(end2d - elbow, lat2))
+
+
+# ------------------------------------------------------------ モーション再生
+func _slot_now() -> Array:
+	## [使い道, 経過秒, ループするか, ワザ全体の秒数]
+	if f.state == "move" and f.move != null:
+		var slot: String = MOVE_SLOTS.get(f.move.d.key, "")
+		if clips.has(slot):
+			var c: Dictionary = clips[slot]
+			var prog: float = float(f.move.f) / max(1, f.move.d.total)
+			return [slot, prog * c.length, false]
+		return ["", 0.0, false]
+	var key := sprite_key()
+	var slot2: String = STATE_SLOTS.get(key, "")
+	if not clips.has(slot2):
+		return ["", 0.0, false]
+	if key != cur_key:
+		cur_key = key
+		cur_start = f.anim
+	var loop := not (key in ["rise", "land", "jumpsquat", "climb", "down"])
+	return [slot2, (f.anim - cur_start) / 60.0, loop]
+
+
+func sprite_key() -> String:
+	var s := f.state
+	if s == "stand" or s == "respawn":
+		if s == "stand" and f.crouch:
+			return "crouch"
+		var sp: float = abs(f.vx)
+		if s == "stand" and sp > f.st.walk + 0.5:
+			return "run"
+		if s == "stand" and sp > 0.6:
+			return "walk"
+		return s
+	if s == "lag":
+		return "land"
+	if s == "air" or s == "helpless" or s == "walltech":
+		return "rise" if f.vy < 0 else "fall"
+	if s == "dodge":
+		return "roll" if f.dodge != null and f.dodge.kind == "roll" else "shield"
+	if s == "hitstun":
+		return "tumble" if f.tumble and f.ground == null else "hit"
+	if s == "knockdown":
+		return "down"
+	return s
+
+
+func _play_motion() -> bool:
+	var sl := _slot_now()
+	if sl[0] == "":
+		return false
+	var c: Dictionary = clips[sl[0]]
+	var frames: Array = c.frames
+	var t: float = sl[1]
+	var k := int(t * MotionLib.FPS)
+	if sl[2]:
+		k = k % frames.size()
+	else:
+		k = clamp(k, 0, frames.size() - 1)
+	var fr: Dictionary = frames[k]
+	if bi.center >= 0:
+		skel.set_bone_pose_rotation(bi.center, fr.hips_rot)
+		var off: Vector3 = fr.hips_off * hip_h
+		skel.set_bone_pose_position(bi.center, skel.get_bone_rest(bi.center).origin + Vector3(off.x * 0.3, off.y, off.z * 0.3))
+	for seg in MotionLib.SEGMENTS:
+		var role: String = seg[2]
+		if fr.dirs.has(role) and bi.get(role, -1) >= 0 and bi.get(seg[3], -1) >= 0:
+			_aim(bi[role], bi[seg[3]], fr.dirs[role])
+	if fr.has("head_rot") and bi.head >= 0:
+		var par := skel.get_bone_parent(bi.head)
+		var gp := _global_rot(par) if par >= 0 else Quaternion.IDENTITY
+		skel.set_bone_pose_rotation(bi.head, gp.inverse() * fr.head_rot)
+	return true
