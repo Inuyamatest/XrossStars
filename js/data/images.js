@@ -8,7 +8,7 @@
   window.XS_LEADER_IMAGE_DIR = 'cards/';
 
   window.XS_LEADER_IMAGES = {
-    // 第5弾（公式サイトのLRP画像。BP05-081〜101）
+    // 第5弾（公式サイトの画像。サインカード（LRPP）がある Selly (IGV)・LEO・神成きゅぴ (IGV) はサインカード（BP05-085・086・097）、ほかはLRP（BP05-081〜101））
     '秋雪こはく': 'cards/BP05-L01.webp',
     'Selly (IGV)': 'cards/BP05-L02.webp',
     'dtto.': 'cards/BP05-L03.webp',
@@ -107,7 +107,7 @@
 
   // 覚醒後の画像（無ければ覚醒前を使用）
   window.XS_LEADER_IMAGES_AWAKENED = {
-    // 第5弾：公式サイトのLRPの覚醒面（Selly (IGV)・LEO は公式のリーダー紹介画像から切り抜き）
+    // 第5弾：公式サイトの覚醒面（サインカードがあるリーダーはサインカードの覚醒面）
     '秋雪こはく': 'cards/BP05-L01_awakened.webp',
     'Selly (IGV)': 'cards/BP05-L02_awakened.webp',
     '碧依さくら': 'cards/BP05-L05_awakened.webp',
