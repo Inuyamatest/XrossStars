@@ -75,6 +75,21 @@ test('第5弾リーダーの覚醒後の画像（渋谷ハル (IGV)・tttcheekyt
   });
 });
 
+test('SRP（絵柄違い）8枚は元のSRと同名・同じ効果・ACEで、同名4枚までに一緒に数えられる', () => {
+  [['BP05-103', 'BP05-017'], ['BP05-104', 'BP05-024'], ['BP05-105', 'BP05-031'], ['BP05-106', 'BP05-038'], ['BP05-107', 'BP05-045'], ['BP05-108', 'BP05-052'], ['BP05-109', 'BP05-059'], ['BP05-110', 'BP05-066']].forEach(([n, base]) => {
+    const c = cardIndex[n];
+    assert.ok(c && c.isParallel && c.rarity === 'SRP' && c.ace === true, n);
+    assert.strictEqual(c.name, cardIndex[base].name, n);
+    assert.deepStrictEqual(CardEffectData.getEffectsForCard(n), CardEffectData.getEffectsForCard(base), n);
+    assert.ok(fs.existsSync(path.join(__dirname, '..', c.imageUrl)), n + ' の画像');
+  });
+  const Rules = require('../js/deckbuilder/rules.js');
+  const L = ['BP05-L02', 'BP05-L11', 'BP05-L14', 'BP01-008'];
+  const base = { leaders: L, tactics: ['BP01-092', 'BP03-074', 'BP02-079', 'BP04-073', 'BP03-073'] };
+  const v = Rules.validateDeck(Object.assign({}, base, { cards: [{ cardNumber: 'BP05-059', count: 3 }, { cardNumber: 'BP05-109', count: 2 }, { cardNumber: 'BP01-081', count: 45 }] }), cardIndex);
+  assert.ok(!v.valid && v.violations.some((x) => x.indexOf('魔王再臨') >= 0), '魔王再臨（通常3＋SRP2）は5枚で違反');
+});
+
 console.log('=== アタック ===');
 test('恐怖の一突き：プレイエリアにコスト2のカードがあるときだけ、他のリーダー1体に20ダメージ', () => {
   const a = makeState();
