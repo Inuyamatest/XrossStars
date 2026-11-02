@@ -8,7 +8,7 @@
   window.XS_LEADER_IMAGE_DIR = 'cards/';
 
   window.XS_LEADER_IMAGES = {
-    // 第5弾（LRP画像から切り抜き。通常版の画像が出たら差し替える）
+    // 第5弾（公式サイトのLRP画像。BP05-081〜101）
     '秋雪こはく': 'cards/BP05-L01.webp',
     'Selly (IGV)': 'cards/BP05-L02.webp',
     'dtto.': 'cards/BP05-L03.webp',
@@ -107,13 +107,16 @@
 
   // 覚醒後の画像（無ければ覚醒前を使用）
   window.XS_LEADER_IMAGES_AWAKENED = {
-    // 第5弾：公式のリーダー紹介画像（ブースターパック第5弾『Ignition Vortex』）から切り抜き
+    // 第5弾：公式サイトのLRPの覚醒面（Selly (IGV)・LEO は公式のリーダー紹介画像から切り抜き）
     '秋雪こはく': 'cards/BP05-L01_awakened.webp',
     'Selly (IGV)': 'cards/BP05-L02_awakened.webp',
     '碧依さくら': 'cards/BP05-L05_awakened.webp',
     'Kamito (IGV)': 'cards/BP05-L06_awakened.webp',
     '胡桃のあ (IGV)': 'cards/BP05-L10_awakened.webp',
     'Cpt (IGV)': 'cards/BP05-L11_awakened.webp',
+    '渋谷ハル (IGV)': 'cards/BP05-L07_awakened.webp',
+    'tttcheekyttt': 'cards/BP05-L08_awakened.webp',
+    'Ras (IGV)': 'cards/BP05-L12_awakened.webp',
     'Arya Kuroha': 'cards/BP05-L13_awakened.webp',
     'Zeder': 'cards/BP05-L15_awakened.webp',
     'ハセシン': 'cards/BP05-L16_awakened.webp',

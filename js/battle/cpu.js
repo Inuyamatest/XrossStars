@@ -783,6 +783,12 @@
         // セルフ実況・対空射撃等「捨てたらカードを1枚引く」：手札の枚数が減らないので、エース以外があれば常に捨てる
         if (q.draw > 0) { var nonAce = discardOrder(cards, cardIndex).filter(function (i) { var cd = cardIndex[cards[i].cardId]; return !(cd && cd.ace); }); return nonAce.length ? [nonAce[0]] : []; }
         return player.hand.length >= 3 ? cheapestIndexes(cards, 1, cardIndex) : [];
+      case 'REVEAL_FOR_DRAW': {
+        // キャプテンズ・リターン：公開するだけで手札は減らないので、一番コストの高いカードを公開して多く引く（コスト0なら公開しない）
+        var best = -1, bestCost = 0;
+        cards.forEach(function (c, i) { var cc = cardCost(c, cardIndex); if (cc !== 99 && cc > bestCost) { bestCost = cc; best = i; } });
+        return best >= 0 ? [best] : [];
+      }
       case 'LOOK_TOP_TRASH': {
         // 運もミスもない：エースは残す。同じ種類のカードが手札に十分あれば（アタック3枚以上／メモリア2枚以上）トラッシュに置いて引き直す
         var top = cardIndex[cards[0].cardId];

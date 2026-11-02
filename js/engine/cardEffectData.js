@@ -1840,6 +1840,39 @@
       E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: -10 } })
     ],
 
+    // ---- 第5弾（ビルドルールの無いカード。公式サイトのカード画像で確認） ----
+    // BP05-019 恐怖の一突き（アタック, 赤, cost1）
+    // カードテキスト: "〖アタックする〗 〖アタック後〗プレイエリアにコスト2のカードがあるなら、対戦相手の他のリーダー1体に20ダメージ。"
+    'BP05-019': [E({ trigger: 'AFTER_ATTACK', condition: function (state, ctx) {
+      return state.players[ctx.ownerPlayerId].playArea.some(function (entry) { var cd = ctx.cardIndex && ctx.cardIndex[entry.card.cardId]; return !!cd && cd.cost === 2; });
+    }, target: F.makeSingleOtherOpponentLeaderTarget(), action: { type: 'DAMAGE', amount: 20 } })],
+    // BP05-026 パーフェクトクローザー（アタック, 青, cost1） … サイコフォートレスと同じ
+    'BP05-026': [E({ trigger: 'ON_ATTACK', condition: F.makeAttackerAwakenedCondition(), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 10 } })],
+    // BP05-033 決闘開始（アタック, 黄, cost2）："〖アタックする〗ダメージ+40。"
+    'BP05-033': [E({ trigger: 'ON_ATTACK', action: { type: 'ATTACK_DAMAGE_BONUS', amount: 40 } })],
+    // BP05-040 怒涛の勢い（アタック, 緑, cost2）："〖アタックする〗プレイエリアにメモリアカードが2枚以上あるなら、ダメージ+50。"
+    'BP05-040': [E({ trigger: 'ON_ATTACK', condition: F.makePlayAreaTypeCountCondition({ player: 'SELF', cardType: 'MEMORIA', operator: 'GTE', count: 2 }), action: { type: 'ATTACK_DAMAGE_BONUS', amount: 50 } })],
+    // BP05-046 ナイトウォーカー／BP05-053 名誉の出禁／BP05-060 ブロードキャスティング／BP05-067 精一杯の声援（メモリア, cost1）："〖アタック強化〗次のアタックのダメージ+50。"
+    'BP05-046': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })],
+    'BP05-053': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })],
+    'BP05-060': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })],
+    'BP05-067': [E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 50 } })],
+    // BP05-047 最後の祈り（メモリア, 赤, cost1）："〖プレイ時〗カードを2枚引き、手札を2枚捨てる。 〖アタック強化〗次のアタックのダメージ+30。"
+    'BP05-047': [
+      E({ trigger: 'ON_PLAY', action: { type: 'MULTI', actions: [{ type: 'DRAW', amount: 2 }, { type: 'DISCARD_HAND', who: 'SELF', amount: 2 }] } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 30 } })
+    ],
+    // BP05-054 インプレッシブコール（メモリア, 青, cost1） … バックステージパスと同じ（装備は〖アタック強化〗を実行するときに確認）
+    'BP05-054': [
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 40 } }),
+      E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS_AT_ATTACK', amount: 20, condition: F.makeAttackerHasEquipmentCondition() } })
+    ],
+    // BP05-061 キャプテンズ・リターン（メモリア, 黄, cost1）
+    // カードテキスト: "〖プレイ時〗自分の手札のコスト3以下のカード1枚を公開してもよい。そうしたなら、公開したカードのコストと同じ数のカードを引く。"
+    'BP05-061': [E({ trigger: 'ON_PLAY', action: { type: 'REVEAL_HAND_DRAW_BY_COST', maxCost: 3 } })],
+    // BP05-068 二連覇の称号（メモリア, 緑, cost0） … 穏やかな一時と同じ
+    'BP05-068': [E({ trigger: 'ON_PLAY', target: F.makeOwnAliveLeaderTarget(), action: { type: 'HEAL', amount: 10 } }), E({ trigger: 'ATTACK_BOOST', modifier: { type: 'DAMAGE_BONUS', amount: 10 } })],
+
     // BP05-049 忍び寄る影（メモリア, 赤, cost1, ビルドルール：リーダー：Selly (IGV)）
     // カードテキスト: "〖アタック強化〗次のアタックのダメージ+50。 〖アタック後〗プレイエリアにメモリアカードが3枚以上あるなら、対戦相手の他のリーダー1体に20ダメージ。"（メンターの教えと同じ）
     'BP05-049': [

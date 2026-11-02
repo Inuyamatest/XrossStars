@@ -480,6 +480,23 @@
         return state;
       }
 
+      case 'REVEAL_HAND_DRAW_BY_COST': {
+        // キャプテンズ・リターン「自分の手札のコスト{maxCost}以下のカード1枚を公開してもよい。そうしたなら、
+        // 公開したカードのコストと同じ数のカードを引く。」選択は ctx.chooseRevealCard(cands, spec) => [instanceId]（空なら公開しない）
+        var revealer = state.players[ctx.ownerPlayerId];
+        var revealCands = revealer.hand.filter(function (c) {
+          var cd = cardIndex[c.cardId];
+          return !!cd && typeof cd.cost === 'number' && cd.cost <= action.maxCost;
+        }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: cardIndex[c.cardId].cost }; });
+        if (!revealCands.length || !ctx.chooseRevealCard) return state;
+        var picked = (ctx.chooseRevealCard(revealCands.slice(), { maxCost: action.maxCost }, state) || [])[0];
+        var shown = revealCands.find(function (c) { return c.instanceId === picked; });
+        if (!shown) return state;
+        Events.logEvent(state, 'CARD_REVEALED', { playerId: ctx.ownerPlayerId, cardId: shown.cardId });
+        if (shown.cost > 0) effectDraw(state, ctx.ownerPlayerId, shown.cost, cardIndex);
+        return state;
+      }
+
       case 'AWAKEN_LEADER':
         // 名誉のバッジ「自分のリーダー1体を覚醒させる。」覚醒したリーダーの〖覚醒時〗効果も発動する（アタックで覚醒したときと同じ）
         (targets || []).forEach(function (ref) {
@@ -1027,7 +1044,7 @@
     'chooseTarget', 'chooseHealTarget', 'chooseDistributedHeal', 'chooseMoveEquipment', 'chooseMultiTargets',
     'chooseSelfDamage', 'chooseDeckLookAddToHand', 'chooseDiscard', 'chooseFreePlayFromHand', 'chooseDeckLookPlay',
     'chooseReplayFromPlayArea', 'chooseApexDiscard', 'chooseDeckLookAttack', 'chooseFreeAttackTarget',
-    'chooseAttackDiscard', 'chooseConfirm', 'chooseDeclareCardType',
+    'chooseAttackDiscard', 'chooseConfirm', 'chooseDeclareCardType', 'chooseRevealCard',
     'chooseDistributedDamage', 'chooseMeetTwo', 'chooseFreeAttackAttacker', 'chooseLookTopTrash',
   ];
   function pickChoiceCallbacks(source) {
