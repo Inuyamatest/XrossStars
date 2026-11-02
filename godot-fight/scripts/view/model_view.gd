@@ -11,21 +11,23 @@ const B := {
 	"l_shoulder": "左肩", "r_shoulder": "右肩", "l_toe": "左つま先", "r_toe": "右つま先",
 }
 
-# ワザ → モーションの使い道（無ければ手続きアニメ）
+# ワザ → モーションの使い道（左から順に、あるものを使う。無ければ手続きアニメ）
 const MOVE_SLOTS := {
-	"jab": "jab", "jab2": "jab", "jab3": "kick", "ftilt": "kick", "utilt": "uppercut", "dtilt": "sweep",
-	"dash": "flykick", "fsmash": "smash", "usmash": "uppercut", "dsmash": "sweep", "nair": "flip", "fair": "flykick",
-	"bair": "kick", "uair": "flip", "dair": "kick", "grab": "throw", "dashgrab": "throw", "fthrow": "throw",
-	"bthrow": "throw", "uthrow": "throw", "dthrow": "throw", "ledgeatk": "kick", "getupatk": "sweep",
-	"nspecial": "magic", "sspecial": "flykick", "uspecial": "uppercut", "dspecial": "smash", "dspecial_air": "kick",
-	"d_land": "smash",
+	"jab": ["jab"], "jab2": ["jab2", "jab"], "jab3": ["hook", "kick"], "ftilt": ["kick", "hook", "swing"],
+	"utilt": ["uppercut", "swing2"], "dtilt": ["sweep"], "dash": ["flykick"], "fsmash": ["heavy", "hook"],
+	"usmash": ["uppercut", "swing2"], "dsmash": ["sweep"], "nair": ["flip"], "fair": ["flykick", "hook"],
+	"bair": ["kick"], "uair": ["flip", "swing2"], "dair": ["kick"], "grab": ["jab2"], "dashgrab": ["jab2"],
+	"fthrow": ["throw"], "bthrow": ["throw"], "uthrow": ["throw"], "dthrow": ["throw"],
+	"ledgeatk": ["kick", "swing"], "getupatk": ["sweep"], "nspecial": ["magic"], "sspecial": ["flykick"],
+	"uspecial": ["uppercut", "swing2"], "dspecial": ["heavy"], "dspecial_air": ["kick"], "d_land": ["heavy"],
 }
 const STATE_SLOTS := {
-	"stand": "idle", "walk": "walk", "run": "run", "crouch": "crouch", "jumpsquat": "crouch", "rise": "jump",
-	"fall": "fall", "land": "land", "shield": "block", "hit": "hit", "tumble": "knockdown", "down": "knockdown",
-	"ledge": "hang", "climb": "climb", "roll": "roll", "awaken": "victory", "respawn": "idle", "grabbed": "hit",
-	"hold": "throw", "dizzy": "hit",
+	"stand": ["idle"], "walk": ["walk"], "run": ["run"], "crouch": ["crouch"], "jumpsquat": ["crouch"],
+	"rise": ["jump"], "fall": ["fall"], "land": ["land"], "shield": ["block"], "hit": ["hit", "hit2"],
+	"tumble": ["knockback"], "down": ["knockdown"], "ledge": ["hang"], "climb": ["climb"], "roll": ["roll"],
+	"awaken": ["awaken"], "respawn": ["idle"], "grabbed": ["hit"], "hold": ["carry"], "dizzy": ["shieldbreak", "hit"],
 }
+
 
 var model := {}
 var skel: Skeleton3D
@@ -35,7 +37,6 @@ var rest_pos := []   # ボーン番号 -> 初期位置（モデル座標）
 var mscale := 1.0
 var mesh_inst: MeshInstance3D
 var _overlay: StandardMaterial3D
-var clips := {}
 var cur_key := ""
 var cur_start := 0
 var hip_h := 1.0
@@ -56,7 +57,6 @@ func setup(fighter: Fighter) -> void:
 	for k in B:
 		bi[k] = model.bones.get(B[k], -1)
 	mscale = (f.h * K * 1.08) / max(0.1, model.height)
-	clips = MotionLib.clips()
 	if bi.l_leg >= 0:
 		hip_h = max(0.1, rest_pos[bi.l_leg].y)
 	root3d.scale = Vector3.ONE * mscale
@@ -170,24 +170,31 @@ func _aim_limb(r1: String, r2: String, r3: String, root2d: Vector2, end2d: Vecto
 
 
 # ------------------------------------------------------------ モーション再生
+func _pick(slots: Array) -> Dictionary:
+	for sl in slots:
+		var c := MotionLib.clip(sl)
+		if not c.is_empty():
+			return c
+	return {}
+
+
 func _slot_now() -> Array:
-	## [使い道, 経過秒, ループするか, ワザ全体の秒数]
+	## [クリップ, 経過秒, ループするか]
 	if f.state == "move" and f.move != null:
-		var slot: String = MOVE_SLOTS.get(f.move.d.key, "")
-		if clips.has(slot):
-			var c: Dictionary = clips[slot]
-			var prog: float = float(f.move.f) / max(1, f.move.d.total)
-			return [slot, prog * c.length, false]
-		return ["", 0.0, false]
+		var c := _pick(MOVE_SLOTS.get(f.move.d.key, []))
+		if c.is_empty():
+			return [null, 0.0, false]
+		var prog: float = float(f.move.f) / max(1, f.move.d.total)
+		return [c, prog * c.length, false]
 	var key := sprite_key()
-	var slot2: String = STATE_SLOTS.get(key, "")
-	if not clips.has(slot2):
-		return ["", 0.0, false]
+	var c2 := _pick(STATE_SLOTS.get(key, []))
+	if c2.is_empty():
+		return [null, 0.0, false]
 	if key != cur_key:
 		cur_key = key
 		cur_start = f.anim
-	var loop := not (key in ["rise", "land", "jumpsquat", "climb", "down"])
-	return [slot2, (f.anim - cur_start) / 60.0, loop]
+	var loop := not (key in ["rise", "land", "jumpsquat", "climb", "down", "hit", "tumble", "roll"])
+	return [c2, (f.anim - cur_start) / 60.0, loop]
 
 
 func sprite_key() -> String:
@@ -216,9 +223,9 @@ func sprite_key() -> String:
 
 func _play_motion() -> bool:
 	var sl := _slot_now()
-	if sl[0] == "":
+	if sl[0] == null:
 		return false
-	var c: Dictionary = clips[sl[0]]
+	var c: Dictionary = sl[0]
 	var frames: Array = c.frames
 	var t: float = sl[1]
 	var k := int(t * MotionLib.FPS)

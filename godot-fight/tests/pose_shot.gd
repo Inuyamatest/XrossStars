@@ -30,11 +30,11 @@ func _init() -> void:
 		print("モデルなし")
 		quit(1)
 		return
-	var poses := [["stand", 0], ["stand", 25], ["stand", 50], ["stand", 75], ["run", null], ["move", "jab"], ["move", "ftilt"], ["move", "fsmash"], ["move", "uair"],
-		["shield", null], ["hitstun", null], ["ledge", null], ["move", "dsmash"]]
+	var poses := [["stand", 0], ["run", null], ["move", "jab"], ["move", "jab2"], ["move", "ftilt"], ["move", "fsmash"],
+		["move", "dsmash"], ["move", "nspecial"], ["shield", null], ["hitstun", null], ["dodge", null], ["move", "fthrow"]]
 	for i in range(poses.size()):
 		var f := Fighter.new(0, chars[0], null, 3, true)
-		f.x = (i - (poses.size() - 1) / 2.0) * 50.0
+		f.x = (i - (poses.size() - 1) / 2.0) * 44.0
 		f.y = 40.0
 		f.face = 1 if i % 2 == 0 else -1
 		var st: String = poses[i][0]
@@ -49,6 +49,10 @@ func _init() -> void:
 		elif st == "hitstun":
 			f.state = "hitstun"
 			f.tumble = false
+		elif st == "dodge":
+			f.state = "dodge"
+			f.dodge = {"kind": "roll", "total": 30, "inv": [0, 0], "dir": 1, "dy": 0.0}
+			f.timer = 10
 		elif st == "ledge":
 			f.state = "stand"
 			f.crouch = true
@@ -61,7 +65,7 @@ func _init() -> void:
 		if st == "stand" and poses[i][1] != null:
 			f.anim += int(poses[i][1])
 			v.refresh()
-	cam.position = Vector3(0, 0.2, 15.5)
+	cam.position = Vector3(0, 0.0, 15.5)
 	if OS.get_cmdline_user_args().size() > 1:
 		cam.position = Vector3(-2.2, -0.3, 4.0)
 
