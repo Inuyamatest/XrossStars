@@ -71,13 +71,8 @@ func _build_overlays() -> void:
 	add_child(aura_mesh)
 
 
-func _mat(c: Color) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.roughness = 0.6
-	m.rim_enabled = true
-	m.rim = 0.4
-	return m
+func _mat(c: Color) -> Material:
+	return Toon.material(c)
 
 
 func _set_mat(names: Array, m: Material) -> void:

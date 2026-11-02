@@ -172,7 +172,7 @@ func _load(path: String) -> Dictionary:
 		m.diffuse = v4()
 		v3(); f32(); v3()   # スペキュラ・環境色（使わない）
 		m.flags = u8()
-		v4(); f32()         # エッジ
+		v4(); f32()         # エッジ色・太さ
 		m.tex = idx(tsize)
 		idx(tsize)          # スフィア
 		u8()
@@ -264,10 +264,10 @@ func _build(path: String, name: String, comment: String, verts, norms, uvs, bone
 		var idxs := PackedInt32Array()
 		idxs.resize(cnt)
 		for k in range(0, cnt, 3):
-			# Z を反転したので面の向き（回り順）も反転する
+			# MMD（左手系・時計回りが表）を Z 反転すると、Godot の表（時計回り）とそのまま一致する
 			idxs[k] = faces[start + k]
-			idxs[k + 1] = faces[start + k + 2]
-			idxs[k + 2] = faces[start + k + 1]
+			idxs[k + 1] = faces[start + k + 1]
+			idxs[k + 2] = faces[start + k + 2]
 		start += cnt
 		var arr := []
 		arr.resize(Mesh.ARRAY_MAX)
@@ -278,26 +278,19 @@ func _build(path: String, name: String, comment: String, verts, norms, uvs, bone
 		arr[Mesh.ARRAY_WEIGHTS] = weights
 		arr[Mesh.ARRAY_INDEX] = idxs
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
-		var mat := StandardMaterial3D.new()
 		var dcol: Vector4 = m.diffuse
-		mat.albedo_color = Color(dcol.x, dcol.y, dcol.z, dcol.w)
-		mat.diffuse_mode = BaseMaterial3D.DIFFUSE_TOON
-		mat.specular_mode = BaseMaterial3D.SPECULAR_TOON
-		mat.roughness = 0.9
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED if (m.flags & 1) else BaseMaterial3D.CULL_BACK
 		var has_alpha := dcol.w < 0.999
+		var tex: ImageTexture = null
 		if m.tex >= 0 and m.tex < texpaths.size():
 			var tp: String = texpaths[m.tex]
 			if not tex_cache.has(tp):
 				tex_cache[tp] = _load_tex(dir, tp)
-			var t: ImageTexture = tex_cache[tp]
-			if t != null:
-				mat.albedo_color = Color(1, 1, 1, dcol.w)
-				mat.albedo_texture = t
-				if t.get_image().detect_alpha() != Image.ALPHA_NONE:
-					has_alpha = true
-		if has_alpha:
-			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS
+			tex = tex_cache[tp]
+			if tex != null and tex.get_image().detect_alpha() != Image.ALPHA_NONE:
+				has_alpha = true
+		var col := Color(1, 1, 1, dcol.w) if tex != null else Color(dcol.x, dcol.y, dcol.z, dcol.w)
+		# 輪郭線は MMD の「エッジ」フラグ(0x10)がある材質だけ
+		var mat := Toon.material(col, tex, has_alpha, (m.flags & 0x10) != 0)
 		mesh.surface_set_material(mesh.get_surface_count() - 1, mat)
 	var mi := MeshInstance3D.new()
 	mi.name = "Mesh"

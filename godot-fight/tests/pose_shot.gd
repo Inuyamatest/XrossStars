@@ -62,6 +62,8 @@ func _init() -> void:
 			f.anim += int(poses[i][1])
 			v.refresh()
 	cam.position = Vector3(0, 0.2, 15.5)
+	if OS.get_cmdline_user_args().size() > 1:
+		cam.position = Vector3(-2.2, -0.3, 4.0)
 
 
 class DummyW:

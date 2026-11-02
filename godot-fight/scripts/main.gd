@@ -29,6 +29,9 @@ var info: Label
 var flash: ColorRect
 var flash_t := 0
 var font: SystemFont
+var lit: Lighting
+var quality := 2
+var shadows := []
 var demo := false          # --demo: 1P も CPU にする（確認用）
 var shots: Array = []      # --shot=フレーム,フレーム,...: そのフレームでスクショを保存して終了
 var shot_dir := "user://"
@@ -105,6 +108,8 @@ func _process(delta: float) -> void:
 		p.refresh()
 	_update_projs()
 	_update_fx()
+	lit.step()
+	_update_shadows()
 	_update_camera(delta)
 	_update_hud()
 	frame_count += 1
@@ -138,6 +143,10 @@ func _unhandled_input(e: InputEvent) -> void:
 			KEY_F4:
 				p1_char += 1
 				start_match()
+			KEY_F6:
+				quality = (quality + 2) % 3
+				lit.set_quality(quality)
+				_update_info()
 			KEY_F5:
 				p2_char += 1
 				start_match()
@@ -154,68 +163,108 @@ func _unhandled_input(e: InputEvent) -> void:
 
 # ------------------------------------------------------------ 背景・ライト
 func _build_env() -> void:
-	var env := Environment.new()
-	var sky := Sky.new()
-	var sm := ProceduralSkyMaterial.new()
-	sm.sky_top_color = Color(0.16, 0.12, 0.36)
-	sm.sky_horizon_color = Color(0.98, 0.58, 0.42)
-	sm.ground_horizon_color = Color(0.55, 0.3, 0.4)
-	sm.ground_bottom_color = Color(0.12, 0.08, 0.16)
-	sm.sun_angle_max = 20.0
-	sky.sky_material = sm
-	env.background_mode = Environment.BG_SKY
-	env.sky = sky
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.9
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.glow_enabled = true
-	env.glow_intensity = 0.6
-	env.glow_bloom = 0.1
-	var we := WorldEnvironment.new()
-	we.environment = env
-	add_child(we)
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-38, 35, 0)
-	sun.light_energy = 1.3
-	sun.light_color = Color(1.0, 0.92, 0.82)
-	sun.shadow_enabled = true
-	add_child(sun)
-	var fill := DirectionalLight3D.new()
-	fill.rotation_degrees = Vector3(-20, -140, 0)
-	fill.light_energy = 0.35
-	fill.light_color = Color(0.6, 0.6, 1.0)
-	add_child(fill)
 	cam = Camera3D.new()
 	cam.fov = 30
 	cam.near = 0.5
 	cam.far = 800
 	add_child(cam)
 	cam.position = cam_pos
-	# 遠景（山と夕日）
+	lit = Lighting.new()
+	add_child(lit)
+	lit.build(cam, quality)
+	# 遠景: 雲の海と遠くの浮島
 	var deco := Node3D.new()
 	add_child(deco)
-	var sunball := MeshInstance3D.new()
-	var sb := SphereMesh.new()
-	sunball.mesh = sb
-	sunball.scale = Vector3.ONE * 40
-	sunball.position = Vector3(0, 6, -320)
-	sunball.material_override = _unshaded(Color(1.0, 0.82, 0.55), 2.0)
-	deco.add_child(sunball)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	for i in range(14):
-		var mi := MeshInstance3D.new()
+	var cloud := Toon.material(Color(1, 1, 1), null, false, false, Color(0.78, 0.84, 1.0))
+	for i in range(26):
+		var cl := Node3D.new()
+		var z := rng.randf_range(-160, -40)
+		var y := rng.randf_range(-22, -10) if i < 18 else rng.randf_range(8, 30)
+		cl.position = Vector3(rng.randf_range(-200, 200), y, z)
+		for k in range(rng.randi_range(4, 7)):
+			var b := MeshInstance3D.new()
+			var sm := SphereMesh.new()
+			sm.radial_segments = 16
+			sm.rings = 8
+			b.mesh = sm
+			var r := rng.randf_range(4.0, 9.0)
+			b.scale = Vector3(r * 1.4, r, r)
+			b.position = Vector3(k * r * 0.9 - 8, rng.randf_range(-1, 2), rng.randf_range(-2, 2))
+			b.material_override = cloud
+			b.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			cl.add_child(b)
+		deco.add_child(cl)
+	var isle_top := Toon.material(Color(0.45, 0.78, 0.4), null, false, false, Color(0.4, 0.55, 0.75))
+	var isle_rock := Toon.material(Color(0.7, 0.55, 0.42), null, false, false, Color(0.5, 0.45, 0.7))
+	for i in range(6):
+		var isle := Node3D.new()
+		isle.position = Vector3(rng.randf_range(-140, 140), rng.randf_range(-6, 14), rng.randf_range(-130, -70))
+		var cone := MeshInstance3D.new()
 		var cm := CylinderMesh.new()
-		cm.top_radius = 0.0
-		cm.bottom_radius = rng.randf_range(30, 60)
-		cm.height = rng.randf_range(30, 60)
-		cm.radial_segments = 6
-		mi.mesh = cm
-		var z := rng.randf_range(-300, -180)
-		mi.position = Vector3(rng.randf_range(-260, 260), -40 + cm.height / 2, z)
-		var shade := 0.22 + (z + 300) / 120 * 0.1
-		mi.material_override = _mat(Color(0.32 * shade * 2.2, 0.2 * shade * 2.2, 0.36 * shade * 2.2))
-		deco.add_child(mi)
+		cm.top_radius = rng.randf_range(6, 12)
+		cm.bottom_radius = 0.5
+		cm.height = cm.top_radius * 1.4
+		cm.radial_segments = 9
+		cone.mesh = cm
+		cone.position.y = -cm.height / 2
+		cone.material_override = isle_rock
+		isle.add_child(cone)
+		var cap := MeshInstance3D.new()
+		var cy := CylinderMesh.new()
+		cy.top_radius = cm.top_radius * 1.02
+		cy.bottom_radius = cm.top_radius * 1.02
+		cy.height = 1.2
+		cy.radial_segments = 9
+		cap.mesh = cy
+		cap.position.y = 0.6
+		cap.material_override = isle_top
+		isle.add_child(cap)
+		deco.add_child(isle)
+
+
+func _stone_mat(c: Color, rough_var := 0.1) -> StandardMaterial3D:
+	## ノイズで色むらと凹凸をつけた石の材質
+	var m := StandardMaterial3D.new()
+	var nz := FastNoiseLite.new()
+	nz.frequency = 0.04
+	nz.fractal_octaves = 4
+	var alb := NoiseTexture2D.new()
+	alb.noise = nz
+	alb.seamless = true
+	alb.width = 256
+	alb.height = 256
+	var grad := Gradient.new()
+	grad.set_color(0, c.darkened(0.25))
+	grad.set_color(1, c.lightened(0.18 + rough_var))
+	alb.color_ramp = grad
+	m.albedo_texture = alb
+	var nrm := NoiseTexture2D.new()
+	nrm.noise = nz
+	nrm.seamless = true
+	nrm.as_normal_map = true
+	nrm.bump_strength = 6.0
+	nrm.width = 256
+	nrm.height = 256
+	m.normal_enabled = true
+	m.normal_texture = nrm
+	m.normal_scale = 0.8
+	m.uv1_triplanar = true
+	m.uv1_scale = Vector3(0.35, 0.35, 0.35)
+	m.roughness = 0.88
+	return m
+
+
+func _polished_mat(c: Color) -> StandardMaterial3D:
+	## ステージ上面: 磨いた石（映り込みが出る）
+	var m := _stone_mat(c, 0.02)
+	m.roughness = 0.22
+	m.metallic = 0.15
+	m.metallic_specular = 0.7
+	m.normal_scale = 0.15
+	m.uv1_scale = Vector3(0.18, 0.18, 0.18)
+	return m
 
 
 func _mat(c: Color) -> StandardMaterial3D:
@@ -239,6 +288,7 @@ func _unshaded(c: Color, energy := 1.0, alpha := 1.0) -> StandardMaterial3D:
 
 # ------------------------------------------------------------ ステージ
 func _build_stage() -> void:
+	## アニメ調の浮島ステージ: 芝の上面・白い石のふち・土の本体・光る結晶
 	stage_root = Node3D.new()
 	add_child(stage_root)
 	var m = world.stage.main
@@ -250,47 +300,64 @@ func _build_stage() -> void:
 	body.polygon = poly
 	body.depth = depth
 	body.position.z = depth / 2
-	body.material = _mat(Color(0.26, 0.2, 0.32))
+	body.material = Toon.material(Color(0.74, 0.54, 0.4), null, false, false, Color(0.48, 0.38, 0.62))
 	stage_root.add_child(body)
-	# 縁（リップ）: 上面から少し下まで別の色、少し張り出す
-	var lip := CSGPolygon3D.new()
 	var cx: float = (m.x1 + m.x2) / 2.0
 	var w: float = (m.x2 - m.x1) / 2.0
-	lip.polygon = PackedVector2Array([Vector2((cx - w) * K, 0), Vector2((cx + w) * K, 0),
-		Vector2((cx + w) * K, -Stage.LIP * K), Vector2((cx - w) * K, -Stage.LIP * K)])
-	lip.depth = depth + 0.3
-	lip.position.z = (depth + 0.3) / 2
-	lip.material = _mat(Color(0.36, 0.3, 0.42))
+	# 縁: 白い石の帯（輪郭線つき）
+	var lip := MeshInstance3D.new()
+	var lb := BoxMesh.new()
+	lb.size = Vector3(w * 2 * K + 0.1, Stage.LIP * K, depth + 0.3)
+	lip.mesh = lb
+	lip.position = Vector3(cx * K, -Stage.LIP * K / 2, 0)
+	lip.material_override = Toon.material(Color(0.96, 0.93, 0.86), null, false, true, Color(0.66, 0.66, 0.86))
 	stage_root.add_child(lip)
+	# 上面: 芝生
 	var top := MeshInstance3D.new()
 	var tb := BoxMesh.new()
-	tb.size = Vector3(w * 2 * K, 0.05, depth + 0.32)
+	tb.size = Vector3(w * 2 * K - 0.1, 0.06, depth + 0.1)
 	top.mesh = tb
 	top.position = Vector3(cx * K, 0.0, 0)
-	top.material_override = _unshaded(Color(1.0, 0.78, 0.5), 0.6)
+	top.material_override = Toon.material(Color(0.42, 0.8, 0.38), null, false, false, Color(0.3, 0.55, 0.6))
 	stage_root.add_child(top)
-	# 底の光
-	var glow := MeshInstance3D.new()
-	glow.mesh = SphereMesh.new()
-	glow.scale = Vector3.ONE * 1.4
-	glow.position = Vector3(cx * K, -m.depth * K, 0)
-	glow.material_override = _unshaded(Color(1.0, 0.6, 0.45), 3.0)
-	stage_root.add_child(glow)
+	# 本体の模様（地層の線）
+	for k in range(1, 4):
+		var dd: float = m.depth * k / 4.5
+		var hw: float = Stage.half_width(world.stage.shape, w, m.depth, dd) * K
+		var band := MeshInstance3D.new()
+		var bb := BoxMesh.new()
+		bb.size = Vector3(hw * 2 * 0.97, 0.06, 0.02)
+		band.mesh = bb
+		band.position = Vector3(cx * K, -dd * K, depth / 2 + 0.01)
+		band.material_override = Toon.material(Color(0.6, 0.42, 0.33), null, false, false)
+		stage_root.add_child(band)
+	# 底の光る結晶
+	var crystal_mat := _unshaded(Color(0.45, 0.95, 1.0), 2.5)
+	for k in range(-2, 3):
+		var cr := MeshInstance3D.new()
+		var pm := PrismMesh.new()
+		pm.size = Vector3(0.45, 1.5 - abs(k) * 0.3, 0.45)
+		cr.mesh = pm
+		cr.rotation_degrees = Vector3(180, 0, 0)
+		var hw2 := Stage.half_width(world.stage.shape, w, m.depth, m.depth * 0.7) * K
+		cr.position = Vector3(cx * K + k * hw2 * 0.35, -m.depth * K * (0.78 + abs(k) * 0.05) - 0.5, 0.9)
+		cr.material_override = crystal_mat
+		stage_root.add_child(cr)
 	for p in world.stage.plats:
 		var pm := MeshInstance3D.new()
 		var bx := BoxMesh.new()
-		bx.size = Vector3((p.x2 - p.x1) * K, 0.22, 3.2)
+		bx.size = Vector3((p.x2 - p.x1) * K, 0.24, 2.6)
 		pm.mesh = bx
-		pm.position = Vector3((p.x1 + p.x2) / 2 * K, -p.y * K - 0.11, 0)
-		pm.material_override = _mat(Color(0.4, 0.32, 0.44))
+		pm.position = Vector3((p.x1 + p.x2) / 2 * K, -p.y * K - 0.12, 0)
+		pm.material_override = Toon.material(Color(0.96, 0.93, 0.86), null, false, true, Color(0.66, 0.66, 0.86))
 		stage_root.add_child(pm)
-		var line := MeshInstance3D.new()
-		var lb := BoxMesh.new()
-		lb.size = Vector3((p.x2 - p.x1) * K, 0.04, 3.22)
-		line.mesh = lb
-		line.position = pm.position + Vector3(0, 0.11, 0)
-		line.material_override = _unshaded(Color(1.0, 0.78, 0.5), 0.6)
-		stage_root.add_child(line)
+		var grass := MeshInstance3D.new()
+		var gb := BoxMesh.new()
+		gb.size = Vector3((p.x2 - p.x1) * K - 0.08, 0.05, 2.5)
+		grass.mesh = gb
+		grass.position = pm.position + Vector3(0, 0.13, 0)
+		grass.material_override = Toon.material(Color(0.42, 0.8, 0.38), null, false, false, Color(0.3, 0.55, 0.6))
+		stage_root.add_child(grass)
 
 
 # ------------------------------------------------------------ カメラ
@@ -335,6 +402,45 @@ func _update_camera(delta: float) -> void:
 	cam.look_at(cam_look + off, Vector3.UP)
 
 
+# ------------------------------------------------------------ 足元の丸い影（空中でも位置がわかるように）
+func _update_shadows() -> void:
+	while shadows.size() < world.fighters.size():
+		var mi := MeshInstance3D.new()
+		var q := QuadMesh.new()
+		q.size = Vector2(1.1, 0.55)
+		q.orientation = PlaneMesh.FACE_Y
+		mi.mesh = q
+		var g := Gradient.new()
+		g.set_color(0, Color(0, 0, 0, 0.55))
+		g.set_color(1, Color(0, 0, 0, 0))
+		var gt := GradientTexture2D.new()
+		gt.gradient = g
+		gt.fill = GradientTexture2D.FILL_RADIAL
+		gt.fill_from = Vector2(0.5, 0.5)
+		gt.fill_to = Vector2(1.0, 0.5)
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = gt
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mi)
+		shadows.append(mi)
+	for i in range(world.fighters.size()):
+		var f: Fighter = world.fighters[i]
+		var mi: MeshInstance3D = shadows[i]
+		var gy = null
+		for g in world.stage.surfaces():
+			if f.x >= g.x1 and f.x <= g.x2 and g.y >= f.y - 1 and (gy == null or g.y < gy):
+				gy = g.y
+		mi.visible = f.alive() and gy != null and f.state != "ledge"
+		if mi.visible:
+			var hgt: float = (gy - f.y) * K
+			var s: float = clamp(1.0 - hgt / 8.0, 0.25, 1.0)
+			mi.position = Vector3(f.x * K, -gy * K + 0.012, 0.0)
+			mi.scale = Vector3(s, 1, s)
+
+
 # ------------------------------------------------------------ 飛び道具・エフェクト
 func _update_projs() -> void:
 	var alive := {}
@@ -343,7 +449,12 @@ func _update_projs() -> void:
 		if not proj_nodes.has(p):
 			var mi := MeshInstance3D.new()
 			mi.mesh = SphereMesh.new()
-			mi.material_override = _unshaded(Color(1.0, 0.5, 0.15), 4.0)
+			mi.material_override = _unshaded(Color(1.0, 0.5, 0.15), 6.0)
+			var pl := OmniLight3D.new()
+			pl.light_color = Color(1.0, 0.5, 0.2)
+			pl.light_energy = 2.5
+			pl.omni_range = 3.5
+			mi.add_child(pl)
 			add_child(mi)
 			proj_nodes[p] = mi
 		var n: MeshInstance3D = proj_nodes[p]
@@ -423,6 +534,7 @@ func _handle_events(events: Array) -> void:
 					var sp := randf_range(0.05, 0.12 + dmg * 0.01)
 					_spawn_fx("spark", pos, col.lightened(0.3), 0.12 + dmg * 0.006, 14, Vector3(cos(a), sin(a), randf_range(-0.3, 0.3)) * sp)
 				_spawn_fx("flash", pos, Color.WHITE, 0.4 + dmg * 0.04, 8)
+				lit.flash(pos + Vector3(0, 0, 0.8), col.lightened(0.4), 1.5 + dmg * 0.35, 2.5 + dmg * 0.12, 10)
 				_spawn_fx("ring", pos, col.lightened(0.5), 0.6 + dmg * 0.05, 14)
 				shake = max(shake, min(22.0, dmg * 0.7 + e.kb * 0.06))
 				if e.kb > 150:
@@ -446,15 +558,18 @@ func _handle_events(events: Array) -> void:
 					_spawn_fx("spark", pos + dir * i * 1.2, who.color.lightened(0.3), 2.2 - i * 0.15, 50, dir * 0.05)
 				shake = 26.0
 				_flash(Color(who.color.r, who.color.g, who.color.b, 0.45), 8)
+				lit.flash(pos + dir * 3.0, who.color.lightened(0.3), 12.0, 25.0, 50)
 			"shieldbreak":
 				_show_banner("SHIELD BREAK!", 60)
 			"awaken":
 				var who: Fighter = e.who
 				_flash(Color(1, 0.8, 0.4, 0.5), 10)
+				lit.flash(pos + Vector3(0, 0, 1.2), Color(1.0, 0.7, 0.4), 6.0, 8.0, 70)
 				_show_banner("覚醒  " + who.ch.awaken, 70)
 			"awaken_blast":
 				_flash(Color(1, 1, 1, 0.8), 18)
 				shake = 30.0
+				lit.flash(pos + Vector3(0, 0, 1.5), Color(1.0, 0.65, 0.35), 18.0, 22.0, 45)
 				for r in range(3):
 					_spawn_fx("ring", pos, Color(1.0, 0.6, 0.3), 10.0 + r * 4, 30 + r * 8)
 			"go":
@@ -542,8 +657,8 @@ func _build_hud() -> void:
 
 func _update_info() -> void:
 	info.text = "1P: WASD移動 / Space ジャンプ / J 攻撃 / K 必殺 / L ガード / U つかみ / O スマッシュ / P 覚醒\n" + \
-		"2P: %s　F3: 2P切替　F2: CPUレベル %d　Tab: ステージ切替（%s）　F4/F5: 1P/2Pキャラ切替　Esc: ポーズ　Enter: やり直し" % [
-		"人間（矢印キー＋テンキー）" if p2_human else "CPU", cpu_level, world.stage.label]
+		"2P: %s　F3: 2P切替　F2: CPUレベル %d　Tab: ステージ切替（%s）　F4/F5: キャラ切替　F6: 画質（%s）　Esc: ポーズ　Enter: やり直し" % [
+		"人間（矢印キー＋テンキー）" if p2_human else "CPU", cpu_level, world.stage.label, Lighting.QUALITY_NAMES[quality]]
 
 
 static func damage_color(p: float) -> Color:
