@@ -26,12 +26,20 @@ func _init() -> void:
 	env.environment.ambient_light_color = Color(0.8, 0.8, 0.85)
 	root.add_child(env)
 	var chars := Chars.model_chars()
+	var ci := -1
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("char="):
+			ci = int(a.substr(5))
+	if ci >= 0 and ci < chars.size():
+		chars = [chars[ci]]
 	if chars.is_empty():
 		print("モデルなし")
 		quit(1)
 		return
 	var poses := [["stand", 0], ["run", null], ["move", "jab"], ["move", "jab2"], ["move", "ftilt"], ["move", "fsmash"],
 		["move", "dsmash"], ["move", "nspecial"], ["shield", null], ["hitstun", null], ["dodge", null], ["move", "fthrow"]]
+	if "few" in OS.get_cmdline_user_args():
+		poses = [["stand", 0], ["move", "jab2"], ["move", "fsmash"], ["stand", 40]]
 	for i in range(poses.size()):
 		var f := Fighter.new(0, chars[0], null, 3, true)
 		f.x = (i - (poses.size() - 1) / 2.0) * 44.0
@@ -66,7 +74,9 @@ func _init() -> void:
 			f.anim += int(poses[i][1])
 			v.refresh()
 	cam.position = Vector3(0, 0.0, 15.5)
-	if OS.get_cmdline_user_args().size() > 1:
+	if "few" in OS.get_cmdline_user_args():
+		cam.position = Vector3(0, 0.0, 6.2)
+	if "close" in OS.get_cmdline_user_args():
 		cam.position = Vector3(-2.2, -0.3, 4.0)
 
 
