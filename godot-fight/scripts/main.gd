@@ -30,6 +30,7 @@ var flash: ColorRect
 var flash_t := 0
 var font: SystemFont
 var lit: Lighting
+var sfx: Sfx
 var quality := 2
 var shadows := []
 var demo := false          # --demo: 1P も CPU にする（確認用）
@@ -51,6 +52,12 @@ func _ready() -> void:
 			shot_dir = a.substr(10)
 		elif a.begins_with("--stage="):
 			stage_key = a.substr(8)
+		elif a.begins_with("--p1="):
+			p1_char = int(a.substr(5))
+		elif a.begins_with("--p2="):
+			p2_char = int(a.substr(5))
+	sfx = Sfx.new()
+	add_child(sfx)
 	_build_env()
 	_build_hud()
 	start_match()
@@ -84,7 +91,13 @@ func start_match() -> void:
 	world = World.new(stage_key, [[a, c1, demo], [b, c2, demo or not p2_human]], 3, rng.randi(), true)
 	_build_stage()
 	for f in world.fighters:
-		var pp: Puppet = ModelView.new() if f.ch.has("model") else Puppet.new()
+		var pp: Puppet
+		if f.ch.has("mugen"):
+			pp = SpriteView.new()
+		elif f.ch.has("model"):
+			pp = ModelView.new()
+		else:
+			pp = Puppet.new()
 		add_child(pp)
 		pp.setup(f)
 		puppets.append(pp)
@@ -613,6 +626,10 @@ func _wpos(x: float, y: float) -> Vector3:
 
 func _handle_events(events: Array) -> void:
 	for e in events:
+		sfx.on_event(e)
+		for pp in puppets:
+			if pp is SpriteView:
+				pp.on_event(e)
 		var pos := _wpos(e.x, e.y)
 		match e.kind:
 			"hit":

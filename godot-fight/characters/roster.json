@@ -28,5 +28,9 @@
   "yukari": {
     "name": "結月ゆかり",
     "type": "magic"
+  },
+  "taiga": {
+    "name": "逢坂大河",
+    "type": "brawler"
   }
 }

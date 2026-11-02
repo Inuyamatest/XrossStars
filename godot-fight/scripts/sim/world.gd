@@ -277,7 +277,15 @@ func resolve_hits() -> void:
 					continue
 				var hb := hurtbox(t)
 				for b in boxes:
-					if circle_rect(b[0], b[1], h.r, hb):
+					var hit := false
+					if h.has("rect"):
+						var rc: Array = h.rect
+						var x1: float = rc[0] if b[2] > 0 else -rc[2]
+						var x2: float = rc[2] if b[2] > 0 else -rc[0]
+						hit = a.x + x1 < hb[2] and a.x + x2 > hb[0] and a.y + rc[1] < hb[3] and a.y + rc[3] > hb[1]
+					else:
+						hit = circle_rect(b[0], b[1], h.r, hb)
+					if hit:
 						var dsg: int = b[2]
 						if h.radial:
 							dsg = Fighter.sgn(t.x - a.x) if t.x != a.x else a.face

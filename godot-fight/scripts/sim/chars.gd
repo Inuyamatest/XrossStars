@@ -60,6 +60,9 @@ static func typed(type_key: String, name: String) -> Dictionary:
 static func build_moves(ch: Dictionary) -> Dictionary:
 	var mv := Moves.common(ch.power)
 	mv.merge(ch.specials.call(), true)
+	if ch.has("mugen"):
+		Mugen.apply_moves(mv, ch.mugen)   # 当たり判定はドット絵の Clsn をそのまま使う（リーチ補正はしない）
+		return mv
 	var reach: float = ch.get("reach", 0.0)
 	var slow: int = ch.get("slow", 0)
 	if reach > 0 or slow > 0:
@@ -117,6 +120,17 @@ static func model_chars() -> Array:
 		var conf: Dictionary = ros.get(sub, {})
 		var files := Array(DirAccess.get_files_at(dir)).filter(func(n): return n.get_extension().to_lower() == "pmx")
 		if files.is_empty():
+			# MUGEN キャラ（.def のあるフォルダ）
+			var mg := Mugen.load_char(dir)
+			if mg.is_empty():
+				continue
+			var mc := typed(conf.get("type", "brawler"), conf.get("name", mg.info.get("displayname", mg.info.get("name", sub))))
+			mc.id = "mugen_" + sub
+			mc.mugen = mg
+			mc.stats.h = Mugen.TARGET_H
+			mc.stats.hw = mg.hw
+			mc.folder = dir
+			out.append(mc)
 			continue
 		files.sort_custom(func(a, b): return a.length() < b.length())
 		var pmx: String = conf.get("pmx", files[0])

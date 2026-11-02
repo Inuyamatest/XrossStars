@@ -27,6 +27,11 @@ var no_drift := false
 var ledge_ok := false
 var once := ""            # "up" / "side"
 var pose := "strike"
+# 画像キャラ（MUGEN）用: 表示するアニメ番号と、ワザのフレームへの合わせ方
+var spr = null
+var spr_mode := "warp"   # "direct"=ティックそのまま / "warp"=ワザの長さに合わせて伸縮
+var spr_delay := 0
+var spr_flip := false
 
 
 static func make(k: String, t: int, h: Array = [], opts := {}) -> MoveDef:
