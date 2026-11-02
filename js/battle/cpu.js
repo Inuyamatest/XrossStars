@@ -58,7 +58,9 @@
     });
   }
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
-  var TUNE = { smartTactics: true, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
+  // planBeaconSet／planBeaconHold／planFlag：攻略記事の「復活ビーコンを1R目に置いて温存」「勝ち進行でターゲットフラッグ」。
+  // CPU同士のA/Bで勝率が上がらなかった（各400戦で48〜50%）ため既定はオフ
+  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -85,7 +87,13 @@
     var oppLow = oppHp.some(function (h) { return h <= 40; });
     var myDowns = me.leaders.length - myAlive.length, oppDowns = opp.leaders.length - oppAlive.length;
     if (name === 'フォールダウンシールド') return state.match.previousRoundLoser === playerId ? 95 : 3; // 負けた次のラウンドならコスト0の体力+50
-    if (name === '復活ビーコン') return myDowns > 0 ? 130 : (round >= 2 ? 20 : 5);
+    if (name === '復活ビーコン') {
+      if (myDowns > 0) return 130;
+      // 置いたタクティクスは使うまでタクティクスエリアに残る。1ラウンド目に置いて温存し、後のラウンドで倒されたリーダーを戻す
+      // （「1R目は復活ビーコンを使わず温存し、3R目の3ターンキルに備える」という使い方。TUNE.planBeaconSet）
+      if (TUNE.planBeaconSet) return round === 1 ? 60 : 55;
+      return round >= 2 ? 20 : 5;
+    }
     if (isHpEquipment(cardId)) return round === 1 ? 100 : (round === 2 ? 70 : 45);
     if (CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(cardId)) return myDowns > oppDowns ? 140 : 10; // 復活ポータル
     switch (name) {
@@ -108,11 +116,18 @@
       case 'メリケンサック': return round === 1 ? 50 : 35;
       case '盗賊キット': return round === 1 ? 40 : 30;
       case 'オートタレット': return round === 1 ? 45 : 30;
-      case 'ターゲットフラッグ': return 30;
+      case 'ターゲットフラッグ': return TUNE.planFlag && state.match.previousRoundLoser && state.match.previousRoundLoser !== playerId ? 48 : 30; // 勝って進んだラウンドで、狙われるリーダーを決めて守る
       case '名誉のバッジ': return myAlive.some(function (l) { return !l.awakened; }) ? 55 : 3; // 覚醒（体力・攻撃力が上がり、覚醒時の効果も出る）
       case '電磁スモーク': return 42; // 1枚引く＋相手のタクティクスのコスト+1
       default: return 30 + (card.cost || 0) * 5;
     }
+  }
+
+  // 復活ビーコン（プレイ条件の無い復活）は1ラウンド目には使わず、後のラウンドの決め手に取っておく（TUNE.planBeaconHold）
+  function holdReviveNow(state, cardId) {
+    if (!TUNE.planBeaconHold || state.match.roundNumber !== 1) return false;
+    if (CardEffectData.getPlayCondition && CardEffectData.getPlayCondition(cardId)) return false; // 復活ポータルは条件付きなので対象外
+    return effectsOf(cardId).some(function (e) { return e.action && e.action.type === 'REVIVE_LEADER'; });
   }
 
   function ppLeft(player) { return player.ppCards.max - player.ppCards.tapped; }
@@ -316,6 +331,7 @@
         if (tCost == null || tCost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return; // 効果が未登録のタクティクスは使っても意味が無い
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return; // プレイ条件（復活ポータル）
+        if (holdReviveNow(state, t.card.cardId)) return; // 復活ビーコンは1ラウンド目は温存
         var equip = isEquipment(t.card.cardId);
         plays.push({ kind: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, cost: tCost, equip: equip, boost: boostAmountOf(t.card.cardId), utility: hasUtilityNow(state, playerId, t.card.cardId) || equip });
       });
@@ -396,6 +412,7 @@
         if (tCost == null || tCost > pp) return;
         if (!CardEffectData.hasEffects(t.card.cardId)) return;
         if (!Resolver.canPlayCardNow(state, playerId, t.card.cardId, cardIndex)) return;
+        if (holdReviveNow(state, t.card.cardId)) return;
         if (isEquipment(t.card.cardId)) {
           aliveIndexes(player).forEach(function (li) {
             acts.push({ type: 'TACTICS', instanceId: t.card.instanceId, cardId: t.card.cardId, subType: 'EQUIPMENT', equipLeaderIndex: li });
