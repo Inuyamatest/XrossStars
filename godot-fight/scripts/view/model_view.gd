@@ -9,13 +9,14 @@ const B := {
 	"l_arm": "左腕", "l_elbow": "左ひじ", "l_wrist": "左手首", "r_arm": "右腕", "r_elbow": "右ひじ", "r_wrist": "右手首",
 	"l_leg": "左足", "l_knee": "左ひざ", "l_ankle": "左足首", "r_leg": "右足", "r_knee": "右ひざ", "r_ankle": "右足首",
 	"l_shoulder": "左肩", "r_shoulder": "右肩", "l_toe": "左つま先", "r_toe": "右つま先",
+	"l_middle": "左中指１", "r_middle": "右中指１",
 }
 
 # ワザ → モーションの使い道（左から順に、あるものを使う。無ければ手続きアニメ）
 const MOVE_SLOTS := {
 	"jab": ["jab"], "jab2": ["jab2", "jab"], "jab3": ["hook", "kick"], "ftilt": ["kick", "hook", "swing"],
 	"utilt": ["uppercut", "swing2"], "dtilt": ["sweep"], "dash": ["flykick"], "fsmash": ["heavy", "hook"],
-	"usmash": ["uppercut", "swing2"], "dsmash": ["sweep"], "nair": ["flip"], "fair": ["flykick", "hook"],
+	"usmash": ["uppercut", "swing2"], "dsmash": ["sweep"], "nair": ["flip", "kick"], "fair": ["flykick", "hook"],
 	"bair": ["kick"], "uair": ["flip", "swing2"], "dair": ["kick"], "grab": ["jab2"], "dashgrab": ["jab2"],
 	"fthrow": ["throw"], "bthrow": ["throw"], "uthrow": ["throw"], "dthrow": ["throw"],
 	"ledgeatk": ["kick", "swing"], "getupatk": ["sweep"], "nspecial": ["magic"], "sspecial": ["flykick"],
@@ -37,7 +38,7 @@ const TYPE_MOVE_SLOTS := {
 const STATE_SLOTS := {
 	"stand": ["idle"], "walk": ["walk"], "run": ["run"], "crouch": ["crouch"], "jumpsquat": ["crouch"],
 	"rise": ["jump"], "fall": ["fall"], "land": ["land"], "shield": ["block"], "hit": ["hit", "hit2"],
-	"tumble": ["knockback"], "down": ["knockdown"], "ledge": ["hang"], "climb": ["climb"], "roll": ["roll"],
+	"tumble": ["knockback"], "down": ["knockdown"], "getup": ["getup"], "ledge": ["hang"], "climb": ["climb"], "roll": ["roll"],
 	"awaken": ["awaken"], "respawn": ["idle"], "grabbed": ["hit"], "hold": ["carry"], "dizzy": ["shieldbreak", "hit"],
 }
 
@@ -109,14 +110,24 @@ func _attach_weapon() -> void:
 		weapon_holder = holder
 		weapon_hand = hand
 	else:
-		# 刀など: 前腕の延長（ひじ→手首）の向きに持つ
+		# 刀など: 拳で握る。握りは手のひらの中心、刃は前腕に垂直で親指側へ伸ばす
 		var att := BoneAttachment3D.new()
 		att.bone_name = "右手首"
 		skel.add_child(att)
 		att.add_child(holder)
-		var d: Vector3 = (rest_pos[hand] - rest_pos[elbow]).normalized()
-		holder.basis = Basis(Quaternion(Vector3.UP, d))
-		holder.position = d * 0.05
+		var fd: Vector3 = (rest_pos[hand] - rest_pos[elbow]).normalized()
+		var mid: int = model.bones.get("右中指１", -1)
+		var thumb: int = model.bones.get("右親指１", model.bones.get("右親指０", -1))
+		var hd: Vector3 = (rest_pos[mid] - rest_pos[hand]).normalized() if mid >= 0 else fd
+		var palm: Vector3 = (rest_pos[mid] - rest_pos[hand]) * 0.55 if mid >= 0 else fd * 0.04
+		var td: Vector3 = (rest_pos[thumb] - rest_pos[hand]) if thumb >= 0 else Vector3(0, 0, 1)
+		var blade := (td - hd * td.dot(hd)).normalized()
+		if blade.length() < 0.5:
+			blade = Vector3(0, 0, 1)
+		blade = (blade * 0.92 + hd * 0.25).normalized()   # 少しだけ指先側へ傾ける（自然な握り）
+		var side := hd.cross(blade).normalized()
+		holder.basis = Basis(side, blade, side.cross(blade).normalized())
+		holder.position = palm
 	var sc: float = float(wcfg.get("scale", 1.0))
 	node.scale = Vector3.ONE * sc
 	node.position = Vector3(0, -grip_y * sc, 0)
@@ -127,6 +138,9 @@ func _update_weapon() -> void:
 	if weapon_holder == null:
 		return
 	var gp := skel.get_bone_global_pose(weapon_hand)
+	var mid: int = model.bones.get("右中指１", -1)
+	if mid >= 0:
+		gp.origin = gp.origin.lerp(skel.get_bone_global_pose(mid).origin, 0.55)   # 拳の中心
 	var dir := Vector3(0, 0.75, 0.66)   # 構え: 斜め上
 	if f.state == "move" and f.move != null:
 		var k: String = f.move.d.key
@@ -208,7 +222,26 @@ func refresh() -> void:
 	_finish(p)
 
 
+const FINGERS := ["人指", "中指", "薬指", "小指"]
+
+
+func _make_fists() -> void:
+	## MMD の手は指を伸ばした形が初期姿勢なので、指を曲げて拳にする
+	for side in ["左", "右"]:
+		var sgn := -1.0 if side == "左" else 1.0
+		for fn in FINGERS:
+			for j in ["１", "２", "３"]:
+				var b: int = model.bones.get(side + fn + j, -1)
+				if b >= 0:
+					skel.set_bone_pose_rotation(b, Quaternion(Vector3(0, 0, sgn), deg_to_rad(72 if j != "３" else 55)))
+		for j in ["１", "２"]:
+			var tb: int = model.bones.get(side + "親指" + j, -1)
+			if tb >= 0:
+				skel.set_bone_pose_rotation(tb, Quaternion(Vector3(0, 1, 0), deg_to_rad(-30 * sgn)))
+
+
 func _finish(p: Dictionary) -> void:
+	_make_fists()
 	# 回転付与（足D・腕捩など）
 	for inh in model.inherits:
 		var q := skel.get_bone_pose_rotation(inh[1])
@@ -296,7 +329,16 @@ func _slot_now() -> Array:
 		cur_key = key
 		cur_start = f.anim
 	var loop := not (key in ["rise", "land", "jumpsquat", "climb", "down", "hit", "tumble", "roll"])
-	return [c2, (f.anim - cur_start) / 60.0, loop]
+	var t := (f.anim - cur_start) / 60.0
+	if key == "ledge":
+		t = 0.0   # ぶら下がりの姿勢で止める
+	elif key == "down" and f.timer > 16:
+		var g := MotionLib.clip("getup")
+		if not g.is_empty():
+			return [g, min(g.length * 0.95, (f.timer - 16) / 60.0 * 3.0), false]
+	elif key == "climb":
+		t = c2.length * clamp(f.timer / 22.0, 0.0, 1.0) * 0.55 + c2.length * 0.25
+	return [c2, t, loop]
 
 
 func sprite_key() -> String:
@@ -336,6 +378,7 @@ func _play_motion() -> bool:
 	else:
 		k = clamp(k, 0, frames.size() - 1)
 	var fr: Dictionary = frames[k]
+	var guard: bool = c.get("name", "") == "fighting idle"
 	if bi.center >= 0:
 		skel.set_bone_pose_rotation(bi.center, fr.hips_rot)
 		var off: Vector3 = fr.hips_off * hip_h
@@ -343,7 +386,15 @@ func _play_motion() -> bool:
 	for seg in MotionLib.SEGMENTS:
 		var role: String = seg[2]
 		if fr.dirs.has(role) and bi.get(role, -1) >= 0 and bi.get(seg[3], -1) >= 0:
-			_aim(bi[role], bi[seg[3]], fr.dirs[role])
+			var d: Vector3 = fr.dirs[role]
+			# 体型の違い（アニメ顔のモデルは頭が大きく肩幅が狭い）で手が顔にかぶらないよう、腕を少し外・下へ
+			if role == "l_arm" or role == "r_arm":
+				d = (d + Vector3(0.16 if role == "l_arm" else -0.16, -0.1, 0.0)).normalized()
+			elif role == "l_elbow" or role == "r_elbow":
+				d = (d + Vector3(0.1 if role == "l_elbow" else -0.1, -0.06, 0.08)).normalized()
+				if guard:   # 構えは拳を顎ではなく胸の前に
+					d = (d + Vector3(0.0, -0.45, 0.25)).normalized()
+			_aim(bi[role], bi[seg[3]], d)
 	if fr.has("head_rot") and bi.head >= 0:
 		var par := skel.get_bone_parent(bi.head)
 		var gp := _global_rot(par) if par >= 0 else Quaternion.IDENTITY

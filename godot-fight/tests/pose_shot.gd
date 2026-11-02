@@ -76,6 +76,9 @@ func _init() -> void:
 	cam.position = Vector3(0, 0.0, 15.5)
 	if "few" in OS.get_cmdline_user_args():
 		cam.position = Vector3(0, 0.0, 6.2)
+	if "face" in OS.get_cmdline_user_args():
+		cam.position = Vector3(-1.32 + 0.3, 0.62, 1.4)
+		cam.look_at(Vector3(-1.32, 0.55, 0))
 	if "close" in OS.get_cmdline_user_args():
 		cam.position = Vector3(-2.2, -0.3, 4.0)
 

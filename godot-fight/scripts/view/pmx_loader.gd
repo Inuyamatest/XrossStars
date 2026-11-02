@@ -172,13 +172,15 @@ func _load(path: String) -> Dictionary:
 		m.diffuse = v4()
 		v3(); f32(); v3()   # スペキュラ・環境色（使わない）
 		m.flags = u8()
-		v4(); f32()         # エッジ色・太さ
+		v4()                # エッジ色
+		m.edge = f32()      # エッジの太さ
 		m.tex = idx(tsize)
-		idx(tsize)          # スフィア
-		u8()
+		m.sph = idx(tsize)  # スフィア
+		m.sph_mode = u8()
 		var shared_toon := u8()
+		m.toon = -1
 		if shared_toon == 0:
-			idx(tsize)
+			m.toon = idx(tsize)
 		else:
 			u8()
 		text()
@@ -289,8 +291,26 @@ func _build(path: String, name: String, comment: String, verts, norms, uvs, bone
 			if tex != null and tex.get_image().detect_alpha() != Image.ALPHA_NONE:
 				has_alpha = true
 		var col := Color(1, 1, 1, dcol.w) if tex != null else Color(dcol.x, dcol.y, dcol.z, dcol.w)
-		# 輪郭線は MMD の「エッジ」フラグ(0x10)がある材質だけ
-		var mat := Toon.material(col, tex, has_alpha, (m.flags & 0x10) != 0)
+		var sph: ImageTexture = null
+		if m.sph >= 0 and m.sph < texpaths.size() and m.sph_mode in [1, 2]:
+			var sp: String = texpaths[m.sph]
+			if not tex_cache.has(sp):
+				tex_cache[sp] = _load_tex(dir, sp)
+			sph = tex_cache[sp]
+		var ramp: ImageTexture = null
+		if m.toon >= 0 and m.toon < texpaths.size():
+			var rp: String = texpaths[m.toon]
+			if not tex_cache.has(rp):
+				tex_cache[rp] = _load_tex(dir, rp)
+			ramp = tex_cache[rp]
+		var nm := String(m.name).to_lower()
+		var face := false
+		for k in ["顔", "肌", "face", "skin", "目", "eye", "白目", "口", "mouth", "body", "体"]:
+			if nm.contains(k):
+				face = true
+		# 輪郭線は MMD の「エッジ」フラグ(0x10)がある材質だけ。太さも MMD の設定に合わせる
+		var mat := Toon.char_material(col, tex, has_alpha, (m.flags & 0x10) != 0, sph, m.sph_mode, ramp, face,
+			clamp(float(m.edge) * 2.0, 1.2, 3.2))
 		mesh.surface_set_material(mesh.get_surface_count() - 1, mat)
 	var mi := MeshInstance3D.new()
 	mi.name = "Mesh"
