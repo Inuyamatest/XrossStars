@@ -56,6 +56,14 @@ var blast := [0.0, 0.0, 0.0, 0.0]  # 左, 右, 上, 下
 var spawns: Array = []
 var ledges: Array = []
 var shape := "bowl"
+var rows: Array = []   # shape="blocks" のとき: 上の段から順に、横に並ぶブロックの数（1ブロック=100）
+
+const TILE := 100.0     # ブロック1個の大きさ（素材の 2m 四方）
+const TILE_EDGE := 45.0 # 端のブロックは外側が少し細い
+
+
+static func row_half(n: int) -> float:
+	return (n - 1) * TILE / 2.0 + TILE_EDGE
 
 
 static func half_width(shp: String, w: float, depth: float, d: float) -> float:
@@ -71,6 +79,19 @@ func _build() -> void:
 	var cx := (main.x1 + main.x2) / 2.0
 	var w := (main.x2 - main.x1) / 2.0
 	main.solids = []
+	if shape == "blocks":
+		# ブロックを積んだ浮島: 段ごとの矩形がそのまま当たり判定
+		for r in range(rows.size()):
+			var hw := row_half(rows[r])
+			main.solids.append([cx - hw, main.y + TILE * r, cx + hw, main.y + TILE * (r + 1)])
+		var opts := PackedVector2Array()
+		for r in range(rows.size()):
+			var hw2 := row_half(rows[r])
+			opts.append(Vector2(cx + hw2, main.y + TILE * r))
+			opts.append(Vector2(cx + hw2, main.y + TILE * (r + 1)))
+		main.outline = opts
+		ledges = [Ledge.new(main.x1, main.y, -1), Ledge.new(main.x2, main.y, 1)]
+		return
 	var d := 0.0
 	while d < main.depth:
 		var d2: float = min(main.depth, d + (LIP if d == 0.0 else SLICE))
@@ -108,15 +129,21 @@ static func make(k: String) -> Stage:
 	match k:
 		"final":
 			s.label = "終点"
-			s.main = Platform.new(-520, 520, 0, true, 170)
+			s.shape = "blocks"
+			s.rows = [10, 8, 6]
+			var hw := row_half(10)
+			s.main = Platform.new(-hw, hw, 0, true, TILE * 3)
 			s.blast = [-1400.0, 1400.0, -1400.0, 720.0]
 			s.spawns = [-330.0, 330.0, -110.0, 110.0]
-			s.shape = "wedge"
 		_:
 			s.key = "battlefield"
 			s.label = "戦場"
-			s.main = Platform.new(-430, 430, 0, true, 210)
-			s.plats = [Platform.new(-300, -120, -140), Platform.new(120, 300, -140), Platform.new(-90, 90, -275)]
+			s.shape = "blocks"
+			s.rows = [8, 6, 4]
+			var hw := row_half(8)
+			s.main = Platform.new(-hw, hw, 0, true, TILE * 3)
+			# すり抜け足場は素材の黄色い足場（幅 4.27m ≒ 213）に合わせる
+			s.plats = [Platform.new(-316, -104, -140), Platform.new(104, 316, -140), Platform.new(-106, 106, -275)]
 			s.blast = [-1350.0, 1350.0, -1400.0, 720.0]
 			s.spawns = [-280.0, 280.0, -110.0, 110.0]
 	s._build()

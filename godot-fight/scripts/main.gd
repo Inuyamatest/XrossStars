@@ -172,56 +172,6 @@ func _build_env() -> void:
 	lit = Lighting.new()
 	add_child(lit)
 	lit.build(cam, quality)
-	# 遠景: 雲の海と遠くの浮島
-	var deco := Node3D.new()
-	add_child(deco)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 7
-	var cloud := Toon.material(Color(1, 1, 1), null, false, false, Color(0.78, 0.84, 1.0))
-	for i in range(26):
-		var cl := Node3D.new()
-		var z := rng.randf_range(-160, -40)
-		var y := rng.randf_range(-22, -10) if i < 18 else rng.randf_range(8, 30)
-		cl.position = Vector3(rng.randf_range(-200, 200), y, z)
-		for k in range(rng.randi_range(4, 7)):
-			var b := MeshInstance3D.new()
-			var sm := SphereMesh.new()
-			sm.radial_segments = 16
-			sm.rings = 8
-			b.mesh = sm
-			var r := rng.randf_range(4.0, 9.0)
-			b.scale = Vector3(r * 1.4, r, r)
-			b.position = Vector3(k * r * 0.9 - 8, rng.randf_range(-1, 2), rng.randf_range(-2, 2))
-			b.material_override = cloud
-			b.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			cl.add_child(b)
-		deco.add_child(cl)
-	var isle_top := Toon.material(Color(0.45, 0.78, 0.4), null, false, false, Color(0.4, 0.55, 0.75))
-	var isle_rock := Toon.material(Color(0.7, 0.55, 0.42), null, false, false, Color(0.5, 0.45, 0.7))
-	for i in range(6):
-		var isle := Node3D.new()
-		isle.position = Vector3(rng.randf_range(-140, 140), rng.randf_range(-6, 14), rng.randf_range(-130, -70))
-		var cone := MeshInstance3D.new()
-		var cm := CylinderMesh.new()
-		cm.top_radius = rng.randf_range(6, 12)
-		cm.bottom_radius = 0.5
-		cm.height = cm.top_radius * 1.4
-		cm.radial_segments = 9
-		cone.mesh = cm
-		cone.position.y = -cm.height / 2
-		cone.material_override = isle_rock
-		isle.add_child(cone)
-		var cap := MeshInstance3D.new()
-		var cy := CylinderMesh.new()
-		cy.top_radius = cm.top_radius * 1.02
-		cy.bottom_radius = cm.top_radius * 1.02
-		cy.height = 1.2
-		cy.radial_segments = 9
-		cap.mesh = cy
-		cap.position.y = 0.6
-		cap.material_override = isle_top
-		isle.add_child(cap)
-		deco.add_child(isle)
 
 
 func _stone_mat(c: Color, rough_var := 0.1) -> StandardMaterial3D:
@@ -291,6 +241,9 @@ func _build_stage() -> void:
 	## アニメ調の浮島ステージ: 芝の上面・白い石のふち・土の本体・光る結晶
 	stage_root = Node3D.new()
 	add_child(stage_root)
+	if world.stage.shape == "blocks":
+		_build_block_stage()
+		return
 	var m = world.stage.main
 	var poly := PackedVector2Array()
 	for p in m.outline:
@@ -358,6 +311,87 @@ func _build_stage() -> void:
 		grass.position = pm.position + Vector3(0, 0.13, 0)
 		grass.material_override = Toon.material(Color(0.42, 0.8, 0.38), null, false, false, Color(0.3, 0.55, 0.6))
 		stage_root.add_child(grass)
+
+
+# ------------------------------------------------------------ 素材（Quaternius Free Platformer Pack, CC0）で組むステージ
+const ASSET_DIR := "res://assets/platformer/"
+var _toon_cache := {}
+
+
+func _prop(parent: Node3D, name: String, pos: Vector3, rot_y := 0.0, scl := 1.0, outline := false) -> Node3D:
+	## 素材を置き、材質をアニメ調（セル画風）に差し替える。
+	## ローポリ素材は面ごとに法線が割れているので、反転法の輪郭線は付けない（破片状のノイズになる）
+	var ps: PackedScene = load(ASSET_DIR + name + ".fbx")
+	if ps == null:
+		return null
+	var n: Node3D = ps.instantiate()
+	n.position = pos
+	n.rotation.y = rot_y
+	n.scale = Vector3.ONE * scl
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		for si in range(mi.mesh.get_surface_count()):
+			var src = mi.mesh.surface_get_material(si)
+			var c: Color = src.albedo_color if src is BaseMaterial3D else Color(0.8, 0.8, 0.8)
+			var key := c.to_html() + str(outline)
+			if not _toon_cache.has(key):
+				var shade := Color(c.r * 0.55 + 0.12, c.g * 0.5 + 0.1, c.b * 0.6 + 0.22)
+				_toon_cache[key] = Toon.material(c.lightened(0.06), null, false, outline, shade)
+			mi.set_surface_override_material(si, _toon_cache[key])
+	parent.add_child(n)
+	return n
+
+
+func _block_island(parent: Node3D, rows: Array, origin: Vector3, scl := 1.0) -> void:
+	## ブロックを段々に積んだ浮島。origin は上面の中心（ワールド座標）
+	var t := 2.0 * scl
+	for r in range(rows.size()):
+		var n: int = rows[r]
+		var kind := "Top" if r == 0 else ("Bottom" if r == rows.size() - 1 else "Center")
+		for i in range(n):
+			var side := "Left" if i == 0 else ("Right" if i == n - 1 else "Middle")
+			var x := (i - (n - 1) / 2.0) * t
+			_prop(parent, "Platform_%s%s" % [kind, side], origin + Vector3(x, -t * 0.5 - t * r, 0), 0.0, scl)
+
+
+func _build_block_stage() -> void:
+	var st := world.stage
+	_block_island(stage_root, st.rows, Vector3.ZERO)
+	var top_w: float = (st.main.x2 - st.main.x1) * K
+	# すり抜け足場 = 黄色い足場
+	for p in st.plats:
+		var w: float = (p.x2 - p.x1) * K
+		var name := "MovingPlatform" if w < 5.0 else "MovingPlatform_Long"
+		var pf := _prop(stage_root, name, Vector3((p.x1 + p.x2) / 2 * K, -p.y * K - 0.3, 0), 0.0, 1.0)
+		if pf != null:
+			pf.scale = Vector3(w / (4.27 if w < 5.0 else 7.29), 0.45, 0.6)
+	# 上面の奥に飾り（戦う面より奥に置いて邪魔にしない）
+	var hw := top_w / 2
+	_prop(stage_root, "Tree1", Vector3(-hw + 1.4, 0.0, -1.1), 0.3, 0.75)
+	_prop(stage_root, "Tree4", Vector3(hw - 1.6, 0.0, -1.2), -0.4, 0.7)
+	_prop(stage_root, "Rock1", Vector3(-hw + 3.2, 0.0, -1.3), 0.5, 0.8)
+	_prop(stage_root, "Rock4", Vector3(hw - 3.4, 0.0, -1.35), 1.2, 0.8)
+	_prop(stage_root, "Mushroom", Vector3(-1.2, 0.0, -1.45), 0.0, 0.7)
+	_prop(stage_root, "Sign_Right", Vector3(hw - 0.9, 0.0, 1.25), -0.2, 0.55)
+	_prop(stage_root, "Sign_Left", Vector3(-hw + 0.9, 0.0, 1.25), 0.2, 0.55)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	for i in range(16):
+		var gx := rng.randf_range(-hw + 0.5, hw - 0.5)
+		var gz := rng.randf_range(-1.5, -0.6) if i % 2 == 0 else rng.randf_range(0.9, 1.5)
+		_prop(stage_root, ["Grass", "Grass1", "Grass2"][i % 3], Vector3(gx, 0.0, gz), rng.randf() * TAU, 0.9, false)
+	# 背景: 遠くの浮島と雲
+	var bg := Node3D.new()
+	stage_root.add_child(bg)
+	var isles := [[Vector3(-34, -2, -42), [5, 3], 1.4], [Vector3(30, 4, -50), [4, 2], 1.5], [Vector3(4, 12, -70), [3, 1], 1.6],
+		[Vector3(-60, 10, -80), [4, 2], 1.8], [Vector3(62, -6, -75), [6, 4, 2], 1.6]]
+	for isl in isles:
+		var o: Vector3 = isl[0]
+		var sc: float = isl[2]
+		_block_island(bg, isl[1], o, sc)
+		_prop(bg, ["Tree1", "Tree2", "Tree4"][int(abs(o.x)) % 3], o + Vector3(-1.5 * sc, 0, -0.5), 0.0, sc * 0.9)
+	for i in range(14):
+		var cpos := Vector3(rng.randf_range(-90, 90), rng.randf_range(-16, 26), rng.randf_range(-110, -30))
+		_prop(bg, "Cloud%d" % (i % 5 + 1), cpos, rng.randf_range(-0.3, 0.3), rng.randf_range(2.0, 4.0), false)
 
 
 # ------------------------------------------------------------ カメラ
