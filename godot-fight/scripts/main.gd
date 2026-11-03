@@ -11,6 +11,10 @@ var p2_human := false
 var roster: Array = []
 var p1_char := -1
 var p2_char := 0
+var hitfx: HitFx
+var cam_kick := 0.0        # 強打で一瞬カメラが寄る
+var slowmo := 0            # 撃墜しそうな一撃のスロー（描画フレーム数）
+var close_start := false   # 確認用: 2人を近くに置いて始める
 var p1_do := ""            # 確認用: --p1do=nspecial などで 1P がそのワザをくり返す
 var paused := false
 
@@ -53,6 +57,8 @@ func _ready() -> void:
 			shot_dir = a.substr(10)
 		elif a.begins_with("--stage="):
 			stage_key = a.substr(8)
+		elif a == "--close":
+			close_start = true
 		elif a.begins_with("--p1do="):
 			p1_do = a.substr(7)
 		elif a.begins_with("--p1="):
@@ -63,6 +69,8 @@ func _ready() -> void:
 		Engine.max_physics_steps_per_frame = 1   # スクショ時は描画が遅くても 1 描画 = 1 フレームにそろえる
 	sfx = Sfx.new()
 	add_child(sfx)
+	hitfx = HitFx.new()
+	add_child(hitfx)
 	_build_env()
 	_build_hud()
 	start_match()
@@ -104,6 +112,9 @@ func start_match() -> void:
 		c2 = CpuController.new(7, rng)
 	world = World.new(stage_key, [[a, c1, demo], [b, c2, demo or not p2_human]], 3, rng.randi(), true)
 	_build_stage()
+	if close_start:
+		world.fighters[0].x = -60.0
+		world.fighters[1].x = 60.0
 	for f in world.fighters:
 		var pp: Puppet
 		if f.ch.has("mugen"):
@@ -133,6 +144,12 @@ func _process(delta: float) -> void:
 		return
 	for p in puppets:
 		p.refresh()
+	if slowmo > 0:
+		slowmo -= 1
+		Engine.time_scale = 0.3 if slowmo > 8 else 0.3 + (8 - slowmo) * 0.0875
+		if slowmo == 0:
+			Engine.time_scale = 1.0
+	_launch_trails()
 	_update_projs()
 	_update_fx()
 	lit.step()
@@ -453,6 +470,9 @@ func _update_camera(delta: float) -> void:
 		target_dist = clamp(max(bh / (2 * tanv), bw / (2 * tanv * aspect)), 9.0, 34.0)
 		var c := Vector3((minx + maxx) / 2 * K, -((miny + maxy) / 2) * K - 0.6, 0)
 		cam_look = cam_look.lerp(c, 0.08)
+	if cam_kick > 0.01:
+		target_dist *= 1.0 - 0.18 * min(1.0, cam_kick)
+		cam_kick *= 0.9
 	var want := cam_look + Vector3(0, target_dist * 0.07, target_dist)
 	cam_pos = cam_pos.lerp(want, 0.08)
 	var off := Vector3.ZERO
@@ -603,6 +623,22 @@ func _spawn_fx(kind: String, pos: Vector3, color: Color, size: float, life: int,
 	fx.append([mi, life, life, vel, kind, size])
 
 
+func _launch_trails() -> void:
+	## 強くふっとんでいる間、うしろに煙の線を残す
+	if paused:
+		return
+	for f in world.fighters:
+		if f.state != "hitstun" or not f.alive() or f.hitlag > 0:
+			continue
+		var sp := Vector2(f.kx, f.ky).length()
+		if sp < 7.0 or frame_count % 2 != 0:
+			continue
+		var p := _wpos(f.x, f.y - f.h * 0.5)
+		p.z = 0.0
+		var c: Color = Color(0.95, 0.95, 0.98) if sp < 14.0 else f.color.lightened(0.5)
+		_spawn_fx("puff", p, Color(c.r, c.g, c.b, 0.5), 0.08 + min(0.18, sp * 0.008), 22, Vector3.ZERO)
+
+
 func _update_fx() -> void:
 	var keep := []
 	for e in fx:
@@ -625,7 +661,7 @@ func _update_fx() -> void:
 			"beam":
 				pass
 		var mat: StandardMaterial3D = mi.material_override
-		mat.albedo_color.a = k * 0.9
+		mat.albedo_color.a = k * (0.45 if e[4] == "puff" else 0.9)
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		if e[1] > 0:
 			keep.append(e)
@@ -650,18 +686,28 @@ func _handle_events(events: Array) -> void:
 				var dmg: float = e.dmg
 				var by: Fighter = e.by
 				var col: Color = by.ch.colors.accent if by != null else Color.WHITE
-				for i in range(6 + int(dmg)):
+				hitfx.spawn_hit(e.x, e.y, dmg, e.get("lx", 1.0), e.get("ly", 0.0), col, e.get("fx", "slash"))
+				for i in range(3 + int(dmg * 0.5)):
 					var a := randf() * TAU
 					var sp := randf_range(0.05, 0.12 + dmg * 0.01)
-					_spawn_fx("spark", pos, col.lightened(0.3), 0.12 + dmg * 0.006, 14, Vector3(cos(a), sin(a), randf_range(-0.3, 0.3)) * sp)
-				_spawn_fx("flash", pos, Color.WHITE, 0.4 + dmg * 0.04, 8)
-				lit.flash(pos + Vector3(0, 0, 0.8), col.lightened(0.4), 1.5 + dmg * 0.35, 2.5 + dmg * 0.12, 10)
-				_spawn_fx("ring", pos, col.lightened(0.5), 0.6 + dmg * 0.05, 14)
-				shake = max(shake, min(22.0, dmg * 0.7 + e.kb * 0.06))
-				if e.kb > 150:
+					_spawn_fx("spark", pos, col.lightened(0.3), 0.08 + dmg * 0.004, 12, Vector3(cos(a), sin(a), randf_range(-0.3, 0.3)) * sp)
+				lit.flash(pos + Vector3(0, 0, 0.8), col.lightened(0.4), 0.8 + dmg * 0.15, 2.0 + dmg * 0.08, 10)
+				_spawn_fx("ring", pos, col.lightened(0.5), 0.5 + dmg * 0.04, 12)
+				shake = max(shake, min(24.0, dmg * 0.8 + e.kb * 0.07))
+				if dmg >= 9.0 or e.kb > 110:
+					cam_kick = max(cam_kick, min(1.0, dmg * 0.05 + e.kb * 0.002))
+				if e.get("ko", false) and e.who.stocks > 0:
+					# 撃墜確定の一撃: スローにして寄る（スマブラの「決まった！」演出）
+					slowmo = 40
+					cam_kick = 1.4
+					_flash(Color(1, 1, 1, 0.6), 8)
+				elif e.kb > 150:
 					_flash(Color(1, 1, 1, 0.5), 6)
 			"block", "tech", "counter":
 				_spawn_fx("ring", pos, Color(0.7, 0.9, 1.0), 1.0, 14)
+				if e.kind == "block":
+					hitfx.spawn_guard(e.x, e.y, e.dmg)
+					shake = max(shake, min(8.0, e.dmg * 0.4))
 			"jump", "land", "djump":
 				for i in [-1, 1]:
 					_spawn_fx("puff", pos + Vector3(i * 0.15, 0.05, 0), Color(0.92, 0.92, 0.95), 0.25, 18, Vector3(i * 0.02, 0.005, 0))

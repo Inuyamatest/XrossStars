@@ -414,6 +414,10 @@ func _play_cues(fr: Array) -> void:
 func on_event(e: Dictionary) -> void:
 	## main から: このキャラが関わるイベント
 	match e.kind:
+		"block":
+			if e.get("by") == f and snd.has("6,0"):
+				fx.stream = snd["6,0"]
+				fx.play()
 		"djump":
 			if e.get("who") == f:
 				cur_key = ""   # 2段ジャンプは跳び直しの絵から
@@ -424,7 +428,15 @@ func on_event(e: Dictionary) -> void:
 				var g := 5000 if d < 5 else (5001 if d < 12 else 5002)
 				if not voice.playing or d >= 5:
 					_play_group(g)
-			elif e.get("by") == f and f.state == "move" and f.move != null and f.move.d.spr != null:
+			elif e.get("by") == f:
+				# 自分の攻撃が当たった音（.cns の hitsound と同じ S5,1〜4 を強さで選ぶ）
+				var dd: float = e.dmg
+				var n := 1 if dd < 4 else (2 if dd < 8 else (3 if dd < 12 else 4))
+				if snd.has("5,%d" % n):
+					fx.stream = snd["5,%d" % n]
+					fx.play()
+				if f.state != "move" or f.move == null or f.move.d.spr == null:
+					return
 				for c in cues.get(f.move.d.spr, []):
 					if c.on_hit:
 						_play_key(c.g, c.s, c.rnd)

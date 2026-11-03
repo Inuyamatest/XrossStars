@@ -22,9 +22,18 @@ func _init() -> void:
 	var keys := {}
 	var anims := {}
 	var bad := 0
+	var hits := 0
+	var ko_flag := 0
+	var kos := 0
 	for i in range(5000):
 		w.step()
 		for e in w.events:
+			if e.kind == "hit":
+				hits += 1
+				if e.get("ko", false):
+					ko_flag += 1
+			if e.kind == "ko":
+				kos += 1
 			for v in views:
 				v.on_event(e)
 		w.events.clear()
@@ -46,5 +55,6 @@ func _init() -> void:
 	an.sort()
 	print("使ったアニメ: ", an)
 	print("絵が決まらなかったフレーム: ", bad)
+	print("ヒット %d  撃墜予測 %d  実際の撃墜 %d" % [hits, ko_flag, kos])
 	print("RESULT ", "ok" if bad == 0 else "NG")
 	quit()

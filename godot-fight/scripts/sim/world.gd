@@ -323,7 +323,7 @@ func apply_hit(a: Fighter, t: Fighter, h: Dictionary, dsg: int, m = null, proj =
 		t.hitlag = hl / 2
 		if proj == null:
 			a.hitlag = hl / 2
-		event("block", t.x - dsg * t.hw, t.y - t.h / 2, {"dmg": dmg, "who": t})
+		event("block", t.x - dsg * t.hw, t.y - t.h / 2, {"dmg": dmg, "who": t, "by": a})
 		if t.shield_hp <= 0:
 			shield_break(t)
 		return true
@@ -361,8 +361,24 @@ func apply_hit(a: Fighter, t: Fighter, h: Dictionary, dsg: int, m = null, proj =
 	if m != null and m.d.on_hit != null:
 		m.d.on_hit.call(self, a, m, t)
 	var hx: float = (a.x + t.x) / 2.0 if proj == null else proj.x
-	event("hit", hx, t.y - t.h * 0.55, {"dmg": dmg, "kb": kb, "who": t, "by": a, "fx": h.get("fx", "slash")})
+	var lv := Vector2(t.kx, t.ky)
+	var ln := lv.normalized() if lv.length() > 0.01 else Vector2(dsg, 0)
+	event("hit", hx, t.y - t.h * 0.55, {"dmg": dmg, "kb": kb, "who": t, "by": a, "fx": h.get("fx", "slash"),
+		"lx": ln.x, "ly": ln.y, "ko": ko_likely(t)})
 	return true
+
+
+## ふっとばされた位置がバーストラインを越えそうか（演出用のおおまかな予測）
+func ko_likely(t: Fighter) -> bool:
+	var sp := Vector2(t.kx, t.ky).length()
+	if sp < 8.0:
+		return false
+	var dist := sp * sp / (2.0 * C.LAUNCH_DECAY) * 0.85
+	var d := Vector2(t.kx, t.ky) / sp
+	var px := t.x + d.x * dist
+	var py := t.y + d.y * dist * (0.8 if d.y < 0 else 1.0)
+	var b: Array = stage.blast
+	return px < b[0] or px > b[1] or py < b[2]
 
 
 func launch(t: Fighter, kb: float, ang: float, dsg: int) -> void:
