@@ -32,6 +32,7 @@ var spr = null
 var spr_mode := "warp"   # "direct"=ティックそのまま / "warp"=ワザの長さに合わせて伸縮
 var spr_delay := 0
 var spr_flip := false
+var mugen_hits := false  # true: 当たり判定をアニメの Clsn1 から作る（必殺ワザ用。hits[0]=途中の多段 / hits[-1]=最後の1発）
 
 
 static func make(k: String, t: int, h: Array = [], opts := {}) -> MoveDef:

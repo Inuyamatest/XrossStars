@@ -11,6 +11,7 @@ var p2_human := false
 var roster: Array = []
 var p1_char := -1
 var p2_char := 0
+var p1_do := ""            # 確認用: --p1do=nspecial などで 1P がそのワザをくり返す
 var paused := false
 
 var cam: Camera3D
@@ -52,10 +53,14 @@ func _ready() -> void:
 			shot_dir = a.substr(10)
 		elif a.begins_with("--stage="):
 			stage_key = a.substr(8)
+		elif a.begins_with("--p1do="):
+			p1_do = a.substr(7)
 		elif a.begins_with("--p1="):
 			p1_char = int(a.substr(5))
 		elif a.begins_with("--p2="):
 			p2_char = int(a.substr(5))
+	if not shots.is_empty():
+		Engine.max_physics_steps_per_frame = 1   # スクショ時は描画が遅くても 1 描画 = 1 フレームにそろえる
 	sfx = Sfx.new()
 	add_child(sfx)
 	_build_env()
@@ -86,6 +91,12 @@ func start_match() -> void:
 		b.colors = {"body": Color(0.2, 0.42, 0.85), "accent": Color(0.55, 0.9, 1.0), "skin": Color(1.0, 0.86, 0.76), "hair": Color(0.12, 0.2, 0.45)}
 	var c2 = HumanController.new(1) if p2_human else CpuController.new(cpu_level, rng)
 	var c1 = CpuController.new(7, rng) if demo else HumanController.new(0)
+	if p1_do != "":
+		c1 = CpuController.new(0, rng)
+		var dir: Dictionary = {"nspecial": {}, "sspecial": {"x": 1.0}, "uspecial": {"y": -1.0}, "dspecial": {"y": 1.0}}.get(p1_do, {})
+		var st: Dictionary = dir.duplicate()
+		st.special = true
+		c1.loop_seq = [CpuController.S(st)] + range(6).map(func(_i): return CpuController.S(dir)) + range(90).map(func(_i): return CpuController.S({}))
 	if demo:
 		c2 = CpuController.new(7, rng)
 	world = World.new(stage_key, [[a, c1, demo], [b, c2, demo or not p2_human]], 3, rng.randi(), true)

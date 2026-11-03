@@ -15,6 +15,10 @@ var fx: AudioStreamPlayer
 var played := {}
 var played_move = null
 var ps := 0.01
+var fx_defs := {}          # アニメ番号 -> Explod の一覧（.cns から）
+var fx_live: Array = []    # 出ているエフェクト {node, anim, start, x, y, face, bind, keep, move}
+var fx_done := {}
+var fx_move = null
 
 
 func setup(fighter: Fighter) -> void:
@@ -44,7 +48,13 @@ func setup(fighter: Fighter) -> void:
 		var p := Mugen.find_file(mg.folder, mg.files.get(k, ""))
 		if p != "" and not p in paths:
 			paths.append(p)
-	cues = Mugen.parse_cns_cues(paths, mg.air)
+	cues = Mugen.parse_cns_cues(paths, mg.air, fx_defs)
+	for an in mg.move_plan.values() + mg.spec_anims.values() + _kit_anims():
+		for e in fx_defs.get(an, []):
+			if e.has("anim"):
+				for fr in mg.air[e.anim].frames:
+					var tr: String = fr.get("tr", "")
+					sff.get_sprite_blend(fr.g, fr.i, "A" if tr == "" and e.get("add", false) else tr)
 	voice = AudioStreamPlayer.new()
 	add_child(voice)
 	fx = AudioStreamPlayer.new()
@@ -149,21 +159,10 @@ func refresh() -> void:
 	var s = sff.get_sprite(fd.g, fd.i)
 	if s == null:
 		return
-	var tex: ImageTexture = s[0]
-	var ax: float = s[1]
-	var ay: float = s[2]
-	spr.texture = tex
-	var flip: bool = ((1 if f.face < 0 else 0) + (1 if fd.flip else 0) + (1 if fr[2] else 0)) % 2 == 1
-	spr.flip_h = flip
-	var w := float(tex.get_width())
-	var h := float(tex.get_height())
-	var sgn := -1.0 if flip else 1.0
-	var dx: float = (w / 2.0 - ax + fd.ox) * sgn
-	var dy: float = -(h / 2.0 - ay + fd.oy)
 	var shake := 0.0
 	if f.shake > 0:
 		shake = (1 if f.anim % 2 == 0 else -1) * min(6, f.shake)
-	spr.position = Vector3((f.x + shake) * K + dx * ps, -f.y * K + dy * ps, 0.05)
+	_place(spr, s, fd, f.face < 0, fr[2], f.x + shake, f.y, 0.05)
 	var m := Color(1, 1, 1, 1)
 	if f.dmg_flash > 6:
 		m = Color(2.2, 2.2, 2.2, 1)
@@ -175,7 +174,85 @@ func refresh() -> void:
 		m = Color(1.8, 1.8, 1.2, 1)
 	spr.modulate = m
 	_play_cues(fr)
+	_update_fx(fr)
 	_update_overlays()
+
+
+func _place(node: Sprite3D, s: Array, fd: Dictionary, face_left: bool, extra_flip: bool, px: float, py: float, z: float) -> void:
+	## MUGEN の絵を 足元 (px, py) 基準で置く（基準点 axis とコマのずれ ox/oy を反映）
+	var tex: ImageTexture = s[0]
+	node.texture = tex
+	var flip: bool = ((1 if face_left else 0) + (1 if fd.flip else 0) + (1 if extra_flip else 0)) % 2 == 1
+	node.flip_h = flip
+	var sgn := -1.0 if flip else 1.0
+	var dx: float = (tex.get_width() / 2.0 - float(s[1]) + fd.ox) * sgn
+	var dy: float = -(tex.get_height() / 2.0 - float(s[2]) + fd.oy)
+	node.position = Vector3(px * K + dx * ps, -py * K + dy * ps, z)
+
+
+# ------------------------------------------------------------ エフェクト（Explod）
+func _kit_anims() -> Array:
+	var out := []
+	for k in f.moves:
+		var d: MoveDef = f.moves[k]
+		if d.spr != null and mg.air.has(d.spr):
+			out.append(d.spr)
+	return out
+
+
+func _update_fx(fr: Array) -> void:
+	var cur_move = f.move if f.state == "move" else null
+	if cur_move != fx_move:
+		fx_move = cur_move
+		fx_done = {}
+		for e in fx_live:
+			if e.keep:
+				e.dead = true
+	# 新しく出すエフェクト
+	if cur_move != null and fr[3] >= 0:
+		var lst: Array = fx_defs.get(fr[0], [])
+		for i in range(lst.size()):
+			var d: Dictionary = lst[i]
+			if fx_done.has(i) or fr[3] < d.t:
+				continue
+			fx_done[i] = true
+			if d.has("remove"):
+				for e in fx_live:
+					if e.keep:
+						e.dead = true
+				continue
+			var node := Sprite3D.new()
+			node.shaded = false
+			node.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
+			node.texture_filter = spr.texture_filter
+			node.double_sided = true
+			node.pixel_size = ps
+			add_child(node)
+			fx_live.append({"node": node, "anim": d.anim, "start": f.anim, "x": f.x, "y": f.y, "face": f.face,
+				"ox": d.x * mg.scale, "oy": d.y * mg.scale, "bind": d.bind, "keep": d.keep, "add": d.get("add", false), "dead": false})
+	# 動かす・消す
+	var keep_list := []
+	for e in fx_live:
+		var a: Dictionary = mg.air[e.anim]
+		var t: int = f.anim - e.start
+		if e.dead or (not e.keep and t >= Mugen.anim_length(a)) or not visible:
+			e.node.queue_free()
+			continue
+		var fd: Dictionary = a.frames[Mugen.frame_at(a, t, e.keep)]
+		var tr: String = fd.get("tr", "")
+		if tr == "" and e.add:
+			tr = "A"
+		var s = sff.get_sprite_blend(fd.g, fd.i, tr)
+		if s == null:
+			e.node.visible = false
+		else:
+			e.node.visible = true
+			var bx: float = f.x if e.bind else e.x
+			var by: float = f.y if e.bind else e.y
+			var face: int = f.face if e.bind else e.face
+			_place(e.node, s, fd, face < 0, false, bx + e.ox * face, by + e.oy, 0.07)
+		keep_list.append(e)
+	fx_live = keep_list
 
 
 # ------------------------------------------------------------ 声・効果音

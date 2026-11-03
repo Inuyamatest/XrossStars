@@ -32,6 +32,7 @@
   "taiga": {
     "name": "逢坂大河",
     "type": "brawler",
+    "kit": "taiga",
     "moves": {
       "jab": 300,
       "jab2": 201,
@@ -52,12 +53,6 @@
       "dashgrab": 820,
       "ledgeatk": 300,
       "getupatk": 420
-    },
-    "specials": {
-      "nspecial": 1300,
-      "sspecial": 820,
-      "uspecial": 211,
-      "dspecial": 1200
     }
   }
 }

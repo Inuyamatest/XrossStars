@@ -150,11 +150,47 @@ static func apply_moves(mv: Dictionary, mg: Dictionary) -> void:
 			m.chain = [min(m.total, hits[-1].f1 + 1), m.chain[1]]
 		m.spr_mode = "direct"
 		m.spr_flip = slot == "bair"
+	# キャラ専用の必殺ワザ（spr と mugen_hits を自分で決めているもの）
+	for k in mv:
+		var m: MoveDef = mv[k]
+		if m.mugen_hits and m.spr != null and air.has(m.spr):
+			_special_hits(m, air[m.spr], scale)
 	for slot in mg.spec_anims:
+		if mv.has(slot) and mv[slot].mugen_hits:
+			continue
 		for k in [slot, slot + "_air", "d_land", "d_hit", "s_throw"]:
 			if k.begins_with(slot.substr(0, 1)) and mv.has(k):
 				mv[k].spr = mg.spec_anims[slot]
 				mv[k].spr_mode = "warp"
+
+
+static func _special_hits(m: MoveDef, a: Dictionary, scale: float) -> void:
+	## アニメのティックそのままで再生し、攻撃判定は Clsn1 の窓を使う。
+	## hits[0] を途中の窓（多段なら rehit で何回も当たる）、hits[-1] を最後の窓の性能にする。
+	## hits に rect を書いてあるワザは、その判定をそのまま使う（画面全体に届く判定などを抑えるため）
+	m.spr_mode = "direct"
+	m.spr_delay = 0
+	if m.hits.is_empty() or m.hits[0].has("rect"):
+		return
+	var wins := clsn_windows(a, scale)
+	if wins.is_empty():
+		return
+	var first: Dictionary = m.hits[0]
+	var last: Dictionary = m.hits[-1]
+	var hits := []
+	for gi in range(wins.size()):
+		var w: Array = wins[gi]
+		var r: Array = w[2]
+		var h: Dictionary = (last if gi == wins.size() - 1 else first).duplicate()
+		h.f0 = w[0]
+		h.f1 = w[1]
+		h.rect = r
+		h.x = (r[0] + r[2]) / 2.0
+		h.y = (r[1] + r[3]) / 2.0
+		h.r = max(8.0, min(r[2] - r[0], r[3] - r[1]) / 2.0)
+		h.group = gi
+		hits.append(h)
+	m.hits = hits
 
 
 # ================================================================ .def
@@ -265,7 +301,8 @@ static func parse_air(path: String) -> Dictionary:
 				continue
 			var fr := {"g": int(float(parts[0])), "i": int(float(parts[1])), "ox": int(float(parts[2])),
 				"oy": int(float(parts[3])), "t": int(float(parts[4])),
-				"flip": parts.size() > 5 and parts[5].to_lower().contains("h")}
+				"flip": parts.size() > 5 and parts[5].to_lower().contains("h"),
+				"tr": parts[6].strip_edges().to_upper() if parts.size() > 6 else ""}
 			fr.c1 = (pend1 if pend1 != null else (def1 if def1 != null else [])).duplicate()
 			fr.c2 = (pend2 if pend2 != null else (def2 if def2 != null else [])).duplicate()
 			cur.frames.append(fr)
@@ -433,6 +470,44 @@ class Sff:
 		var res = null
 		if nodes.has(key):
 			res = _decode_v2(nodes[key], 0) if ver == 2 else _decode_v1(nodes[key], 0)
+		cache[key] = res
+		return res
+
+	func get_sprite_blend(g: int, i: int, tr: String):
+		## 加算合成（AIR の A / AS..D.. や Explod の trans=add）の絵を、ふつうの半透明で近い見た目に直したもの
+		if tr == "":
+			return get_sprite(g, i)
+		var key := "%d,%d,%s" % [g, i, tr]
+		if cache.has(key):
+			return cache[key]
+		var base = get_sprite(g, i)
+		var res = null
+		if base != null:
+			var src_k := 1.0
+			var dst_k := 1.0
+			var re := RegEx.create_from_string("AS(\\d+)D(\\d+)")
+			var m := re.search(tr)
+			if m:
+				src_k = int(m.get_string(1)) / 256.0
+				dst_k = int(m.get_string(2)) / 256.0
+			elif tr.begins_with("A1"):
+				src_k = 0.5
+			var img: Image = base[0].get_image()
+			if img != null:
+				img = img.duplicate()
+				img.convert(Image.FORMAT_RGBA8)
+				for y in range(img.get_height()):
+					for x in range(img.get_width()):
+						var c := img.get_pixel(x, y)
+						if c.a <= 0.0:
+							continue
+						var add := Color(c.r * src_k, c.g * src_k, c.b * src_k)
+						var a: float = clamp(max(1.0 - dst_k, max(add.r, max(add.g, add.b))), 0.0, 1.0)
+						if a <= 0.01:
+							img.set_pixel(x, y, Color(0, 0, 0, 0))
+						else:
+							img.set_pixel(x, y, Color(min(1.0, add.r / a), min(1.0, add.g / a), min(1.0, add.b / a), a))
+				res = [ImageTexture.create_from_image(img), base[1], base[2]]
 		cache[key] = res
 		return res
 
@@ -735,9 +810,11 @@ static func wav(b: PackedByteArray) -> AudioStreamWAV:
 
 
 # ================================================================ .cns（PlaySnd: どのアニメの何ティック目に何番の音）
-static func parse_cns_cues(paths: Array, anims: Dictionary) -> Dictionary:
+static func parse_cns_cues(paths: Array, anims: Dictionary, fx_out = null) -> Dictionary:
 	## アニメ番号 -> [{t, g, s, rnd, prob, on_hit}]
+	## fx_out に辞書を渡すと、Explod（エフェクトの絵）も アニメ番号 -> [{t, anim, x, y, bind, keep} / {t, remove}] で入れる
 	var by_state := {}
+	var fx_state := {}
 	var re_sd := RegEx.create_from_string("^\\[\\s*statedef\\s+(-?\\d+)")
 	var re_anim := RegEx.create_from_string("^\\s*anim\\s*=\\s*(\\d+)\\s*$")
 	var re_val := RegEx.create_from_string("^\\s*(s)?(\\d+)\\s*,\\s*(\\d+)\\s*(?:\\+\\s*random\\s*%\\s*(\\d+))?\\s*$")
@@ -771,7 +848,35 @@ static func parse_cns_cues(paths: Array, anims: Dictionary) -> Dictionary:
 					trig.append(v)
 				else:
 					kv[k] = v
-			if kv.get("type", "").to_lower() != "playsnd":
+			var ty: String = kv.get("type", "").to_lower()
+			if fx_out != null and (ty == "explod" or ty == "removeexplod"):
+				var tke := _cue_tick(trig, sd_anim, anims)
+				if tke.is_empty() or tke.on_hit:
+					continue
+				var e := {"t": tke.t}
+				if ty == "removeexplod":
+					e.remove = true
+				else:
+					var an_s: String = kv.get("anim", "").strip_edges()
+					if not an_s.is_valid_int() or not anims.has(int(an_s)):
+						continue   # F 付き（共通エフェクト）や式は使わない
+					if not kv.get("postype", "p1").strip_edges().to_lower() in ["p1", ""]:
+						continue
+					var ps: PackedStringArray = str(kv.get("pos", "0,0")).split(",")
+					e.anim = int(an_s)
+					e.x = float(ps[0]) if ps.size() > 0 and ps[0].strip_edges().is_valid_float() else 0.0
+					e.y = float(ps[1]) if ps.size() > 1 and ps[1].strip_edges().is_valid_float() else 0.0
+					e.bind = kv.get("bindtime", "0").strip_edges() == "-1"
+					e.keep = kv.get("removetime", "").strip_edges() == "-1"
+					var tr: String = kv.get("trans", "").strip_edges().to_lower()
+					e.add = tr.begins_with("add")
+				if not fx_state.has(sd_anim):
+					fx_state[sd_anim] = {}
+				if not fx_state[sd_anim].has(sd):
+					fx_state[sd_anim][sd] = []
+				fx_state[sd_anim][sd].append(e)
+				continue
+			if ty != "playsnd":
 				continue
 			var mv := re_val.search(kv.get("value", "").to_lower())
 			if mv == null:
@@ -786,6 +891,10 @@ static func parse_cns_cues(paths: Array, anims: Dictionary) -> Dictionary:
 			if not by_state[sd_anim].has(sd):
 				by_state[sd_anim][sd] = []
 			by_state[sd_anim][sd].append(cue)
+	if fx_out != null:
+		for an in fx_state:
+			var sts: Dictionary = fx_state[an]
+			fx_out[an] = sts.get(an, sts[sts.keys().min()])
 	var cues := {}
 	for an in by_state:
 		var states: Dictionary = by_state[an]

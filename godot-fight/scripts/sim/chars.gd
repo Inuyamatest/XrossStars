@@ -127,6 +127,9 @@ static func model_chars() -> Array:
 			var mc := typed(conf.get("type", "brawler"), conf.get("name", mg.info.get("displayname", mg.info.get("name", sub))))
 			mc.id = "mugen_" + sub
 			mc.mugen = mg
+			# "kit": キャラ専用の必殺ワザ（Specials の関数名）
+			if conf.has("kit") and Specials.new().has_method(conf.kit):
+				mc.specials = Callable(Specials, conf.kit)
 			# roster.json の "moves" / "specials" でワザに使うアニメ番号を手で決められる
 			for k in conf.get("moves", {}):
 				var an := int(conf.moves[k])

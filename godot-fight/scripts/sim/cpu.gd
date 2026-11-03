@@ -8,6 +8,7 @@ var seq: Array = []
 var wait := 0
 var hold_x := 0.0
 var hold_y := 0.0
+var loop_seq: Array = []   # 確認用: これが入っていると、同じ入力をくり返す
 
 
 func _init(lv: int, r: RandomNumberGenerator) -> void:
@@ -32,6 +33,8 @@ func press(opts: Dictionary) -> void:
 
 
 func get_input(w, f) -> InputState:
+	if seq.is_empty() and not loop_seq.is_empty() and w.countdown <= 0 and f.state in ["stand", "air"]:
+		seq.append_array(loop_seq)
 	if not seq.is_empty():
 		return seq.pop_front()
 	if level <= 0 or w.countdown > 0 or f.state == "dead":

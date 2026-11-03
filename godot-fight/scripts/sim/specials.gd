@@ -215,3 +215,51 @@ static func magic() -> Dictionary:
 		"dspecial": MoveDef.make("dspecial", 40, [], {"label": "リフレクター", "pose": "counter", "counter": [4, 24], "reflect": true, "nograv": [1, 30]}),
 		"d_hit": MoveDef.make("d_hit", 30, [], {"label": "リフレクター", "pose": "bigpunch", "inv": [1, 22]}),
 	}
+
+
+# ================================================================ 逢坂大河（MUGEN 版の必殺ワザをそのまま使う）
+# アニメ番号は Taiga.air の番号。ワザのフレームは アニメのティック+1（spr_mode "direct"）
+static func taiga() -> Dictionary:
+	# ヘルスラスト: 一気に踏み込んで木刀で突く
+	var thrust := func(_w, f, m):
+		if m.f >= 8 and m.f <= 19:
+			f.vx = 12.0 * f.face
+		elif m.f > 19:
+			f.vx *= 0.6
+	# 大河ニークラッシュ: 斜め上に跳びひざ（復帰ワザ）
+	var knee := func(_w, f, m):
+		if m.f == 7:
+			f.vy = -17.0
+			f.vx = 4.0 * f.face
+			f.ground = null
+		elif m.f > 7 and m.f < 22:
+			f.vx = lerp(f.vx, 4.0 * f.face, 0.2)
+	# ウザいのよ！: 空中なら急降下してから地面をたたく
+	var stomp := func(_w, f, m):
+		if f.ground == null and m.f >= 9:
+			f.vy = 15.0
+			f.vx *= 0.8
+	# M-Morgue: その場でマイクを振り回す（空中ではゆっくり落ちる）
+	var morgue := func(_w, f, m):
+		if f.ground == null and m.f < 50:
+			f.vy = min(f.vy, 1.5)
+			f.vx *= 0.92
+	var multi := MoveDef.H(0, 0, 0, 0, 10, 1.5, 30, 20, 0, {"rehit": 5, "fx": "hit", "shieldmul": 0.5})
+	var finish := MoveDef.H(0, 0, 0, 0, 10, 7.0, 40, 55, 70, {"fx": "big"})
+	return {
+		"nspecial": MoveDef.make("nspecial", 72, [multi, finish],
+			{"label": "M-Morgue", "spr": 1000, "mugen_hits": true, "on_frame": morgue}),
+		"sspecial": MoveDef.make("sspecial", 44, [MoveDef.H(0, 0, 0, 0, 10, 13.0, 35, 50, 85, {"fx": "big", "shieldmul": 1.4})],
+			{"label": "ヘルスラスト", "spr": 1300, "mugen_hits": true, "keep_vx": true, "nograv": [1, 26], "once": "side",
+			 "on_frame": thrust}),
+		"uspecial": MoveDef.make("uspecial", 40, [MoveDef.H(0, 0, 0, 0, 10, 11.0, 80, 55, 75, {"fx": "big"})],
+			{"label": "大河ニークラッシュ", "spr": 1100, "mugen_hits": true, "helpless": true, "once": "up", "ledge_ok": true,
+			 "keep_vx": true, "on_frame": knee}),
+		"uspecial_air": MoveDef.make("uspecial_air", 40, [MoveDef.H(0, 0, 0, 0, 10, 11.0, 80, 55, 75, {"fx": "big"})],
+			{"label": "大河ニークラッシュ", "spr": 1101, "mugen_hits": true, "helpless": true, "once": "up", "ledge_ok": true,
+			 "keep_vx": true, "on_frame": knee}),
+		# 地面をたたいて左右の相手を真上に打ち上げる（元は画面全体に届くので、届く範囲を絞っている）
+		"dspecial": MoveDef.make("dspecial", 46, [MoveDef.H(26, 28, 0, -10, 40, 12.0, 90, 60, 75,
+			{"rect": [-125.0, -26.0, 125.0, 4.0], "fx": "big"})],
+			{"label": "ウザいのよ！", "spr": 1200, "mugen_hits": true, "no_drift": true, "on_frame": stomp}),
+	}
