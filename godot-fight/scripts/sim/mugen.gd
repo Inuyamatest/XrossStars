@@ -10,7 +10,7 @@ const TARGET_H := 92.0
 # 状態 → MUGEN の標準アニメ番号（候補を順に試す）
 const STATE_ANIMS := {
 	"stand": [0], "walk": [20], "run": [100, 20], "crouch": [11, 10], "jumpsquat": [40, 10],
-	"rise": [41, 42], "fall": [44, 41], "land": [47, 10], "shield": [130, 120],
+	"rise": [41, 42], "fall": [44, 46, 41], "land": [47, 10], "shield": [130, 120],
 	"roll": [105, 100], "spot": [130], "airdodge": [132, 41], "hit": [5000, 5010], "tumble": [5050, 5030],
 	"down": [5110, 5100, 5050], "getup": [5120], "grabbed": [5000], "hold": [800], "ledge": [41], "climb": [40, 10],
 	"dizzy": [5300, 5000], "helpless": [41], "awaken": [3000, 195, 181], "respawn": [0], "win": [181, 180, 0],

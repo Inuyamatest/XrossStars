@@ -221,8 +221,19 @@ static func magic() -> Dictionary:
 # アニメ番号は Taiga.air の番号。ワザのフレームは アニメのティック+1（spr_mode "direct"）
 static func taiga() -> Dictionary:
 	# ヘルスラスト: 一気に踏み込んで木刀で突く
-	var thrust := func(_w, f, m):
-		if m.f >= 8 and m.f <= 19:
+	var thrust := func(w, f, m):
+		# 目の前（木刀が届く距離）に相手がいたら踏み込みを止める。止めないと突きが出る前に相手をすり抜ける
+		if not m.data.has("stop") and m.f >= 6 and m.f <= 19:
+			for t in w.fighters:
+				if t == f or not t.alive() or t.team == f.team:
+					continue
+				var hb := World.hurtbox(t)
+				var front: float = (hb[0] - f.x) if f.face > 0 else (f.x - hb[2])
+				if front < 70.0 and front > -f.hw - 10.0 and f.y - 80.0 < hb[3] and f.y + 10.0 > hb[1]:
+					m.data["stop"] = true
+		if m.data.has("stop"):
+			f.vx *= 0.3
+		elif m.f >= 8 and m.f <= 19:
 			f.vx = 12.0 * f.face
 		elif m.f > 19:
 			f.vx *= 0.6
