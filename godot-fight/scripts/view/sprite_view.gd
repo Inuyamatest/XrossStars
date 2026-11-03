@@ -7,7 +7,16 @@ var mg: Dictionary
 var sff: Mugen.Sff
 var spr: Sprite3D
 var cur_key := ""
-var cur_start := 0
+var prev_key := ""
+var cur_seq: Array = []
+var seq_t := 0.0
+var last_anim := 0
+var last_face := 1
+var turn_an := -1
+var turn_t := 0.0
+var hit_size := 0.0       # 最後に受けたダメージ（やられアニメの大きさ）
+var walk_ref := 1.0       # MUGEN 側の歩き・走りの速さ（ゲームの px/フレーム）
+var run_ref := 3.0
 var snd := {}
 var cues := {}
 var voice: AudioStreamPlayer
@@ -49,6 +58,14 @@ func setup(fighter: Fighter) -> void:
 		if p != "" and not p in paths:
 			paths.append(p)
 	cues = Mugen.parse_cns_cues(paths, mg.air, fx_defs)
+	# 歩き・走りの足の速さを、MUGEN 側の移動速度と比べて合わせる
+	for p in paths:
+		for ln in FileAccess.get_file_as_string(p).split("\n"):
+			var l := ln.get_slice(";", 0).strip_edges().to_lower().replace(" ", "")
+			if l.begins_with("walk.fwd="):
+				walk_ref = max(0.2, abs(float(l.substr(9).get_slice(",", 0))) * mg.scale)
+			elif l.begins_with("run.fwd="):
+				run_ref = max(0.5, abs(float(l.substr(8).get_slice(",", 0))) * mg.scale)
 	for an in mg.move_plan.values() + mg.spec_anims.values() + _kit_anims():
 		for e in fx_defs.get(an, []):
 			if e.has("anim"):
@@ -64,31 +81,99 @@ func setup(fighter: Fighter) -> void:
 
 
 # ------------------------------------------------------------ どの絵を出すか
-func _state_key() -> String:
+# 状態ごとのアニメの並び（つなぎ → 本体）。数字は MUGEN の標準アニメ番号。無い番号は飛ばす
+func _has(an: int) -> bool:
+	return mg.air.has(an) and not mg.air[an].frames.is_empty()
+
+
+func _seq(lst: Array) -> Array:
+	return lst.filter(func(an): return _has(an))
+
+
+func _choose() -> Array:
+	## [並びの名前, アニメ番号の並び, 最後をループするか, 再生速度]
 	var s := f.state
-	if s == "stand" or s == "respawn":
-		if s == "stand" and f.crouch:
-			return "crouch"
-		var sp: float = abs(f.vx)
-		if s == "stand" and sp > f.st.walk + 0.5:
-			return "run"
-		if s == "stand" and sp > 0.6:
-			return "walk"
-		return "stand"
-	if s == "lag":
-		return "land"
-	if s == "jumpsquat":
-		return "jumpsquat"
-	if s == "air" or s == "walltech":
-		return "rise" if f.vy < 0 else "fall"
-	if s == "dodge":
-		var k: String = f.dodge.kind if f.dodge != null else ""
-		return {"roll": "roll", "spot": "spot", "tech": "land"}.get(k, "airdodge")
-	if s == "hitstun":
-		return "tumble" if f.tumble and f.ground == null else "hit"
-	if s == "knockdown":
-		return "getup" if f.timer > 20 and mg.state_map.has("getup") else "down"
-	return s
+	var pk := prev_key
+	var spd: float = abs(f.vx)
+	match s:
+		"stand", "respawn":
+			if s == "stand" and f.crouch:
+				return ["crouch", _seq([10, 11]) if pk != "crouch" and pk != "crouch_in" else _seq([11]), true, 1.0]
+			if s == "stand" and spd > f.st.walk + 0.5:
+				return ["run", _seq([100, 20]), true, clamp(spd / max(0.1, run_ref), 0.7, 2.0)]
+			if s == "stand" and spd > 0.6:
+				var back: bool = f.vx * f.face < 0 and _has(21)
+				return ["walkb" if back else "walk", _seq([21] if back else [20]), true, clamp(spd / max(0.1, walk_ref), 0.7, 2.2)]
+			if pk == "crouch":
+				return ["stand_up", _seq([12, 0]), true, 1.0]
+			if pk == "run":
+				return ["run_stop", _seq([101, 0]), true, 1.0]
+			return ["stand", _seq([0]), true, 1.0]
+		"jumpsquat":
+			return ["jumpsquat", _seq([40, 10]), false, 1.0]
+		"air", "walltech":
+			if f.vy < 0:
+				if cur_key.begins_with("rise"):
+					return [cur_key, cur_seq, false, 1.0]   # 跳んだ瞬間の向きで決めたまま
+				var dirv: float = f.vx * f.face
+				if dirv > 1.5 and _has(42):
+					return ["rise_f", _seq([42]), false, 1.0]
+				if dirv < -1.5 and _has(43):
+					return ["rise_b", _seq([43]), false, 1.0]
+				return ["rise", _seq([41]), false, 1.0]
+			return ["fall", _seq([44, 46, 41]), true, 1.0]
+		"helpless":
+			return ["fall", _seq([44, 46, 41]), true, 1.0]
+		"lag":
+			if cur_key in ["shield_end", "getup", "lag_long", "land"]:
+				return [cur_key, cur_seq, false, 1.0]   # 入った瞬間に決めたまま
+			if cur_key == "shield" or cur_key == "shield_hit":
+				return ["shield_end", _seq([140, 0]), true, 1.0]
+			if pk == "down" or cur_key == "down":
+				return ["getup", _seq([5120, 0]), true, 1.0]
+			if f.timer >= 8:
+				return ["lag_long", _seq([48, 47]), false, 1.0]
+			return ["land", _seq([47, 10]), false, 1.0]
+		"shield":
+			if f.shieldstun > 0:
+				return ["shield_hit", _seq([150, 130]), false, 1.0]
+			if pk == "shield" or pk == "shield_hit":
+				return ["shield", _seq([130, 120]), true, 1.0]
+			return ["shield", _seq([120, 130]), true, 1.0]
+		"dodge":
+			var kind: String = f.dodge.kind if f.dodge != null else ""
+			if kind == "roll":
+				if f.dodge.dir * f.face < 0 and _has(105):
+					return ["roll_b", _seq([105, 106]), false, 1.0]
+				return ["roll_f", _seq([161, 105]), false, 1.0]
+			if kind == "spot":
+				return ["spot", _seq([160, 130]), false, 1.0]
+			if kind == "tech":
+				return ["tech", _seq([5200, 47]), false, 1.0]
+			return ["airdodge", _seq([162, 132, 41]), false, 1.0]
+		"hitstun":
+			if f.tumble and f.ground == null:
+				if f.vy + f.ky < 0:
+					return ["tumble_up", _seq([5050, 5030]), true, 1.0]
+				return ["tumble_down", _seq([5061, 5050]), true, 1.0]
+			if f.ground == null:
+				return ["hit_air", _seq([5030, 5000]), false, 1.0]
+			var g := 5000 if hit_size < 12 else (5001 if hit_size < 25 else 5002)
+			return ["hit%d" % g, _seq([g, 5000]), false, 1.0]
+		"knockdown":
+			return ["down", _seq([5100, 5110]) if pk != "down" else cur_seq, true, 1.0]
+		"grabbed":
+			return ["grabbed", _seq([5000]), true, 1.0]
+		"hold":
+			return ["hold", _seq([810, 800, 0]), false, 1.0]
+		"dizzy":
+			return ["dizzy", _seq([5300, 5000]), true, 1.0]
+		"ledge":
+			return ["ledge", _seq([41]), false, 0.0]
+		"climb":
+			return ["climb", _seq([40, 47]), false, 1.0]
+	var an = mg.state_map.get(s, mg.state_map.get("stand"))
+	return [s, [an] if an != null else [], true, 1.0]
 
 
 func _warp_index(d: MoveDef, mf: int, a: Dictionary) -> int:
@@ -120,6 +205,8 @@ func _warp_index(d: MoveDef, mf: int, a: Dictionary) -> int:
 
 func _frame() -> Array:
 	## [アニメ番号, フレーム番号, 反転するか, ワザ中のティック]
+	var dt: int = max(0, f.anim - last_anim)
+	last_anim = f.anim
 	if f.state == "move" and f.move != null and f.move.d.spr != null and mg.air.has(f.move.d.spr):
 		var d := f.move.d
 		var a: Dictionary = mg.air[d.spr]
@@ -131,19 +218,51 @@ func _frame() -> Array:
 		else:
 			idx = _warp_index(d, f.move.f, a)
 			tick = int(float(f.move.f) / max(1, d.total) * Mugen.anim_length(a))
+		prev_key = "move"
+		cur_key = "move"
+		last_face = f.face
 		return [d.spr, idx, d.spr_flip, tick]
-	var key := _state_key()
-	var an = mg.state_map.get(key, mg.state_map.get("stand"))
-	if an == null:
-		return []
-	if key != cur_key:
+	var c := _choose()
+	var key: String = c[0]
+	if key != cur_key or c[1] != cur_seq:
+		if key != cur_key:
+			prev_key = cur_key
 		cur_key = key
-		cur_start = f.anim
-	var loop := not (key in ["rise", "land", "jumpsquat", "hit", "down", "getup", "roll", "climb"])
-	var t := f.anim - cur_start
-	if key == "ledge":
-		t = 0
-	return [an, Mugen.frame_at(mg.air[an], t, loop), false, -1]
+		cur_seq = c[1]
+		seq_t = 0.0
+	else:
+		seq_t += dt * float(c[3])
+	if cur_seq.is_empty():
+		return []
+	# 振り向き（立ち・歩き・しゃがみで向きが変わったとき）
+	if f.face != last_face:
+		if key in ["stand", "walk", "walkb", "run_stop", "stand_up"] and _has(5):
+			turn_an = 5
+			turn_t = 0.0
+		elif key == "crouch" and _has(6):
+			turn_an = 6
+			turn_t = 0.0
+		last_face = f.face
+	if turn_an >= 0:
+		var ta: Dictionary = mg.air[turn_an]
+		turn_t += dt
+		if turn_t < Mugen.anim_length(ta) and key in ["stand", "walk", "walkb", "crouch", "run_stop", "stand_up"]:
+			return [turn_an, Mugen.frame_at(ta, int(turn_t), false), false, -1]
+		turn_an = -1
+	# 並びの中のどのアニメの何ティック目か
+	var t := int(seq_t)
+	var loop: bool = c[2]
+	for n in range(cur_seq.size()):
+		var an: int = cur_seq[n]
+		var a2: Dictionary = mg.air[an]
+		var ln := Mugen.anim_length(a2)
+		var last := n == cur_seq.size() - 1
+		if last:
+			return [an, Mugen.frame_at(a2, t, loop), false, -1]
+		if t < ln:
+			return [an, Mugen.frame_at(a2, t, false), false, -1]
+		t -= ln
+	return []
 
 
 # ------------------------------------------------------------ 表示
@@ -287,8 +406,12 @@ func _play_cues(fr: Array) -> void:
 func on_event(e: Dictionary) -> void:
 	## main から: このキャラが関わるイベント
 	match e.kind:
+		"djump":
+			if e.get("who") == f:
+				cur_key = ""   # 2段ジャンプは跳び直しの絵から
 		"hit":
 			if e.get("who") == f:
+				hit_size = float(e.dmg) * 2.0
 				var d: float = e.dmg
 				var g := 5000 if d < 5 else (5001 if d < 12 else 5002)
 				if not voice.playing or d >= 5:
