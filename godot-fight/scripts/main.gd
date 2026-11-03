@@ -97,6 +97,9 @@ func start_match() -> void:
 		var st: Dictionary = dir.duplicate()
 		st.special = true
 		c1.loop_seq = [CpuController.S(st)] + range(6).map(func(_i): return CpuController.S(dir)) + range(90).map(func(_i): return CpuController.S({}))
+		if p1_do == "run":   # 右へ走って止まる、左へ走って止まる
+			c1.loop_seq = range(50).map(func(_i): return CpuController.S({"x": 1.0})) + range(30).map(func(_i): return CpuController.S({})) \
+				+ range(50).map(func(_i): return CpuController.S({"x": -1.0})) + range(30).map(func(_i): return CpuController.S({}))
 	if demo:
 		c2 = CpuController.new(7, rng)
 	world = World.new(stage_key, [[a, c1, demo], [b, c2, demo or not p2_human]], 3, rng.randi(), true)

@@ -90,6 +90,14 @@ func _seq(lst: Array) -> Array:
 	return lst.filter(func(an): return _has(an))
 
 
+func _pick(cands: Array) -> Array:
+	## 候補のうち最初にあるアニメ 1 つ（代わりの候補。続けて流すのは _seq）
+	for an in cands:
+		if _has(an):
+			return [an]
+	return []
+
+
 func _choose() -> Array:
 	## [並びの名前, アニメ番号の並び, 最後をループするか, 再生速度]
 	var s := f.state
@@ -100,7 +108,7 @@ func _choose() -> Array:
 			if s == "stand" and f.crouch:
 				return ["crouch", _seq([10, 11]) if pk != "crouch" and pk != "crouch_in" else _seq([11]), true, 1.0]
 			if s == "stand" and spd > f.st.walk + 0.5:
-				return ["run", _seq([100, 20]), true, clamp(spd / max(0.1, run_ref), 0.7, 2.0)]
+				return ["run", _pick([100, 20]), true, clamp(spd / max(0.1, run_ref), 0.8, 3.0)]
 			if s == "stand" and spd > 0.6:
 				var back: bool = f.vx * f.face < 0 and _has(21)
 				return ["walkb" if back else "walk", _seq([21] if back else [20]), true, clamp(spd / max(0.1, walk_ref), 0.7, 2.2)]
@@ -110,7 +118,7 @@ func _choose() -> Array:
 				return ["run_stop", _seq([101, 0]), true, 1.0]
 			return ["stand", _seq([0]), true, 1.0]
 		"jumpsquat":
-			return ["jumpsquat", _seq([40, 10]), false, 1.0]
+			return ["jumpsquat", _pick([40, 10]), false, 1.0]
 		"air", "walltech":
 			if f.vy < 0:
 				if cur_key.begins_with("rise"):
@@ -121,9 +129,9 @@ func _choose() -> Array:
 				if dirv < -1.5 and _has(43):
 					return ["rise_b", _seq([43]), false, 1.0]
 				return ["rise", _seq([41]), false, 1.0]
-			return ["fall", _seq([44, 46, 41]), true, 1.0]
+			return ["fall", _pick([44, 46, 41]), true, 1.0]
 		"helpless":
-			return ["fall", _seq([44, 46, 41]), true, 1.0]
+			return ["fall", _pick([44, 46, 41]), true, 1.0]
 		"lag":
 			if cur_key in ["shield_end", "getup", "lag_long", "land"]:
 				return [cur_key, cur_seq, false, 1.0]   # 入った瞬間に決めたまま
@@ -132,42 +140,42 @@ func _choose() -> Array:
 			if pk == "down" or cur_key == "down":
 				return ["getup", _seq([5120, 0]), true, 1.0]
 			if f.timer >= 8:
-				return ["lag_long", _seq([48, 47]), false, 1.0]
-			return ["land", _seq([47, 10]), false, 1.0]
+				return ["lag_long", _pick([48, 47]), false, 1.0]
+			return ["land", _pick([47, 10]), false, 1.0]
 		"shield":
 			if f.shieldstun > 0:
 				return ["shield_hit", _seq([150, 130]), false, 1.0]
 			if pk == "shield" or pk == "shield_hit":
-				return ["shield", _seq([130, 120]), true, 1.0]
+				return ["shield", _pick([130, 120]), true, 1.0]
 			return ["shield", _seq([120, 130]), true, 1.0]
 		"dodge":
 			var kind: String = f.dodge.kind if f.dodge != null else ""
 			if kind == "roll":
 				if f.dodge.dir * f.face < 0 and _has(105):
 					return ["roll_b", _seq([105, 106]), false, 1.0]
-				return ["roll_f", _seq([161, 105]), false, 1.0]
+				return ["roll_f", _pick([161, 105]), false, 1.0]
 			if kind == "spot":
-				return ["spot", _seq([160, 130]), false, 1.0]
+				return ["spot", _pick([160, 130]), false, 1.0]
 			if kind == "tech":
-				return ["tech", _seq([5200, 47]), false, 1.0]
-			return ["airdodge", _seq([162, 132, 41]), false, 1.0]
+				return ["tech", _pick([5200, 47]), false, 1.0]
+			return ["airdodge", _pick([162, 132, 41]), false, 1.0]
 		"hitstun":
 			if f.tumble and f.ground == null:
 				if f.vy + f.ky < 0:
-					return ["tumble_up", _seq([5050, 5030]), true, 1.0]
-				return ["tumble_down", _seq([5061, 5050]), true, 1.0]
+					return ["tumble_up", _pick([5050, 5030]), true, 1.0]
+				return ["tumble_down", _pick([5061, 5050]), true, 1.0]
 			if f.ground == null:
-				return ["hit_air", _seq([5030, 5000]), false, 1.0]
+				return ["hit_air", _pick([5030, 5000]), false, 1.0]
 			var g := 5000 if hit_size < 12 else (5001 if hit_size < 25 else 5002)
-			return ["hit%d" % g, _seq([g, 5000]), false, 1.0]
+			return ["hit%d" % g, _pick([g, 5000]), false, 1.0]
 		"knockdown":
 			return ["down", _seq([5100, 5110]) if pk != "down" else cur_seq, true, 1.0]
 		"grabbed":
 			return ["grabbed", _seq([5000]), true, 1.0]
 		"hold":
-			return ["hold", _seq([810, 800, 0]), false, 1.0]
+			return ["hold", _pick([810, 800, 0]), false, 1.0]
 		"dizzy":
-			return ["dizzy", _seq([5300, 5000]), true, 1.0]
+			return ["dizzy", _pick([5300, 5000]), true, 1.0]
 		"ledge":
 			return ["ledge", _seq([41]), false, 0.0]
 		"climb":
