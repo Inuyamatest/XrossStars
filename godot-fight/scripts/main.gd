@@ -6,7 +6,7 @@ const K := 0.02
 var world: World
 var puppets: Array = []
 var stage_key := "battlefield"
-var cpu_level := 5
+var cpu_level := 0         # 0 = 動かない（サンドバッグ）。F2 で 1〜9 に上げられる
 var p2_human := false
 var roster: Array = []
 var p1_char := -1
@@ -762,8 +762,8 @@ func _build_hud() -> void:
 
 func _update_info() -> void:
 	info.text = "1P: WASD移動 / Space ジャンプ / J 攻撃 / K 必殺 / L ガード / U つかみ / O スマッシュ / P 覚醒\n" + \
-		"2P: %s　F3: 2P切替　F2: CPUレベル %d　Tab: ステージ切替（%s）　F4/F5: キャラ切替　F6: 画質（%s）　Esc: ポーズ　Enter: やり直し" % [
-		"人間（矢印キー＋テンキー）" if p2_human else "CPU", cpu_level, world.stage.label, Lighting.QUALITY_NAMES[quality]]
+		"2P: %s　F3: 2P切替　F2: CPUレベル %s　Tab: ステージ切替（%s）　F4/F5: キャラ切替　F6: 画質（%s）　Esc: ポーズ　Enter: やり直し" % [
+		"人間（矢印キー＋テンキー）" if p2_human else "CPU", ("0（停止）" if cpu_level == 0 else str(cpu_level)), world.stage.label, Lighting.QUALITY_NAMES[quality]]
 
 
 static func damage_color(p: float) -> Color:
