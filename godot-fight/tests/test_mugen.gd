@@ -9,7 +9,7 @@ func _init() -> void:
 		var t := Time.get_ticks_msec()
 		print(ch.name, "  scale %.3f hw %.1f  アニメ%d  状態%d  ワザ%d  必殺%s" % [mg.scale, mg.hw, mg.air.size(), mg.state_map.size(), mg.move_plan.size(), mg.spec_anims])
 		var mv := Chars.build_moves(ch)
-		for k in ["jab", "ftilt", "fsmash", "nair", "bair", "grab"]:
+		for k in ["jab", "jab2", "jab3", "ftilt", "utilt", "dtilt", "dash", "fsmash", "usmash", "dsmash", "nair", "fair", "bair", "uair", "dair", "grab", "dashgrab"]:
 			var m: MoveDef = mv[k]
 			print("  %-7s anim=%s %s total=%d hits=%s" % [k, m.spr, m.spr_mode, m.total, m.hits.map(func(h): return [h.f0, h.f1, h.get("rect", null)])])
 		# ドット絵のデコード

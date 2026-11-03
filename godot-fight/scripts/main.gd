@@ -755,13 +755,14 @@ func _build_hud() -> void:
 		bar.max_value = 100
 		bar.show_percentage = false
 		bar.custom_minimum_size = Vector2(0, 8)
+		bar.visible = Fighter.AWAKEN_ENABLED
 		v.add_child(bar)
 		box.add_child(pc)
 		panels.append({"name": name, "pct": pct, "stock": stock, "bar": bar})
 
 
 func _update_info() -> void:
-	info.text = "1P: WASD移動 / Space ジャンプ / J 攻撃 / K 必殺 / L ガード / U つかみ / O スマッシュ / P 覚醒\n" + \
+	info.text = "1P: WASD移動 / Space ジャンプ / J 攻撃 / K 必殺 / L ガード / U つかみ / O スマッシュ\n" + \
 		"2P: %s　F3: 2P切替　F2: CPUレベル %s　Tab: ステージ切替（%s）　F4/F5: キャラ切替　F6: 画質（%s）　Esc: ポーズ　Enter: やり直し" % [
 		"人間（矢印キー＋テンキー）" if p2_human else "CPU", ("0（停止）" if cpu_level == 0 else str(cpu_level)), world.stage.label, Lighting.QUALITY_NAMES[quality]]
 

@@ -183,8 +183,12 @@ func end_move(_w) -> void:
 		to_neutral()
 
 
+## 覚醒（ゲージ技）は仕様からいったん外している。戻すときは true にする
+const AWAKEN_ENABLED := false
+
+
 func can_awaken() -> bool:
-	return meter >= 100.0
+	return AWAKEN_ENABLED and meter >= 100.0
 
 
 # ------------------------------------------------------------ メイン更新

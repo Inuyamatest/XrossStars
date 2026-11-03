@@ -31,6 +31,33 @@
   },
   "taiga": {
     "name": "逢坂大河",
-    "type": "brawler"
+    "type": "brawler",
+    "moves": {
+      "jab": 300,
+      "jab2": 201,
+      "jab3": 203,
+      "ftilt": 2000,
+      "utilt": 230,
+      "dtilt": 400,
+      "dash": 420,
+      "fsmash": 210,
+      "usmash": 410,
+      "dsmash": 212,
+      "nair": 620,
+      "fair": 600,
+      "bair": 1101,
+      "uair": 601,
+      "dair": 610,
+      "grab": 800,
+      "dashgrab": 820,
+      "ledgeatk": 300,
+      "getupatk": 420
+    },
+    "specials": {
+      "nspecial": 1300,
+      "sspecial": 820,
+      "uspecial": 211,
+      "dspecial": 1200
+    }
   }
 }

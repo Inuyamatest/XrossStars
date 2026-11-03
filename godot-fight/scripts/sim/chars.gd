@@ -127,6 +127,15 @@ static func model_chars() -> Array:
 			var mc := typed(conf.get("type", "brawler"), conf.get("name", mg.info.get("displayname", mg.info.get("name", sub))))
 			mc.id = "mugen_" + sub
 			mc.mugen = mg
+			# roster.json の "moves" / "specials" でワザに使うアニメ番号を手で決められる
+			for k in conf.get("moves", {}):
+				var an := int(conf.moves[k])
+				if mg.air.has(an):
+					mg.move_plan[k] = an
+			for k in conf.get("specials", {}):
+				var an := int(conf.specials[k])
+				if mg.air.has(an):
+					mg.spec_anims[k] = an
 			mc.stats.h = Mugen.TARGET_H
 			mc.stats.hw = mg.hw
 			mc.folder = dir
