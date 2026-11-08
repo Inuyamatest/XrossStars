@@ -1,10 +1,10 @@
 [
  {
-  "id": "p-shadow-shield~19869944",
-  "name": "影アナイアレーション v2 盾型 改8",
+  "id": "p-shadow-shield~94280118",
+  "name": "影アナイアレーション v2 盾型 改1",
   "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型 改1",
-  "change": "強さの証明×2 → インパクトショット×2 ／ 強さの証明×2 → マシンガントーク×2",
+  "parent": "影アナイアレーション v2 盾型",
+  "change": "強さの証明×2 → インパクトショット×2",
   "leaders": [
    "BP05-L02",
    "BP05-L11",
@@ -27,84 +27,6 @@
    {
     "cardNumber": "BP01-081",
     "count": 2
-   },
-   {
-    "cardNumber": "BP02-040",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP03-032",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-036",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-042",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "ST02-007",
-    "count": 2
-   }
-  ],
-  "tactics": [
-   "BP04-073",
-   "BP01-095",
-   "BP02-079",
-   "BP03-074",
-   "BP04-078"
-  ]
- },
- {
-  "id": "p-shadow-shield~50549223",
-  "name": "影アナイアレーション v2 盾型 改3",
-  "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型",
-  "change": "喧嘩上等×2 → 登頂成功×2",
-  "leaders": [
-   "BP05-L02",
-   "BP05-L11",
-   "BP05-L14",
-   "BP01-008"
-  ],
-  "cards": [
-   {
-    "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP01-070",
-    "count": 4
    },
    {
     "cardNumber": "BP03-032",
@@ -144,10 +66,10 @@
    },
    {
     "cardNumber": "ST01-009",
-    "count": 4
+    "count": 2
    },
    {
-    "cardNumber": "ST01-017",
+    "cardNumber": "ST02-007",
     "count": 2
    }
   ],
@@ -238,11 +160,93 @@
   ]
  },
  {
-  "id": "p-shadow-shield~94280118",
-  "name": "影アナイアレーション v2 盾型 改1",
+  "id": "p-shadow-shield~19869944",
+  "name": "影アナイアレーション v2 盾型 改8",
   "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型",
-  "change": "強さの証明×2 → インパクトショット×2",
+  "parent": "影アナイアレーション v2 盾型 改1",
+  "change": "強さの証明×2 → インパクトショット×2 ／ 強さの証明×2 → マシンガントーク×2",
+  "leaders": [
+   "BP05-L02",
+   "BP05-L11",
+   "BP05-L14",
+   "BP01-008"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP01-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-081",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP02-040",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP03-032",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST02-007",
+    "count": 2
+   }
+  ],
+  "tactics": [
+   "BP04-073",
+   "BP01-095",
+   "BP02-079",
+   "BP03-074",
+   "BP04-078"
+  ]
+ },
+ {
+  "id": "p-shadow-shield~11239109",
+  "name": "影アナイアレーション v2 盾型 改5",
+  "origin": "auto",
+  "parent": "影アナイアレーション v2 盾型 改1",
+  "change": "強さの証明×2 → インパクトショット×2 ／ ナイスキャッチ！×2 → デッドサイレンス×2",
   "leaders": [
    "BP05-L02",
    "BP05-L11",
@@ -271,12 +275,16 @@
     "count": 2
    },
    {
+    "cardNumber": "BP03-040",
+    "count": 2
+   },
+   {
     "cardNumber": "BP04-038",
     "count": 4
    },
    {
     "cardNumber": "BP05-021",
-    "count": 4
+    "count": 2
    },
    {
     "cardNumber": "BP05-036",
@@ -317,158 +325,6 @@
    "BP02-079",
    "BP03-074",
    "BP04-078"
-  ]
- },
- {
-  "id": "p-shadow-v2",
-  "name": "影アナイアレーション v2",
-  "origin": "claude",
-  "leaders": [
-   "BP05-L02",
-   "BP05-L11",
-   "BP05-L14",
-   "BP01-008"
-  ],
-  "cards": [
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-036",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-042",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-081",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-009",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP03-032",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 2
-   }
-  ],
-  "tactics": [
-   "BP01-092",
-   "BP03-074",
-   "BP02-079",
-   "BP04-073",
-   "BP03-073"
-  ]
- },
- {
-  "id": "p-shadow-smoke",
-  "name": "影アナイアレーション v2 スモーク型",
-  "origin": "claude",
-  "leaders": [
-   "BP05-L02",
-   "BP05-L11",
-   "BP05-L14",
-   "BP01-008"
-  ],
-  "cards": [
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-036",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-042",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-081",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-009",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP03-032",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 2
-   }
-  ],
-  "tactics": [
-   "BP04-073",
-   "BP05-076",
-   "BP02-079",
-   "BP03-074",
-   "BP05-078"
   ]
  },
  {
@@ -704,11 +560,9 @@
   ]
  },
  {
-  "id": "p-shadow-shield~49296829",
-  "name": "影アナイアレーション v2 盾型 改2",
-  "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型",
-  "change": "鬼の猛追×2 → パン売りの少女×2",
+  "id": "p-shadow-v2",
+  "name": "影アナイアレーション v2",
+  "origin": "claude",
   "leaders": [
    "BP05-L02",
    "BP05-L11",
@@ -717,15 +571,31 @@
   ],
   "cards": [
    {
-    "cardNumber": "BP01-034",
+    "cardNumber": "BP04-038",
     "count": 4
    },
    {
-    "cardNumber": "BP01-036",
-    "count": 2
+    "cardNumber": "BP05-049",
+    "count": 4
    },
    {
-    "cardNumber": "BP01-070",
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
     "count": 4
    },
    {
@@ -733,77 +603,7 @@
     "count": 2
    },
    {
-    "cardNumber": "BP04-033",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-036",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-042",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
     "cardNumber": "ST01-009",
-    "count": 4
-   }
-  ],
-  "tactics": [
-   "BP04-073",
-   "BP01-095",
-   "BP02-079",
-   "BP03-074",
-   "BP04-078"
-  ]
- },
- {
-  "id": "p-shadow-shield~65897725",
-  "name": "影アナイアレーション v2 盾型 改7",
-  "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型 改3",
-  "change": "喧嘩上等×2 → 登頂成功×2 ／ 強さの証明×2 → リスキーエントリー×2",
-  "leaders": [
-   "BP05-L02",
-   "BP05-L11",
-   "BP05-L14",
-   "BP01-008"
-  ],
-  "cards": [
-   {
-    "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP01-070",
     "count": 4
    },
    {
@@ -811,64 +611,34 @@
     "count": 2
    },
    {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
     "cardNumber": "BP05-021",
     "count": 4
    },
    {
-    "cardNumber": "BP05-036",
+    "cardNumber": "BP01-070",
     "count": 4
    },
    {
-    "cardNumber": "BP05-042",
+    "cardNumber": "BP01-034",
     "count": 4
    },
    {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "ST01-006",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-009",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-017",
+    "cardNumber": "BP01-036",
     "count": 2
    }
   ],
   "tactics": [
-   "BP04-073",
-   "BP01-095",
-   "BP02-079",
+   "BP01-092",
    "BP03-074",
-   "BP04-078"
+   "BP02-079",
+   "BP04-073",
+   "BP03-073"
   ]
  },
  {
-  "id": "p-shadow-shield~11239109",
-  "name": "影アナイアレーション v2 盾型 改5",
-  "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型 改1",
-  "change": "強さの証明×2 → インパクトショット×2 ／ ナイスキャッチ！×2 → デッドサイレンス×2",
+  "id": "p-shadow-smoke",
+  "name": "影アナイアレーション v2 スモーク型",
+  "origin": "claude",
   "leaders": [
    "BP05-L02",
    "BP05-L11",
@@ -877,15 +647,31 @@
   ],
   "cards": [
    {
-    "cardNumber": "BP01-034",
+    "cardNumber": "BP04-038",
     "count": 4
    },
    {
-    "cardNumber": "BP01-036",
-    "count": 2
+    "cardNumber": "BP05-049",
+    "count": 4
    },
    {
-    "cardNumber": "BP01-070",
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
     "count": 4
    },
    {
@@ -893,60 +679,36 @@
     "count": 2
    },
    {
+    "cardNumber": "ST01-009",
+    "count": 4
+   },
+   {
     "cardNumber": "BP03-032",
     "count": 2
    },
    {
-    "cardNumber": "BP03-040",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
     "cardNumber": "BP05-021",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP05-036",
     "count": 4
    },
    {
-    "cardNumber": "BP05-042",
+    "cardNumber": "BP01-070",
     "count": 4
    },
    {
-    "cardNumber": "BP05-049",
+    "cardNumber": "BP01-034",
     "count": 4
    },
    {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "ST01-009",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST02-007",
+    "cardNumber": "BP01-036",
     "count": 2
    }
   ],
   "tactics": [
    "BP04-073",
-   "BP01-095",
+   "BP05-076",
    "BP02-079",
    "BP03-074",
-   "BP04-078"
+   "BP05-078"
   ]
  },
  {
@@ -1032,11 +794,11 @@
   ]
  },
  {
-  "id": "p-shadow-v2~85968787",
-  "name": "影アナイアレーション v2 改1",
+  "id": "p-shadow-shield~49296829",
+  "name": "影アナイアレーション v2 盾型 改2",
   "origin": "auto",
-  "parent": "影アナイアレーション v2",
-  "change": "強さの証明×2 → 駆け引き上手×2",
+  "parent": "影アナイアレーション v2 盾型",
+  "change": "鬼の猛追×2 → パン売りの少女×2",
   "leaders": [
    "BP05-L02",
    "BP05-L11",
@@ -1061,7 +823,7 @@
     "count": 2
    },
    {
-    "cardNumber": "BP03-032",
+    "cardNumber": "BP04-033",
     "count": 2
    },
    {
@@ -1098,105 +860,23 @@
    },
    {
     "cardNumber": "ST01-009",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-013",
-    "count": 2
+    "count": 4
    }
   ],
   "tactics": [
-   "BP01-092",
-   "BP03-074",
+   "BP04-073",
+   "BP01-095",
    "BP02-079",
-   "BP04-073",
-   "BP03-073"
-  ]
- },
- {
-  "id": "p-shadow-smoke~25583870",
-  "name": "影アナイアレーション v2 スモーク型 改5",
-  "origin": "auto",
-  "parent": "影アナイアレーション v2 スモーク型 改2",
-  "change": "タクティクス：ヒーリングオーブ → ライトシールド ／ 鬼の猛追×2 → クリティカルショット×2",
-  "leaders": [
-   "BP05-L02",
-   "BP05-L11",
-   "BP05-L14",
-   "BP01-008"
-  ],
-  "cards": [
-   {
-    "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP01-046",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP01-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-081",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-036",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-042",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-064",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "ST01-009",
-    "count": 4
-   }
-  ],
-  "tactics": [
-   "BP04-073",
-   "BP05-076",
-   "ST02-023",
    "BP03-074",
-   "BP05-078"
+   "BP04-078"
   ]
  },
  {
-  "id": "p-shadow-shield~53961231",
-  "name": "影アナイアレーション v2 盾型 改6",
+  "id": "p-shadow-shield~50549223",
+  "name": "影アナイアレーション v2 盾型 改3",
   "origin": "auto",
-  "parent": "影アナイアレーション v2 盾型 改3",
-  "change": "喧嘩上等×2 → 登頂成功×2 ／ タクティクス：ライトシールド → ストラテジックレーダー",
+  "parent": "影アナイアレーション v2 盾型",
+  "change": "喧嘩上等×2 → 登頂成功×2",
   "leaders": [
    "BP05-L02",
    "BP05-L11",
@@ -1263,7 +943,7 @@
   ],
   "tactics": [
    "BP04-073",
-   "BP02-074",
+   "BP01-095",
    "BP02-079",
    "BP03-074",
    "BP04-078"
@@ -1345,6 +1025,166 @@
    "BP02-079",
    "BP03-074",
    "BP05-078"
+  ]
+ },
+ {
+  "id": "p-shadow-smoke~25583870",
+  "name": "影アナイアレーション v2 スモーク型 改5",
+  "origin": "auto",
+  "parent": "影アナイアレーション v2 スモーク型 改2",
+  "change": "タクティクス：ヒーリングオーブ → ライトシールド ／ 鬼の猛追×2 → クリティカルショット×2",
+  "leaders": [
+   "BP05-L02",
+   "BP05-L11",
+   "BP05-L14",
+   "BP01-008"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP01-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-046",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-081",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP04-073",
+   "BP05-076",
+   "ST02-023",
+   "BP03-074",
+   "BP05-078"
+  ]
+ },
+ {
+  "id": "p-shadow-shield~65897725",
+  "name": "影アナイアレーション v2 盾型 改7",
+  "origin": "auto",
+  "parent": "影アナイアレーション v2 盾型 改3",
+  "change": "喧嘩上等×2 → 登頂成功×2 ／ 強さの証明×2 → リスキーエントリー×2",
+  "leaders": [
+   "BP05-L02",
+   "BP05-L11",
+   "BP05-L14",
+   "BP01-008"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP01-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-032",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-006",
+    "count": 2
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 2
+   },
+   {
+    "cardNumber": "ST01-017",
+    "count": 2
+   }
+  ],
+  "tactics": [
+   "BP04-073",
+   "BP01-095",
+   "BP02-079",
+   "BP03-074",
+   "BP04-078"
   ]
  },
  {
@@ -1430,82 +1270,6 @@
   ]
  },
  {
-  "id": "p-shadow-moka",
-  "name": "影アナイアレーション（もか）",
-  "origin": "claude",
-  "leaders": [
-   "BP05-L02",
-   "BP02-009",
-   "BP05-L14",
-   "BP01-008"
-  ],
-  "cards": [
-   {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-062",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-042",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-081",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-009",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP03-032",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 2
-   }
-  ],
-  "tactics": [
-   "BP01-092",
-   "BP03-074",
-   "BP02-079",
-   "BP04-073",
-   "BP03-073"
-  ]
- },
- {
   "id": "p-shadow-saine",
   "name": "影アナイアレーション（サイネ）",
   "origin": "claude",
@@ -1582,62 +1346,20 @@
   ]
  },
  {
-  "id": "p-shadow-burn",
-  "name": "影バーン",
-  "origin": "claude",
+  "id": "p-shadow-shield~53961231",
+  "name": "影アナイアレーション v2 盾型 改6",
+  "origin": "auto",
+  "parent": "影アナイアレーション v2 盾型 改3",
+  "change": "喧嘩上等×2 → 登頂成功×2 ／ タクティクス：ライトシールド → ストラテジックレーダー",
   "leaders": [
    "BP05-L02",
-   "BP01-008",
-   "BP02-009",
-   "BP04-014"
+   "BP05-L11",
+   "BP05-L14",
+   "BP01-008"
   ],
   "cards": [
    {
-    "cardNumber": "BP04-038",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-049",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP01-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-062",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP04-070",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP05-021",
-    "count": 4
-   },
-   {
     "cardNumber": "BP01-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-034",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP04-042",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP01-081",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST01-009",
     "count": 4
    },
    {
@@ -1645,25 +1367,69 @@
     "count": 2
    },
    {
-    "cardNumber": "BP03-032",
+    "cardNumber": "BP01-070",
     "count": 4
+   },
+   {
+    "cardNumber": "BP03-032",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-017",
+    "count": 2
    }
   ],
   "tactics": [
-   "BP01-092",
-   "BP03-074",
-   "BP02-079",
    "BP04-073",
-   "BP03-073"
+   "BP02-074",
+   "BP02-079",
+   "BP03-074",
+   "BP04-078"
   ]
  },
  {
-  "id": "p-shadow-badge",
-  "name": "影アナイアレーション v2 バッジ・ビーコン型",
+  "id": "p-shadow-moka",
+  "name": "影アナイアレーション（もか）",
   "origin": "claude",
   "leaders": [
    "BP05-L02",
-   "BP05-L11",
+   "BP02-009",
    "BP05-L14",
    "BP01-008"
   ],
@@ -1677,11 +1443,11 @@
     "count": 4
    },
    {
-    "cardNumber": "BP05-064",
+    "cardNumber": "BP02-062",
     "count": 4
    },
    {
-    "cardNumber": "BP05-036",
+    "cardNumber": "BP02-034",
     "count": 4
    },
    {
@@ -1726,11 +1492,93 @@
    }
   ],
   "tactics": [
+   "BP01-092",
+   "BP03-074",
+   "BP02-079",
    "BP04-073",
-   "BP05-077",
-   "BP05-078",
-   "BP05-079",
-   "BP03-074"
+   "BP03-073"
+  ]
+ },
+ {
+  "id": "p-shadow-v2~85968787",
+  "name": "影アナイアレーション v2 改1",
+  "origin": "auto",
+  "parent": "影アナイアレーション v2",
+  "change": "強さの証明×2 → 駆け引き上手×2",
+  "leaders": [
+   "BP05-L02",
+   "BP05-L11",
+   "BP05-L14",
+   "BP01-008"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP01-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-081",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP03-032",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 2
+   },
+   {
+    "cardNumber": "ST01-013",
+    "count": 2
+   }
+  ],
+  "tactics": [
+   "BP01-092",
+   "BP03-074",
+   "BP02-079",
+   "BP04-073",
+   "BP03-073"
   ]
  },
  {
@@ -1834,6 +1682,82 @@
   ]
  },
  {
+  "id": "p-shadow-badge",
+  "name": "影アナイアレーション v2 バッジ・ビーコン型",
+  "origin": "claude",
+  "leaders": [
+   "BP05-L02",
+   "BP05-L11",
+   "BP05-L14",
+   "BP01-008"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-081",
+    "count": 2
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-032",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   }
+  ],
+  "tactics": [
+   "BP04-073",
+   "BP05-077",
+   "BP05-078",
+   "BP05-079",
+   "BP03-074"
+  ]
+ },
+ {
   "id": "p-shadow-nazuna",
   "name": "影アナイアレーション（なずな・ttt）",
   "origin": "claude",
@@ -1894,6 +1818,82 @@
    },
    {
     "cardNumber": "BP05-021",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP01-092",
+   "BP03-074",
+   "BP02-079",
+   "BP04-073",
+   "BP03-073"
+  ]
+ },
+ {
+  "id": "p-shadow-burn",
+  "name": "影バーン",
+  "origin": "claude",
+  "leaders": [
+   "BP05-L02",
+   "BP01-008",
+   "BP02-009",
+   "BP04-014"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-062",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-042",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-081",
+    "count": 2
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP03-032",
     "count": 4
    }
   ],
@@ -2692,6 +2692,106 @@
   ]
  },
  {
+  "id": "p-ysplash",
+  "name": "最強イエロー 赤1タッチ",
+  "origin": "field",
+  "leaders": [
+   "BP03-010",
+   "BP02-011",
+   "BP02-012",
+   "BP05-L02"
+  ],
+  "cards": [
+   {
+    "cardNumber": "ST02-015",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-035",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-031",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-036",
+    "count": 3
+   },
+   {
+    "cardNumber": "BP02-033",
+    "count": 3
+   },
+   {
+    "cardNumber": "BP03-033",
+    "count": 3
+   },
+   {
+    "cardNumber": "BP01-036",
+    "count": 1
+   },
+   {
+    "cardNumber": "BP02-059",
+    "count": 2
+   },
+   {
+    "cardNumber": "ST02-011",
+    "count": 3
+   },
+   {
+    "cardNumber": "BP01-037",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-064",
+    "count": 3
+   },
+   {
+    "cardNumber": "BP02-032",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-035",
+    "count": 1
+   },
+   {
+    "cardNumber": "BP04-033",
+    "count": 3
+   },
+   {
+    "cardNumber": "BP02-065",
+    "count": 1
+   },
+   {
+    "cardNumber": "BP04-061",
+    "count": 1
+   },
+   {
+    "cardNumber": "BP04-060",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP03-063",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 1
+   },
+   {
+    "cardNumber": "ST02-010",
+    "count": 3
+   }
+  ],
+  "tactics": [
+   "BP02-079",
+   "BP01-094",
+   "BP01-092",
+   "BP04-073",
+   "BP03-073"
+  ]
+ },
+ {
   "id": "p-yellow",
   "name": "最強イエロー",
   "origin": "field",
@@ -2861,106 +2961,6 @@
    "BP01-092",
    "BP01-095",
    "BP05-078"
-  ]
- },
- {
-  "id": "p-ysplash",
-  "name": "最強イエロー 赤1タッチ",
-  "origin": "field",
-  "leaders": [
-   "BP03-010",
-   "BP02-011",
-   "BP02-012",
-   "BP05-L02"
-  ],
-  "cards": [
-   {
-    "cardNumber": "ST02-015",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP03-035",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-031",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-036",
-    "count": 3
-   },
-   {
-    "cardNumber": "BP02-033",
-    "count": 3
-   },
-   {
-    "cardNumber": "BP03-033",
-    "count": 3
-   },
-   {
-    "cardNumber": "BP01-036",
-    "count": 1
-   },
-   {
-    "cardNumber": "BP02-059",
-    "count": 2
-   },
-   {
-    "cardNumber": "ST02-011",
-    "count": 3
-   },
-   {
-    "cardNumber": "BP01-037",
-    "count": 4
-   },
-   {
-    "cardNumber": "BP02-064",
-    "count": 3
-   },
-   {
-    "cardNumber": "BP02-032",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP01-035",
-    "count": 1
-   },
-   {
-    "cardNumber": "BP04-033",
-    "count": 3
-   },
-   {
-    "cardNumber": "BP02-065",
-    "count": 1
-   },
-   {
-    "cardNumber": "BP04-061",
-    "count": 1
-   },
-   {
-    "cardNumber": "BP04-060",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP03-063",
-    "count": 2
-   },
-   {
-    "cardNumber": "BP05-059",
-    "count": 1
-   },
-   {
-    "cardNumber": "ST02-010",
-    "count": 3
-   }
-  ],
-  "tactics": [
-   "BP02-079",
-   "BP01-094",
-   "BP01-092",
-   "BP04-073",
-   "BP03-073"
   ]
  },
  {
