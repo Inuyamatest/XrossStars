@@ -1214,5 +1214,149 @@
    "BP05-074",
    "BP05-079"
   ]
+ },
+ {
+  "id": "f-c-harvest",
+  "origin": "field",
+  "name": "環境：収穫アサルト（赤緑リンクアサルト型）",
+  "leaders": [
+   "BP01-003",
+   "BP02-001",
+   "ST02-002",
+   "BP01-013"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP04-066",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-044",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-018",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-023",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-025",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-020",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-018",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-047",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-054",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-061",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-048",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-083",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP01-089",
+   "BP01-092",
+   "BP03-080",
+   "BP05-076",
+   "BP05-078"
+  ]
+ },
+ {
+  "id": "f-c-odweare",
+  "origin": "field",
+  "name": "環境：OD We are（ODアサルト型）",
+  "leaders": [
+   "BP03-005",
+   "BP01-016",
+   "BP05-L10",
+   "BP04-013"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP04-024",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-027",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-035",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-039",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-041",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-055",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-054",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP05-063",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-088",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-068",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-069",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP01-091",
+   "BP01-092",
+   "BP01-094",
+   "BP01-095",
+   "BP03-080"
+  ]
  }
 ]
