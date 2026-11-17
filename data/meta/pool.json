@@ -3294,5 +3294,221 @@
    "BP02-080",
    "BP02-077"
   ]
+ },
+ {
+  "id": "p-t-abso",
+  "origin": "field",
+  "name": "トレコロ：アブソ再臨",
+  "leaders": [
+   "BP04-003",
+   "BP05-L01",
+   "BP02-006",
+   "BP04-012"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP05-024",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-018",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-022",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-020",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-028",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP03-032",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-037",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-050",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-048",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-056",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-053",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-065",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP01-089",
+   "BP01-092",
+   "BP03-080",
+   "BP05-076",
+   "BP05-078"
+  ]
+ },
+ {
+  "id": "p-t-hazard",
+  "origin": "field",
+  "name": "トレコロ：ハザード極致",
+  "leaders": [
+   "BP01-003",
+   "BP05-L04",
+   "ST02-002",
+   "BP05-L16"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP05-017",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-045",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-023",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-025",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-018",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-023",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-044",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP01-061",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-047",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP05-051",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-068",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-072",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP01-089",
+   "BP01-091",
+   "BP03-080",
+   "BP05-078",
+   "BP05-079"
+  ]
+ },
+ {
+  "id": "p-t-apexdd",
+  "origin": "field",
+  "name": "トレコロ：頂点DD",
+  "leaders": [
+   "BP05-L09",
+   "BP05-L10",
+   "BP05-L13",
+   "BP05-L14"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP05-031",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-033",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-034",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-035",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-040",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP05-041",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-062",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-063",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-068",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-069",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP02-078",
+   "BP03-080",
+   "BP05-073",
+   "BP05-074",
+   "BP05-079"
+  ]
  }
 ]
