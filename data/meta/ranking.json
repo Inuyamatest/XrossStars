@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-17T05:31:20.838Z",
+ "updatedAt": "2026-11-18T04:32:07.732Z",
  "minutes": 280,
  "gamesPerOpponent": 60,
  "field": [
@@ -13,7 +13,12 @@
   "記事：ダブルダウン（れん・つな・あかり・のあ）",
   "記事：ダブルダウン（れん・つな・こはく・のあ）",
   "記事：ハンデス（レイド・どぐら・Kamito・ttt）",
-  "記事：すみれ（あかり・らむね・とおこ・すみれ）"
+  "記事：すみれ（あかり・らむね・とおこ・すみれ）",
+  "トレコロ：アブソ再臨",
+  "トレコロ：ハザード極致",
+  "トレコロ：頂点DD",
+  "環境：収穫アサルト（赤緑リンクアサルト型）",
+  "環境：OD We are（ODアサルト型）"
  ],
  "note": "CPU（強）同士の対戦シミュレーションでの勝率。人間が使ったときの強さとはずれることがある",
  "decks": [
@@ -24,8 +29,8 @@
    "origin": "auto",
    "parent": "影アナイアレーション v2 スモーク型 改2",
    "change": "タクティクス：ヒーリングオーブ → ライトシールド ／ 鬼の猛追×2 → クリティカルショット×2",
-   "winRate": 75.6,
-   "games": 660,
+   "winRate": 77.9,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "46/60",
     "ttt・フラッシュバン": "46/60",
@@ -37,9 +42,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "47/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "48/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60",
+    "トレコロ：アブソ再臨": "40/60",
+    "トレコロ：ハザード極致": "54/60",
+    "トレコロ：頂点DD": "49/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "52/60",
+    "環境：OD We are（ODアサルト型）": "54/60"
    },
-   "measuredAt": "2026-11-17T01:00:54.195Z",
+   "measuredAt": "2026-11-17T23:58:00.898Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -56,87 +66,13 @@
   },
   {
    "rank": 2,
-   "id": "p-shadow-smoke~85412159",
-   "name": "影アナイアレーション v2 スモーク型 改1",
-   "origin": "auto",
-   "parent": "影アナイアレーション v2 スモーク型",
-   "change": "喧嘩上等×2 → 大旋風×2",
-   "winRate": 75.2,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "43/60",
-    "ttt・フラッシュバン": "45/60",
-    "デュアルハザード赤": "55/60",
-    "最強イエロー": "43/60",
-    "極致アナイヤ改": "37/60",
-    "頂点捕食者 改": "36/60",
-    "最強イエロー 赤1タッチ": "45/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "50/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "46/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "50/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "46/60"
-   },
-   "measuredAt": "2026-11-17T01:07:35.361Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLkxIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA0LTAzOSIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNS0wNzgiXSwidiI6MX0"
-  },
-  {
-   "rank": 3,
-   "id": "p-shadow-shield~11239109",
-   "name": "影アナイアレーション v2 盾型 改5",
-   "origin": "auto",
-   "parent": "影アナイアレーション v2 盾型 改1",
-   "change": "強さの証明×2 → インパクトショット×2 ／ ナイスキャッチ！×2 → デッドサイレンス×2",
-   "winRate": 75.2,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "38/60",
-    "ttt・フラッシュバン": "45/60",
-    "デュアルハザード赤": "58/60",
-    "最強イエロー": "49/60",
-    "極致アナイヤ改": "41/60",
-    "頂点捕食者 改": "35/60",
-    "最強イエロー 赤1タッチ": "48/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "50/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "50/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "43/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "39/60"
-   },
-   "measuredAt": "2026-11-17T01:48:51.830Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk1IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDAzLTA0MCIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsMl0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
-  },
-  {
-   "rank": 4,
    "id": "p-shadow-shield~94280118",
    "name": "影アナイアレーション v2 盾型 改1",
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型",
    "change": "強さの証明×2 → インパクトショット×2",
-   "winRate": 74.5,
-   "games": 660,
+   "winRate": 76.8,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "38/60",
     "ttt・フラッシュバン": "44/60",
@@ -148,9 +84,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "51/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "50/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "43/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "38/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "38/60",
+    "トレコロ：アブソ再臨": "43/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "51/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "44/60",
+    "環境：OD We are（ODアサルト型）": "56/60"
    },
-   "measuredAt": "2026-11-17T00:57:49.892Z",
+   "measuredAt": "2026-11-18T00:16:16.443Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -166,14 +107,14 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLkxIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 5,
+   "rank": 3,
    "id": "p-shadow-smoke~90216708",
    "name": "影アナイアレーション v2 スモーク型 改4",
    "origin": "auto",
    "parent": "影アナイアレーション v2 スモーク型 改1",
    "change": "喧嘩上等×2 → 大旋風×2 ／ タクティクス：復活ビーコン → フォールダウンシールド",
-   "winRate": 73.8,
-   "games": 660,
+   "winRate": 76.5,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "44/60",
     "ttt・フラッシュバン": "43/60",
@@ -185,9 +126,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "46/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "44/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "50/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60",
+    "トレコロ：アブソ再臨": "39/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "53/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "48/60",
+    "環境：OD We are（ODアサルト型）": "56/60"
    },
-   "measuredAt": "2026-11-17T00:54:39.924Z",
+   "measuredAt": "2026-11-18T00:23:01.396Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -203,14 +149,56 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLk0IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA0LTAzOSIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNS0wNzkiXSwidiI6MX0"
   },
   {
-   "rank": 6,
+   "rank": 4,
+   "id": "p-shadow-shield~11239109",
+   "name": "影アナイアレーション v2 盾型 改5",
+   "origin": "auto",
+   "parent": "影アナイアレーション v2 盾型 改1",
+   "change": "強さの証明×2 → インパクトショット×2 ／ ナイスキャッチ！×2 → デッドサイレンス×2",
+   "winRate": 75.9,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "38/60",
+    "ttt・フラッシュバン": "45/60",
+    "デュアルハザード赤": "58/60",
+    "最強イエロー": "49/60",
+    "極致アナイヤ改": "41/60",
+    "頂点捕食者 改": "35/60",
+    "最強イエロー 赤1タッチ": "48/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "50/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "50/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "43/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "39/60",
+    "トレコロ：アブソ再臨": "40/60",
+    "トレコロ：ハザード極致": "52/60",
+    "トレコロ：頂点DD": "45/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "44/60",
+    "環境：OD We are（ODアサルト型）": "52/60"
+   },
+   "measuredAt": "2026-11-18T00:10:17.248Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk1IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDAzLTA0MCIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsMl0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
+  },
+  {
+   "rank": 5,
    "id": "p-shadow-shield~65897725",
    "name": "影アナイアレーション v2 盾型 改7",
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型 改3",
    "change": "喧嘩上等×2 → 登頂成功×2 ／ 強さの証明×2 → リスキーエントリー×2",
-   "winRate": 73.8,
-   "games": 660,
+   "winRate": 75.9,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "38/60",
     "ttt・フラッシュバン": "41/60",
@@ -222,9 +210,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "47/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "49/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "46/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "46/60",
+    "トレコロ：アブソ再臨": "40/60",
+    "トレコロ：ハザード極致": "50/60",
+    "トレコロ：頂点DD": "49/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "50/60",
+    "環境：OD We are（ODアサルト型）": "53/60"
    },
-   "measuredAt": "2026-11-17T01:04:09.700Z",
+   "measuredAt": "2026-11-18T00:29:21.785Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -240,14 +233,56 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk3IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwNiIsMl0sWyJTVDAxLTAwOSIsMl0sWyJTVDAxLTAxNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
   },
   {
+   "rank": 6,
+   "id": "p-shadow-smoke~85412159",
+   "name": "影アナイアレーション v2 スモーク型 改1",
+   "origin": "auto",
+   "parent": "影アナイアレーション v2 スモーク型",
+   "change": "喧嘩上等×2 → 大旋風×2",
+   "winRate": 75.8,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "43/60",
+    "ttt・フラッシュバン": "45/60",
+    "デュアルハザード赤": "55/60",
+    "最強イエロー": "43/60",
+    "極致アナイヤ改": "37/60",
+    "頂点捕食者 改": "36/60",
+    "最強イエロー 赤1タッチ": "45/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "50/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "46/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "50/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "46/60",
+    "トレコロ：アブソ再臨": "38/60",
+    "トレコロ：ハザード極致": "50/60",
+    "トレコロ：頂点DD": "43/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "46/60",
+    "環境：OD We are（ODアサルト型）": "55/60"
+   },
+   "measuredAt": "2026-11-18T00:04:33.907Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLkxIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA0LTAzOSIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNS0wNzgiXSwidiI6MX0"
+  },
+  {
    "rank": 7,
    "id": "p-shadow-shield~50549223",
    "name": "影アナイアレーション v2 盾型 改3",
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型",
    "change": "喧嘩上等×2 → 登頂成功×2",
-   "winRate": 73.8,
-   "games": 660,
+   "winRate": 75.7,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "40/60",
     "ttt・フラッシュバン": "45/60",
@@ -259,9 +294,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "45/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "46/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "48/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "46/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "46/60",
+    "トレコロ：アブソ再臨": "42/60",
+    "トレコロ：ハザード極致": "49/60",
+    "トレコロ：頂点DD": "49/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "50/60",
+    "環境：OD We are（ODアサルト型）": "50/60"
    },
-   "measuredAt": "2026-11-17T01:13:49.169Z",
+   "measuredAt": "2026-11-18T00:35:48.627Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -283,8 +323,8 @@
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型 改3",
    "change": "喧嘩上等×2 → 登頂成功×2 ／ タクティクス：ライトシールド → ストラテジックレーダー",
-   "winRate": 73.3,
-   "games": 660,
+   "winRate": 74.8,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "38/60",
     "ttt・フラッシュバン": "47/60",
@@ -296,9 +336,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "46/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "45/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "50/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60",
+    "トレコロ：アブソ再臨": "38/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "47/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "48/60",
+    "環境：OD We are（ODアサルト型）": "50/60"
    },
-   "measuredAt": "2026-11-17T01:45:53.159Z",
+   "measuredAt": "2026-11-18T00:42:09.192Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -315,50 +360,13 @@
   },
   {
    "rank": 9,
-   "id": "p-shadow-shield~56445305",
-   "name": "影アナイアレーション v2 盾型 改4",
-   "origin": "auto",
-   "parent": "影アナイアレーション v2 盾型 改2",
-   "change": "鬼の猛追×2 → パン売りの少女×2 ／ 巧みな裏取り×2 → ゾーン状態×2",
-   "winRate": 72.6,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "41/60",
-    "ttt・フラッシュバン": "40/60",
-    "デュアルハザード赤": "57/60",
-    "最強イエロー": "43/60",
-    "極致アナイヤ改": "37/60",
-    "頂点捕食者 改": "36/60",
-    "最強イエロー 赤1タッチ": "44/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "44/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "46/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "42/60"
-   },
-   "measuredAt": "2026-11-17T01:10:31.768Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk0IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsMl0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDA0LTAzMyIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF0sWyJTVDAxLTAxNCIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
-  },
-  {
-   "rank": 10,
    "id": "p-shadow-smoke~36412956",
    "name": "影アナイアレーション v2 スモーク型 改3",
    "origin": "auto",
    "parent": "影アナイアレーション v2 スモーク型 改2",
    "change": "タクティクス：ヒーリングオーブ → ライトシールド ／ ブライトホーリー×2 → ステークアウト×2",
-   "winRate": 72.3,
-   "games": 660,
+   "winRate": 74.2,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "42/60",
     "ttt・フラッシュバン": "43/60",
@@ -370,9 +378,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "46/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "47/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "43/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60",
+    "トレコロ：アブソ再臨": "45/60",
+    "トレコロ：ハザード極致": "44/60",
+    "トレコロ：頂点DD": "43/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "48/60",
+    "環境：OD We are（ODアサルト型）": "55/60"
    },
-   "measuredAt": "2026-11-17T01:17:01.266Z",
+   "measuredAt": "2026-11-18T00:54:12.140Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -388,14 +401,56 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLkzIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJBTjAxLTAwNSIsMl0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsMl0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJTVDAyLTAyMyIsIkJQMDMtMDc0IiwiQlAwNS0wNzgiXSwidiI6MX0"
   },
   {
+   "rank": 10,
+   "id": "p-shadow-shield~56445305",
+   "name": "影アナイアレーション v2 盾型 改4",
+   "origin": "auto",
+   "parent": "影アナイアレーション v2 盾型 改2",
+   "change": "鬼の猛追×2 → パン売りの少女×2 ／ 巧みな裏取り×2 → ゾーン状態×2",
+   "winRate": 74.1,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "41/60",
+    "ttt・フラッシュバン": "40/60",
+    "デュアルハザード赤": "57/60",
+    "最強イエロー": "43/60",
+    "極致アナイヤ改": "37/60",
+    "頂点捕食者 改": "36/60",
+    "最強イエロー 赤1タッチ": "44/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "44/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "46/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "42/60",
+    "トレコロ：アブソ再臨": "39/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "48/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "48/60",
+    "環境：OD We are（ODアサルト型）": "46/60"
+   },
+   "measuredAt": "2026-11-18T00:47:54.502Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk0IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsMl0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDA0LTAzMyIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAxLTAwOSIsNF0sWyJTVDAxLTAxNCIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
+  },
+  {
    "rank": 11,
    "id": "p-shadow-shield~49296829",
    "name": "影アナイアレーション v2 盾型 改2",
    "origin": "auto",
    "parent": "影アナイアレーション v2 盾型",
    "change": "鬼の猛追×2 → パン売りの少女×2",
-   "winRate": 72.3,
-   "games": 660,
+   "winRate": 74.1,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "38/60",
     "ttt・フラッシュバン": "41/60",
@@ -407,9 +462,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "49/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "43/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "38/60",
+    "トレコロ：ハザード極致": "46/60",
+    "トレコロ：頂点DD": "46/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "49/60",
+    "環境：OD We are（ODアサルト型）": "55/60"
    },
-   "measuredAt": "2026-11-17T01:36:00.080Z",
+   "measuredAt": "2026-11-18T01:00:09.290Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -426,87 +486,13 @@
   },
   {
    "rank": 12,
-   "id": "p-shadow-shield~19869944",
-   "name": "影アナイアレーション v2 盾型 改8",
-   "origin": "auto",
-   "parent": "影アナイアレーション v2 盾型 改1",
-   "change": "強さの証明×2 → インパクトショット×2 ／ 強さの証明×2 → マシンガントーク×2",
-   "winRate": 71.2,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "42/60",
-    "ttt・フラッシュバン": "44/60",
-    "デュアルハザード赤": "53/60",
-    "最強イエロー": "44/60",
-    "極致アナイヤ改": "31/60",
-    "頂点捕食者 改": "34/60",
-    "最強イエロー 赤1タッチ": "47/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "42/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "41/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "43/60"
-   },
-   "measuredAt": "2026-11-17T01:29:41.598Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk4IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAyLTA0MCIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
-  },
-  {
-   "rank": 13,
-   "id": "p-shadow-moka",
-   "name": "影アナイアレーション（もか）",
-   "origin": "claude",
-   "parent": null,
-   "change": null,
-   "winRate": 70.9,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "35/60",
-    "ttt・フラッシュバン": "38/60",
-    "デュアルハザード赤": "56/60",
-    "最強イエロー": "45/60",
-    "極致アナイヤ改": "37/60",
-    "頂点捕食者 改": "32/60",
-    "最強イエロー 赤1タッチ": "42/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "49/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "40/60"
-   },
-   "measuredAt": "2026-11-17T01:52:00.714Z",
-   "leaders": [
-    "BP05-L02",
-    "BP02-009",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "甘結もか",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44KC44GL77yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDItMDA5IiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDAyLTA2MiIsNF0sWyJCUDAyLTAzNCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
-  },
-  {
-   "rank": 14,
    "id": "p-shadow-shield",
    "name": "影アナイアレーション v2 盾型",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 70.3,
-   "games": 660,
+   "winRate": 73.9,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "36/60",
     "ttt・フラッシュバン": "39/60",
@@ -518,9 +504,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "48/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "50/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "52/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "41/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "50/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "49/60",
+    "環境：OD We are（ODアサルト型）": "54/60"
    },
-   "measuredAt": "2026-11-17T01:20:11.676Z",
+   "measuredAt": "2026-11-18T01:18:31.065Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -536,14 +527,14 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyIsImwiOlsiQlAwNS1MMDIiLCJCUDA1LUwxMSIsIkJQMDUtTDE0IiwiQlAwMS0wMDgiXSwiYyI6W1siQlAwNC0wMzgiLDRdLFsiQlAwNS0wNDkiLDRdLFsiQlAwNS0wNjQiLDRdLFsiQlAwNS0wMzYiLDRdLFsiQlAwNS0wNzAiLDRdLFsiQlAwNS0wNDIiLDRdLFsiQlAwNS0wNTkiLDRdLFsiQlAwMS0wODEiLDJdLFsiU1QwMS0wMDkiLDRdLFsiQlAwMy0wMzIiLDJdLFsiQlAwNS0wMjEiLDRdLFsiQlAwMS0wNzAiLDRdLFsiQlAwMS0wMzQiLDRdLFsiQlAwMS0wMzYiLDJdXSwidCI6WyJCUDA0LTA3MyIsIkJQMDEtMDk1IiwiQlAwMi0wNzkiLCJCUDAzLTA3NCIsIkJQMDQtMDc4Il0sInYiOjF9"
   },
   {
-   "rank": 15,
+   "rank": 13,
    "id": "p-shadow-smoke~56135099",
    "name": "影アナイアレーション v2 スモーク型 改2",
    "origin": "auto",
    "parent": "影アナイアレーション v2 スモーク型",
    "change": "タクティクス：ヒーリングオーブ → ライトシールド",
-   "winRate": 70.3,
-   "games": 660,
+   "winRate": 73.9,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "36/60",
     "ttt・フラッシュバン": "39/60",
@@ -555,9 +546,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "48/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "50/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "52/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "41/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "50/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "49/60",
+    "環境：OD We are（ODアサルト型）": "54/60"
    },
-   "measuredAt": "2026-11-17T01:23:23.571Z",
+   "measuredAt": "2026-11-18T01:24:45.268Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -573,14 +569,14 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyDmlLkyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNS0wNzYiLCJTVDAyLTAyMyIsIkJQMDMtMDc0IiwiQlAwNS0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 16,
+   "rank": 14,
    "id": "p-shadow-v2~66461946",
    "name": "影アナイアレーション v2 改2",
    "origin": "auto",
    "parent": "影アナイアレーション v2",
    "change": "タクティクス：救急キット → ライトシールド",
-   "winRate": 70.3,
-   "games": 660,
+   "winRate": 73.9,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "36/60",
     "ttt・フラッシュバン": "39/60",
@@ -592,9 +588,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "48/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "50/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "52/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "41/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "50/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "49/60",
+    "環境：OD We are（ODアサルト型）": "54/60"
    },
-   "measuredAt": "2026-11-17T01:26:37.510Z",
+   "measuredAt": "2026-11-18T01:30:55.124Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -610,88 +611,56 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOaUuTIiLCJsIjpbIkJQMDUtTDAyIiwiQlAwNS1MMTEiLCJCUDA1LUwxNCIsIkJQMDEtMDA4Il0sImMiOltbIkJQMDQtMDM4Iiw0XSxbIkJQMDUtMDQ5Iiw0XSxbIkJQMDUtMDY0Iiw0XSxbIkJQMDUtMDM2Iiw0XSxbIkJQMDUtMDcwIiw0XSxbIkJQMDUtMDQyIiw0XSxbIkJQMDUtMDU5Iiw0XSxbIkJQMDEtMDgxIiwyXSxbIlNUMDEtMDA5Iiw0XSxbIkJQMDMtMDMyIiwyXSxbIkJQMDUtMDIxIiw0XSxbIkJQMDEtMDcwIiw0XSxbIkJQMDEtMDM0Iiw0XSxbIkJQMDEtMDM2IiwyXV0sInQiOlsiQlAwMS0wOTIiLCJCUDAzLTA3NCIsIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJTVDAxLTAyMyJdLCJ2IjoxfQ"
   },
   {
-   "rank": 17,
-   "id": "p-shadow-v2",
-   "name": "影アナイアレーション v2",
+   "rank": 15,
+   "id": "p-shadow-moka",
+   "name": "影アナイアレーション（もか）",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 70.2,
-   "games": 660,
+   "winRate": 73.2,
+   "games": 960,
    "perOpponent": {
-    "アリア・クレイジーバースト": "38/60",
-    "ttt・フラッシュバン": "42/60",
+    "アリア・クレイジーバースト": "35/60",
+    "ttt・フラッシュバン": "38/60",
     "デュアルハザード赤": "56/60",
-    "最強イエロー": "37/60",
-    "極致アナイヤ改": "39/60",
-    "頂点捕食者 改": "36/60",
-    "最強イエロー 赤1タッチ": "43/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "45/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "45/60",
+    "最強イエロー": "45/60",
+    "極致アナイヤ改": "37/60",
+    "頂点捕食者 改": "32/60",
+    "最強イエロー 赤1タッチ": "42/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "49/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "40/60",
+    "トレコロ：アブソ再臨": "39/60",
+    "トレコロ：ハザード極致": "48/60",
+    "トレコロ：頂点DD": "49/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "50/60",
+    "環境：OD We are（ODアサルト型）": "49/60"
    },
-   "measuredAt": "2026-11-17T01:39:17.322Z",
+   "measuredAt": "2026-11-18T01:12:13.858Z",
    "leaders": [
     "BP05-L02",
-    "BP05-L11",
+    "BP02-009",
     "BP05-L14",
     "BP01-008"
    ],
    "leaderNames": [
     "Selly (IGV)",
-    "Cpt (IGV)",
+    "甘結もか",
     "花芽すみれ (IGV)",
     "英リサ"
    ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44KC44GL77yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDItMDA5IiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDAyLTA2MiIsNF0sWyJCUDAyLTAzNCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
   },
   {
-   "rank": 18,
-   "id": "p-shadow-smoke",
-   "name": "影アナイアレーション v2 スモーク型",
-   "origin": "claude",
-   "parent": null,
-   "change": null,
-   "winRate": 70.2,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "38/60",
-    "ttt・フラッシュバン": "42/60",
-    "デュアルハザード赤": "56/60",
-    "最強イエロー": "37/60",
-    "極致アナイヤ改": "39/60",
-    "頂点捕食者 改": "36/60",
-    "最強イエロー 赤1タッチ": "43/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "45/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "45/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
-   },
-   "measuredAt": "2026-11-17T01:42:36.689Z",
-   "leaders": [
-    "BP05-L02",
-    "BP05-L11",
-    "BP05-L14",
-    "BP01-008"
-   ],
-   "leaderNames": [
-    "Selly (IGV)",
-    "Cpt (IGV)",
-    "花芽すみれ (IGV)",
-    "英リサ"
-   ],
-   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyIsImwiOlsiQlAwNS1MMDIiLCJCUDA1LUwxMSIsIkJQMDUtTDE0IiwiQlAwMS0wMDgiXSwiYyI6W1siQlAwNC0wMzgiLDRdLFsiQlAwNS0wNDkiLDRdLFsiQlAwNS0wNjQiLDRdLFsiQlAwNS0wMzYiLDRdLFsiQlAwNS0wNzAiLDRdLFsiQlAwNS0wNDIiLDRdLFsiQlAwNS0wNTkiLDRdLFsiQlAwMS0wODEiLDJdLFsiU1QwMS0wMDkiLDRdLFsiQlAwMy0wMzIiLDJdLFsiQlAwNS0wMjEiLDRdLFsiQlAwMS0wNzAiLDRdLFsiQlAwMS0wMzQiLDRdLFsiQlAwMS0wMzYiLDJdXSwidCI6WyJCUDA0LTA3MyIsIkJQMDUtMDc2IiwiQlAwMi0wNzkiLCJCUDAzLTA3NCIsIkJQMDUtMDc4Il0sInYiOjF9"
-  },
-  {
-   "rank": 19,
+   "rank": 16,
    "id": "p-shadow-saine",
    "name": "影アナイアレーション（サイネ）",
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 70.2,
-   "games": 660,
+   "winRate": 73.2,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "36/60",
     "ttt・フラッシュバン": "42/60",
@@ -703,9 +672,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "47/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "49/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "49/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "30/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "30/60",
+    "トレコロ：アブソ再臨": "36/60",
+    "トレコロ：ハザード極致": "47/60",
+    "トレコロ：頂点DD": "53/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "47/60",
+    "環境：OD We are（ODアサルト型）": "57/60"
    },
-   "measuredAt": "2026-11-17T01:55:02.809Z",
+   "measuredAt": "2026-11-18T01:49:14.186Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -721,14 +695,140 @@
    "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44Oz77yI44K144Kk44ON77yJIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNC0wMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA0LTA3MCIsNF0sWyJCUDA0LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
   },
   {
+   "rank": 17,
+   "id": "p-shadow-shield~19869944",
+   "name": "影アナイアレーション v2 盾型 改8",
+   "origin": "auto",
+   "parent": "影アナイアレーション v2 盾型 改1",
+   "change": "強さの証明×2 → インパクトショット×2 ／ 強さの証明×2 → マシンガントーク×2",
+   "winRate": 73.1,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "42/60",
+    "ttt・フラッシュバン": "44/60",
+    "デュアルハザード赤": "53/60",
+    "最強イエロー": "44/60",
+    "極致アナイヤ改": "31/60",
+    "頂点捕食者 改": "34/60",
+    "最強イエロー 赤1タッチ": "47/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "49/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "42/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "41/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "43/60",
+    "トレコロ：アブソ再臨": "40/60",
+    "トレコロ：ハザード極致": "51/60",
+    "トレコロ：頂点DD": "46/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "42/60",
+    "環境：OD We are（ODアサルト型）": "53/60"
+   },
+   "measuredAt": "2026-11-18T01:06:04.250Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOebvuWeiyDmlLk4IiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTA4MSIsMl0sWyJCUDAyLTA0MCIsMl0sWyJCUDAzLTAzMiIsMl0sWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTAyMSIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTA3MCIsNF0sWyJTVDAyLTAwNyIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwMS0wOTUiLCJCUDAyLTA3OSIsIkJQMDMtMDc0IiwiQlAwNC0wNzgiXSwidiI6MX0"
+  },
+  {
+   "rank": 18,
+   "id": "p-shadow-v2",
+   "name": "影アナイアレーション v2",
+   "origin": "claude",
+   "parent": null,
+   "change": null,
+   "winRate": 73,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "38/60",
+    "ttt・フラッシュバン": "42/60",
+    "デュアルハザード赤": "56/60",
+    "最強イエロー": "37/60",
+    "極致アナイヤ改": "39/60",
+    "頂点捕食者 改": "36/60",
+    "最強イエロー 赤1タッチ": "43/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "45/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "45/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "43/60",
+    "トレコロ：ハザード極致": "49/60",
+    "トレコロ：頂点DD": "52/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "43/60",
+    "環境：OD We are（ODアサルト型）": "51/60"
+   },
+   "measuredAt": "2026-11-18T01:37:14.139Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIiwibCI6WyJCUDA1LUwwMiIsIkJQMDUtTDExIiwiQlAwNS1MMTQiLCJCUDAxLTAwOCJdLCJjIjpbWyJCUDA0LTAzOCIsNF0sWyJCUDA1LTA0OSIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAxLTA4MSIsMl0sWyJTVDAxLTAwOSIsNF0sWyJCUDAzLTAzMiIsMl0sWyJCUDA1LTAyMSIsNF0sWyJCUDAxLTA3MCIsNF0sWyJCUDAxLTAzNCIsNF0sWyJCUDAxLTAzNiIsMl1dLCJ0IjpbIkJQMDEtMDkyIiwiQlAwMy0wNzQiLCJCUDAyLTA3OSIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+  },
+  {
+   "rank": 19,
+   "id": "p-shadow-smoke",
+   "name": "影アナイアレーション v2 スモーク型",
+   "origin": "claude",
+   "parent": null,
+   "change": null,
+   "winRate": 73,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "38/60",
+    "ttt・フラッシュバン": "42/60",
+    "デュアルハザード赤": "56/60",
+    "最強イエロー": "37/60",
+    "極致アナイヤ改": "39/60",
+    "頂点捕食者 改": "36/60",
+    "最強イエロー 赤1タッチ": "43/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "45/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "45/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "43/60",
+    "トレコロ：ハザード極致": "49/60",
+    "トレコロ：頂点DD": "52/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "43/60",
+    "環境：OD We are（ODアサルト型）": "51/60"
+   },
+   "measuredAt": "2026-11-18T01:43:32.966Z",
+   "leaders": [
+    "BP05-L02",
+    "BP05-L11",
+    "BP05-L14",
+    "BP01-008"
+   ],
+   "leaderNames": [
+    "Selly (IGV)",
+    "Cpt (IGV)",
+    "花芽すみれ (IGV)",
+    "英リサ"
+   ],
+   "code": "eyJuIjoi5b2x44Ki44OK44Kk44Ki44Os44O844K344On44OzIHYyIOOCueODouODvOOCr-WeiyIsImwiOlsiQlAwNS1MMDIiLCJCUDA1LUwxMSIsIkJQMDUtTDE0IiwiQlAwMS0wMDgiXSwiYyI6W1siQlAwNC0wMzgiLDRdLFsiQlAwNS0wNDkiLDRdLFsiQlAwNS0wNjQiLDRdLFsiQlAwNS0wMzYiLDRdLFsiQlAwNS0wNzAiLDRdLFsiQlAwNS0wNDIiLDRdLFsiQlAwNS0wNTkiLDRdLFsiQlAwMS0wODEiLDJdLFsiU1QwMS0wMDkiLDRdLFsiQlAwMy0wMzIiLDJdLFsiQlAwNS0wMjEiLDRdLFsiQlAwMS0wNzAiLDRdLFsiQlAwMS0wMzQiLDRdLFsiQlAwMS0wMzYiLDJdXSwidCI6WyJCUDA0LTA3MyIsIkJQMDUtMDc2IiwiQlAwMi0wNzkiLCJCUDAzLTA3NCIsIkJQMDUtMDc4Il0sInYiOjF9"
+  },
+  {
    "rank": 20,
    "id": "p-shadow-v2~85968787",
    "name": "影アナイアレーション v2 改1",
    "origin": "auto",
    "parent": "影アナイアレーション v2",
    "change": "強さの証明×2 → 駆け引き上手×2",
-   "winRate": 68.2,
-   "games": 660,
+   "winRate": 71.7,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "39/60",
     "ttt・フラッシュバン": "40/60",
@@ -740,9 +840,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "46/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "43/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "43/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "32/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "32/60",
+    "トレコロ：アブソ再臨": "40/60",
+    "トレコロ：ハザード極致": "48/60",
+    "トレコロ：頂点DD": "48/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "47/60",
+    "環境：OD We are（ODアサルト型）": "55/60"
    },
-   "measuredAt": "2026-11-17T01:32:51.438Z",
+   "measuredAt": "2026-11-18T01:55:16.655Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -764,8 +869,8 @@
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 67.7,
-   "games": 660,
+   "winRate": 70.4,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "36/60",
     "ttt・フラッシュバン": "35/60",
@@ -777,9 +882,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "50/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "45/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "41/60",
+    "トレコロ：アブソ再臨": "41/60",
+    "トレコロ：ハザード極致": "46/60",
+    "トレコロ：頂点DD": "45/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "47/60",
+    "環境：OD We are（ODアサルト型）": "50/60"
    },
-   "measuredAt": "2026-11-17T02:03:35.249Z",
+   "measuredAt": "2026-11-18T02:00:53.155Z",
    "leaders": [
     "BP05-L02",
     "BP01-008",
@@ -801,8 +911,8 @@
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 67.3,
-   "games": 660,
+   "winRate": 70.1,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "41/60",
     "ttt・フラッシュバン": "40/60",
@@ -814,9 +924,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "44/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "44/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "35/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "35/60",
+    "トレコロ：アブソ再臨": "37/60",
+    "トレコロ：ハザード極致": "45/60",
+    "トレコロ：頂点DD": "48/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "48/60",
+    "環境：OD We are（ODアサルト型）": "51/60"
    },
-   "measuredAt": "2026-11-17T01:58:23.074Z",
+   "measuredAt": "2026-11-18T02:07:13.537Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -838,8 +953,8 @@
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 64.8,
-   "games": 600,
+   "winRate": 67.4,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "33/60",
     "ttt・フラッシュバン": "36/60",
@@ -850,9 +965,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "45/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "34/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "49/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "36/60",
+    "トレコロ：ハザード極致": "44/60",
+    "トレコロ：頂点DD": "43/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "46/60",
+    "環境：OD We are（ODアサルト型）": "49/60"
    },
-   "measuredAt": "2026-11-17T02:00:40.565Z",
+   "measuredAt": "2026-11-18T02:11:31.473Z",
    "leaders": [
     "AN01-002",
     "AN01-004",
@@ -874,8 +994,8 @@
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 63.5,
-   "games": 660,
+   "winRate": 67.1,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "35/60",
     "ttt・フラッシュバン": "28/60",
@@ -887,9 +1007,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "36/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "44/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "46/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "37/60",
+    "トレコロ：アブソ再臨": "38/60",
+    "トレコロ：ハザード極致": "45/60",
+    "トレコロ：頂点DD": "50/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "44/60",
+    "環境：OD We are（ODアサルト型）": "48/60"
    },
-   "measuredAt": "2026-11-17T02:09:50.770Z",
+   "measuredAt": "2026-11-18T02:17:51.952Z",
    "leaders": [
     "BP05-L02",
     "BP05-L11",
@@ -911,8 +1036,8 @@
    "origin": "claude",
    "parent": null,
    "change": null,
-   "winRate": 63,
-   "games": 660,
+   "winRate": 66.8,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "33/60",
     "ttt・フラッシュバン": "37/60",
@@ -924,9 +1049,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "42/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "49/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "40/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "23/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "23/60",
+    "トレコロ：アブソ再臨": "39/60",
+    "トレコロ：ハザード極致": "44/60",
+    "トレコロ：頂点DD": "47/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "44/60",
+    "環境：OD We are（ODアサルト型）": "51/60"
    },
-   "measuredAt": "2026-11-17T02:06:29.533Z",
+   "measuredAt": "2026-11-18T02:23:26.446Z",
    "leaders": [
     "BP05-L01",
     "BP01-008",
@@ -948,8 +1078,8 @@
    "origin": "auto",
    "parent": "頂点捕食者 改",
    "change": "ステークアウト×2 → ドレッドフォーム×2",
-   "winRate": 62.3,
-   "games": 660,
+   "winRate": 66.3,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "30/60",
     "ttt・フラッシュバン": "37/60",
@@ -961,9 +1091,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "42/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "36/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "42/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "32/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "32/60",
+    "トレコロ：アブソ再臨": "32/60",
+    "トレコロ：ハザード極致": "44/60",
+    "トレコロ：頂点DD": "51/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "44/60",
+    "環境：OD We are（ODアサルト型）": "54/60"
    },
-   "measuredAt": "2026-11-17T02:12:18.374Z",
+   "measuredAt": "2026-11-18T02:27:56.619Z",
    "leaders": [
     "AN01-002",
     "AN01-004",
@@ -985,8 +1120,8 @@
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 62,
-   "games": 600,
+   "winRate": 63.6,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "37/60",
     "ttt・フラッシュバン": "35/60",
@@ -997,9 +1132,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "36/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "38/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "47/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "29/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "29/60",
+    "トレコロ：アブソ再臨": "31/60",
+    "トレコロ：ハザード極致": "38/60",
+    "トレコロ：頂点DD": "44/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "40/60",
+    "環境：OD We are（ODアサルト型）": "47/60"
    },
-   "measuredAt": "2026-11-17T02:17:20.696Z",
+   "measuredAt": "2026-11-18T02:32:34.444Z",
    "leaders": [
     "AN01-002",
     "AN01-004",
@@ -1016,49 +1156,13 @@
   },
   {
    "rank": 28,
-   "id": "p-aria",
-   "name": "アリア・クレイジーバースト",
-   "origin": "field",
-   "parent": null,
-   "change": null,
-   "winRate": 60.7,
-   "games": 600,
-   "perOpponent": {
-    "ttt・フラッシュバン": "35/60",
-    "デュアルハザード赤": "47/60",
-    "最強イエロー": "37/60",
-    "極致アナイヤ改": "35/60",
-    "頂点捕食者 改": "27/60",
-    "最強イエロー 赤1タッチ": "33/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "44/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "34/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "27/60"
-   },
-   "measuredAt": "2026-11-17T02:24:07.484Z",
-   "leaders": [
-    "BP01-016",
-    "ST01-003",
-    "BP05-L13",
-    "BP04-010"
-   ],
-   "leaderNames": [
-    "nqrse",
-    "花芽すみれ",
-    "Arya Kuroha",
-    "千燈ゆうひ"
-   ],
-   "code": "eyJuIjoi44Ki44Oq44Ki44O744Kv44Os44Kk44K444O844OQ44O844K544OIIiwibCI6WyJCUDAxLTAxNiIsIlNUMDEtMDAzIiwiQlAwNS1MMTMiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTA0NSIsNF0sWyJCUDAxLTA1MiIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDA1LTAzOCIsNF0sWyJCUDA0LTA2MyIsNF0sWyJCUDAxLTA4NSIsNF0sWyJTVDAyLTAxNSIsMV0sWyJCUDAxLTA4OCIsNF0sWyJCUDA0LTAzNSIsM10sWyJCUDAxLTA0OSIsNF0sWyJTVDAyLTAxMSIsM10sWyJCUDA0LTA0MCIsMl0sWyJTVDAxLTAwOSIsM10sWyJCUDAzLTA0MCIsMl0sWyJCUDA1LTA2OSIsNF1dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
-  },
-  {
-   "rank": 29,
    "id": "p-doubledown",
    "name": "ダブルダウンテスト改",
    "origin": "user",
    "parent": null,
    "change": null,
-   "winRate": 59.1,
-   "games": 660,
+   "winRate": 62.3,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "35/60",
     "ttt・フラッシュバン": "35/60",
@@ -1070,9 +1174,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "38/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "39/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "41/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "29/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "29/60",
+    "トレコロ：アブソ再臨": "24/60",
+    "トレコロ：ハザード極致": "40/60",
+    "トレコロ：頂点DD": "45/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "44/60",
+    "環境：OD We are（ODアサルト型）": "55/60"
    },
-   "measuredAt": "2026-11-17T02:14:53.381Z",
+   "measuredAt": "2026-11-18T02:41:44.926Z",
    "leaders": [
     "BP05-L14",
     "BP02-010",
@@ -1088,50 +1197,55 @@
    "code": "eyJuIjoi44OA44OW44Or44OA44Km44Oz44OG44K544OI5pS5IiwibCI6WyJCUDA1LUwxNCIsIkJQMDItMDEwIiwiQlAwNS1MMTAiLCJCUDA1LUwwOSJdLCJjIjpbWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA2MyIsNF0sWyJCUDA1LTAzNSIsNF0sWyJCUDA1LTA2MiIsNF0sWyJCUDA1LTAzNCIsNF0sWyJCUDAyLTAzNSIsNF0sWyJCUDAyLTA2MyIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDA1LTAzOCIsNF0sWyJCUDAxLTAzNyIsNF0sWyJCUDAyLTAzOSIsMV0sWyJTVDAyLTAxMSIsMl0sWyJCUDAzLTA0MCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwNC0wNzMiLCJCUDAyLTA3NCIsIkJQMDItMDc1IiwiQlAwNC0wNzUiXSwidiI6MX0"
   },
   {
-   "rank": 30,
-   "id": "p-n-sumire",
-   "name": "記事：すみれ（あかり・らむね・とおこ・すみれ）",
+   "rank": 29,
+   "id": "p-aria",
+   "name": "アリア・クレイジーバースト",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 58.8,
-   "games": 600,
+   "winRate": 61.3,
+   "games": 900,
    "perOpponent": {
-    "アリア・クレイジーバースト": "32/60",
-    "ttt・フラッシュバン": "34/60",
-    "デュアルハザード赤": "44/60",
-    "最強イエロー": "35/60",
-    "極致アナイヤ改": "32/60",
-    "頂点捕食者 改": "29/60",
-    "最強イエロー 赤1タッチ": "36/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "40/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "41/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "30/60"
+    "ttt・フラッシュバン": "35/60",
+    "デュアルハザード赤": "47/60",
+    "最強イエロー": "37/60",
+    "極致アナイヤ改": "35/60",
+    "頂点捕食者 改": "27/60",
+    "最強イエロー 赤1タッチ": "33/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "44/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "34/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "45/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "27/60",
+    "トレコロ：アブソ再臨": "27/60",
+    "トレコロ：ハザード極致": "34/60",
+    "トレコロ：頂点DD": "41/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "37/60",
+    "環境：OD We are（ODアサルト型）": "49/60"
    },
-   "measuredAt": "2026-11-17T02:30:25.204Z",
+   "measuredAt": "2026-11-18T02:36:47.138Z",
    "leaders": [
-    "BP04-003",
-    "BP04-006",
-    "BP04-012",
-    "BP05-L14"
+    "BP01-016",
+    "ST01-003",
+    "BP05-L13",
+    "BP04-010"
    ],
    "leaderNames": [
-    "夢野あかり",
-    "白波らむね",
-    "とおこ",
-    "花芽すみれ (IGV)"
+    "nqrse",
+    "花芽すみれ",
+    "Arya Kuroha",
+    "千燈ゆうひ"
    ],
-   "code": "eyJuIjoi6KiY5LqL77ya44GZ44G_44KM77yI44GC44GL44KK44O744KJ44KA44Gt44O744Go44GK44GT44O744GZ44G_44KM77yJIiwibCI6WyJCUDA0LTAwMyIsIkJQMDQtMDA2IiwiQlAwNC0wMTIiLCJCUDA1LUwxNCJdLCJjIjpbWyJCUDA1LTAyNCIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA0LTAyMiIsNF0sWyJCUDA0LTAyOCIsNF0sWyJCUDA0LTAzNyIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA0LTA1MCIsNF0sWyJCUDA0LTA1NiIsNF0sWyJCUDA0LTA2NSIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDAxLTAyOCIsMV0sWyJCUDAxLTAzNiIsM10sWyJCUDAyLTA1NCIsNF0sWyJCUDA0LTA1MyIsMl1dLCJ0IjpbIkJQMDMtMDc5IiwiQlAwNC0wNzkiLCJCUDA0LTA3NiIsIkJQMDUtMDc4IiwiQlAwNS0wNzkiXSwidiI6MX0"
+   "code": "eyJuIjoi44Ki44Oq44Ki44O744Kv44Os44Kk44K444O844OQ44O844K544OIIiwibCI6WyJCUDAxLTAxNiIsIlNUMDEtMDAzIiwiQlAwNS1MMTMiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTA0NSIsNF0sWyJCUDAxLTA1MiIsNF0sWyJCUDAyLTAzMSIsNF0sWyJCUDA1LTAzOCIsNF0sWyJCUDA0LTA2MyIsNF0sWyJCUDAxLTA4NSIsNF0sWyJTVDAyLTAxNSIsMV0sWyJCUDAxLTA4OCIsNF0sWyJCUDA0LTAzNSIsM10sWyJCUDAxLTA0OSIsNF0sWyJTVDAyLTAxMSIsM10sWyJCUDA0LTA0MCIsMl0sWyJTVDAxLTAwOSIsM10sWyJCUDAzLTA0MCIsMl0sWyJCUDA1LTA2OSIsNF1dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
   },
   {
-   "rank": 31,
+   "rank": 30,
    "id": "p-assault-win",
    "name": "4cODアナイアアサルト（2026/08/09優勝）",
    "origin": "user",
    "parent": null,
    "change": null,
-   "winRate": 58.3,
-   "games": 660,
+   "winRate": 60.7,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "32/60",
     "ttt・フラッシュバン": "37/60",
@@ -1143,9 +1257,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "42/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "30/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "44/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "27/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "27/60",
+    "トレコロ：アブソ再臨": "34/60",
+    "トレコロ：ハザード極致": "33/60",
+    "トレコロ：頂点DD": "40/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "38/60",
+    "環境：OD We are（ODアサルト型）": "53/60"
    },
-   "measuredAt": "2026-11-17T02:19:34.778Z",
+   "measuredAt": "2026-11-18T02:54:47.101Z",
    "leaders": [
     "ST02-002",
     "BP04-008",
@@ -1161,50 +1280,55 @@
    "code": "eyJuIjoiNGNPROOCouODiuOCpOOCouOCouOCteODq-ODiO-8iDIwMjYvMDgvMDnlhKrli53vvIkiLCJsIjpbIlNUMDItMDAyIiwiQlAwNC0wMDgiLCJTVDAyLTAwNCIsIkJQMDMtMDE0Il0sImMiOltbIkJQMDEtMDI1Iiw0XSxbIkJQMDEtMDYxIiw0XSxbIkJQMDEtMDQzIiw0XSxbIkJQMDEtMDc5Iiw0XSxbIkJQMDMtMDQyIiw0XSxbIkJQMDQtMDU4Iiw0XSxbIkJQMDQtMDMwIiw0XSxbIkJQMDMtMDcwIiw0XSxbIkJQMDQtMTA4IiwzXSxbIkJQMDEtMTM2IiwxXSxbIkJQMDQtMTA2Iiw0XSxbIkJQMDItMDI2IiwxXSxbIkJQMDItMDMyIiwyXSxbIkJQMDMtMDMyIiwxXSxbIkJQMDItMDQ2IiwxXSxbIkJQMDMtMDUzIiwxXSxbIkJQMDItMDY4Iiw0XV0sInQiOlsiQlAwNC0wNzUiLCJCUDA0LTA3MyIsIkJQMDMtMDc0IiwiQlAwMy0wNzUiLCJCUDAzLTA3OSJdLCJ2IjoxfQ"
   },
   {
-   "rank": 32,
-   "id": "p-flash",
-   "name": "ttt・フラッシュバン",
+   "rank": 31,
+   "id": "p-n-sumire",
+   "name": "記事：すみれ（あかり・らむね・とおこ・すみれ）",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 53.2,
-   "games": 600,
+   "winRate": 60.6,
+   "games": 900,
    "perOpponent": {
-    "アリア・クレイジーバースト": "26/60",
-    "デュアルハザード赤": "49/60",
-    "最強イエロー": "36/60",
+    "アリア・クレイジーバースト": "32/60",
+    "ttt・フラッシュバン": "34/60",
+    "デュアルハザード赤": "44/60",
+    "最強イエロー": "35/60",
     "極致アナイヤ改": "32/60",
-    "頂点捕食者 改": "21/60",
-    "最強イエロー 赤1タッチ": "37/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "33/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "25/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "35/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60"
+    "頂点捕食者 改": "29/60",
+    "最強イエロー 赤1タッチ": "36/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "40/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "41/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "30/60",
+    "トレコロ：アブソ再臨": "31/60",
+    "トレコロ：ハザード極致": "38/60",
+    "トレコロ：頂点DD": "38/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "40/60",
+    "環境：OD We are（ODアサルト型）": "45/60"
    },
-   "measuredAt": "2026-11-17T02:26:19.298Z",
+   "measuredAt": "2026-11-18T02:50:37.092Z",
    "leaders": [
-    "ST01-001",
-    "BP04-008",
-    "BP05-L08",
-    "BP04-010"
+    "BP04-003",
+    "BP04-006",
+    "BP04-012",
+    "BP05-L14"
    ],
    "leaderNames": [
-    "一ノ瀬うるは",
-    "夜乃くろむ",
-    "tttcheekyttt",
-    "千燈ゆうひ"
+    "夢野あかり",
+    "白波らむね",
+    "とおこ",
+    "花芽すみれ (IGV)"
    ],
-   "code": "eyJuIjoidHR044O744OV44Op44OD44K344Ol44OQ44OzIiwibCI6WyJTVDAxLTAwMSIsIkJQMDQtMDA4IiwiQlAwNS1MMDgiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTAyNyIsNF0sWyJCUDAyLTAzMSIsM10sWyJCUDAzLTA1MiIsNF0sWyJCUDAxLTA2NSIsM10sWyJCUDA0LTA1OCIsNF0sWyJCUDA0LTA2MyIsMl0sWyJCUDAxLTAyOSIsNF0sWyJTVDAxLTAwNyIsM10sWyJCUDAzLTAyNiIsM10sWyJCUDA0LTAyNiIsMV0sWyJCUDA0LTAzMCIsM10sWyJCUDAyLTAyNiIsM10sWyJCUDAyLTA2MCIsMV0sWyJCUDA0LTAyNCIsMV0sWyJCUDA0LTA2MSIsMV0sWyJCUDAzLTAyNSIsMl0sWyJCUDAzLTA1MyIsMV0sWyJCUDA1LTA1OCIsNF0sWyJCUDA1LTAzMCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+   "code": "eyJuIjoi6KiY5LqL77ya44GZ44G_44KM77yI44GC44GL44KK44O744KJ44KA44Gt44O744Go44GK44GT44O744GZ44G_44KM77yJIiwibCI6WyJCUDA0LTAwMyIsIkJQMDQtMDA2IiwiQlAwNC0wMTIiLCJCUDA1LUwxNCJdLCJjIjpbWyJCUDA1LTAyNCIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA0LTAyMiIsNF0sWyJCUDA0LTAyOCIsNF0sWyJCUDA0LTAzNyIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA0LTA1MCIsNF0sWyJCUDA0LTA1NiIsNF0sWyJCUDA0LTA2NSIsNF0sWyJCUDA1LTA3MCIsNF0sWyJCUDAxLTAyOCIsMV0sWyJCUDAxLTAzNiIsM10sWyJCUDAyLTA1NCIsNF0sWyJCUDA0LTA1MyIsMl1dLCJ0IjpbIkJQMDMtMDc5IiwiQlAwNC0wNzkiLCJCUDA0LTA3NiIsIkJQMDUtMDc4IiwiQlAwNS0wNzkiXSwidiI6MX0"
   },
   {
-   "rank": 33,
+   "rank": 32,
    "id": "p-assault-2nd",
    "name": "アサルトストーム（2026/08/09準優勝）",
    "origin": "user",
    "parent": null,
    "change": null,
-   "winRate": 52.6,
-   "games": 660,
+   "winRate": 58.4,
+   "games": 960,
    "perOpponent": {
     "アリア・クレイジーバースト": "26/60",
     "ttt・フラッシュバン": "30/60",
@@ -1216,9 +1340,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "31/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "33/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "32/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "29/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "29/60",
+    "トレコロ：アブソ再臨": "33/60",
+    "トレコロ：ハザード極致": "40/60",
+    "トレコロ：頂点DD": "46/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "43/60",
+    "環境：OD We are（ODアサルト型）": "52/60"
    },
-   "measuredAt": "2026-11-17T02:21:50.830Z",
+   "measuredAt": "2026-11-18T03:03:05.304Z",
    "leaders": [
     "ST02-002",
     "BP01-003",
@@ -1234,14 +1363,55 @@
    "code": "eyJuIjoi44Ki44K144Or44OI44K544OI44O844Og77yIMjAyNi8wOC8wOea6luWEquWLne-8iSIsImwiOlsiU1QwMi0wMDIiLCJCUDAxLTAwMyIsIkJQMDEtMDE2IiwiQlAwMy0wMDQiXSwiYyI6W1siQlAwMS0wMjUiLDRdLFsiQlAwMS0wNjEiLDRdLFsiQlAwMS0xMzYiLDRdLFsiQlAwMi0wNjgiLDRdLFsiQlAwMS0wMTgiLDRdLFsiQlAwMS0wMjMiLDRdLFsiQlAwNC0xMTQiLDJdLFsiQlAwMy0wNTEiLDRdLFsiQlAwMS0wODgiLDRdLFsiQlAwMS0wNTkiLDRdLFsiQlAwMy0wMjMiLDRdLFsiQlAwMy0xMDYiLDRdLFsiQlAwMy0wMTgiLDNdLFsiQlAwMi0wMTgiLDFdXSwidCI6WyJCUDA0LTA3NSIsIkJQMDQtMDczIiwiQlAwMy0wNzQiLCJCUDAzLTA3NSIsIkJQMDMtMDc5Il0sInYiOjF9"
   },
   {
+   "rank": 33,
+   "id": "p-t-abso",
+   "name": "トレコロ：アブソ再臨",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 55.6,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "25/60",
+    "ttt・フラッシュバン": "30/60",
+    "デュアルハザード赤": "48/60",
+    "最強イエロー": "35/60",
+    "極致アナイヤ改": "32/60",
+    "頂点捕食者 改": "24/60",
+    "最強イエロー 赤1タッチ": "31/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "27/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "35/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "32/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60",
+    "トレコロ：ハザード極致": "38/60",
+    "トレコロ：頂点DD": "37/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "35/60",
+    "環境：OD We are（ODアサルト型）": "46/60"
+   },
+   "measuredAt": "2026-11-18T03:44:27.092Z",
+   "leaders": [
+    "BP04-003",
+    "BP05-L01",
+    "BP02-006",
+    "BP04-012"
+   ],
+   "leaderNames": [
+    "夢野あかり",
+    "秋雪こはく",
+    "かずのこ",
+    "とおこ"
+   ],
+   "code": "eyJuIjoi44OI44Os44Kz44Ot77ya44Ki44OW44K95YaN6IeoIiwibCI6WyJCUDA0LTAwMyIsIkJQMDUtTDAxIiwiQlAwMi0wMDYiLCJCUDA0LTAxMiJdLCJjIjpbWyJCUDA1LTAyNCIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA0LTAxOCIsMl0sWyJCUDA0LTAyMiIsNF0sWyJCUDA1LTAyMCIsNF0sWyJCUDAyLTAyOCIsNF0sWyJCUDAzLTAzMiIsNF0sWyJCUDA0LTAzNyIsNF0sWyJCUDA0LTA1MCIsNF0sWyJCUDA1LTA0OCIsNF0sWyJCUDAyLTA1NiIsNF0sWyJCUDA0LTA1MyIsNF0sWyJCUDA0LTA2NSIsNF1dLCJ0IjpbIkJQMDEtMDg5IiwiQlAwMS0wOTIiLCJCUDAzLTA4MCIsIkJQMDUtMDc2IiwiQlAwNS0wNzgiXSwidiI6MX0"
+  },
+  {
    "rank": 34,
    "id": "p-yellow",
    "name": "最強イエロー",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 50.7,
-   "games": 600,
+   "winRate": 55,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "27/60",
     "ttt・フラッシュバン": "32/60",
@@ -1252,9 +1422,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "37/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "29/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "39/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "32/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "32/60",
+    "トレコロ：アブソ再臨": "28/60",
+    "トレコロ：ハザード極致": "38/60",
+    "トレコロ：頂点DD": "38/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "39/60",
+    "環境：OD We are（ODアサルト型）": "48/60"
    },
-   "measuredAt": "2026-11-17T02:32:45.547Z",
+   "measuredAt": "2026-11-18T03:07:29.160Z",
    "leaders": [
     "BP03-010",
     "BP02-011",
@@ -1271,13 +1446,54 @@
   },
   {
    "rank": 35,
+   "id": "p-flash",
+   "name": "ttt・フラッシュバン",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 54.1,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "26/60",
+    "デュアルハザード赤": "49/60",
+    "最強イエロー": "36/60",
+    "極致アナイヤ改": "32/60",
+    "頂点捕食者 改": "21/60",
+    "最強イエロー 赤1タッチ": "37/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "33/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "25/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "35/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60",
+    "トレコロ：アブソ再臨": "25/60",
+    "トレコロ：ハザード極致": "29/60",
+    "トレコロ：頂点DD": "34/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "38/60",
+    "環境：OD We are（ODアサルト型）": "42/60"
+   },
+   "measuredAt": "2026-11-18T02:58:52.554Z",
+   "leaders": [
+    "ST01-001",
+    "BP04-008",
+    "BP05-L08",
+    "BP04-010"
+   ],
+   "leaderNames": [
+    "一ノ瀬うるは",
+    "夜乃くろむ",
+    "tttcheekyttt",
+    "千燈ゆうひ"
+   ],
+   "code": "eyJuIjoidHR044O744OV44Op44OD44K344Ol44OQ44OzIiwibCI6WyJTVDAxLTAwMSIsIkJQMDQtMDA4IiwiQlAwNS1MMDgiLCJCUDA0LTAxMCJdLCJjIjpbWyJCUDAxLTAyNyIsNF0sWyJCUDAyLTAzMSIsM10sWyJCUDAzLTA1MiIsNF0sWyJCUDAxLTA2NSIsM10sWyJCUDA0LTA1OCIsNF0sWyJCUDA0LTA2MyIsMl0sWyJCUDAxLTAyOSIsNF0sWyJTVDAxLTAwNyIsM10sWyJCUDAzLTAyNiIsM10sWyJCUDA0LTAyNiIsMV0sWyJCUDA0LTAzMCIsM10sWyJCUDAyLTAyNiIsM10sWyJCUDAyLTA2MCIsMV0sWyJCUDA0LTAyNCIsMV0sWyJCUDA0LTA2MSIsMV0sWyJCUDAzLTAyNSIsMl0sWyJCUDAzLTA1MyIsMV0sWyJCUDA1LTA1OCIsNF0sWyJCUDA1LTAzMCIsM11dLCJ0IjpbIkJQMDItMDc5IiwiQlAwMS0wOTQiLCJCUDAxLTA5MiIsIkJQMDQtMDczIiwiQlAwMy0wNzMiXSwidiI6MX0"
+  },
+  {
+   "rank": 36,
    "id": "p-ysplash",
    "name": "最強イエロー 赤1タッチ",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 48.7,
-   "games": 600,
+   "winRate": 54.1,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "32/60",
     "ttt・フラッシュバン": "29/60",
@@ -1288,9 +1504,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "31/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "31/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "36/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60",
+    "トレコロ：アブソ再臨": "33/60",
+    "トレコロ：ハザード極致": "36/60",
+    "トレコロ：頂点DD": "42/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "37/60",
+    "環境：OD We are（ODアサルト型）": "47/60"
    },
-   "measuredAt": "2026-11-17T02:39:15.718Z",
+   "measuredAt": "2026-11-18T03:11:47.189Z",
    "leaders": [
     "BP03-010",
     "BP02-011",
@@ -1306,87 +1527,14 @@
    "code": "eyJuIjoi5pyA5by344Kk44Ko44Ot44O8IOi1pDHjgr_jg4Pjg4EiLCJsIjpbIkJQMDMtMDEwIiwiQlAwMi0wMTEiLCJCUDAyLTAxMiIsIkJQMDUtTDAyIl0sImMiOltbIlNUMDItMDE1Iiw0XSxbIkJQMDMtMDM1Iiw0XSxbIkJQMDItMDMxIiw0XSxbIkJQMDItMDM2IiwzXSxbIkJQMDItMDMzIiwzXSxbIkJQMDMtMDMzIiwzXSxbIkJQMDEtMDM2IiwxXSxbIkJQMDItMDU5IiwyXSxbIlNUMDItMDExIiwzXSxbIkJQMDEtMDM3Iiw0XSxbIkJQMDItMDY0IiwzXSxbIkJQMDItMDMyIiwyXSxbIkJQMDEtMDM1IiwxXSxbIkJQMDQtMDMzIiwzXSxbIkJQMDItMDY1IiwxXSxbIkJQMDQtMDYxIiwxXSxbIkJQMDQtMDYwIiwyXSxbIkJQMDMtMDYzIiwyXSxbIkJQMDUtMDU5IiwxXSxbIlNUMDItMDEwIiwzXV0sInQiOlsiQlAwMi0wNzkiLCJCUDAxLTA5NCIsIkJQMDEtMDkyIiwiQlAwNC0wNzMiLCJCUDAzLTA3MyJdLCJ2IjoxfQ"
   },
   {
-   "rank": 36,
-   "id": "p-zero",
-   "name": "新０コス",
-   "origin": "user",
-   "parent": null,
-   "change": null,
-   "winRate": 46.7,
-   "games": 660,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "22/60",
-    "ttt・フラッシュバン": "24/60",
-    "デュアルハザード赤": "48/60",
-    "最強イエロー": "26/60",
-    "極致アナイヤ改": "25/60",
-    "頂点捕食者 改": "22/60",
-    "最強イエロー 赤1タッチ": "31/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "31/60",
-    "記事：ダブルダウン（れん・つな・こはく・のあ）": "34/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "22/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "23/60"
-   },
-   "measuredAt": "2026-11-17T02:36:57.981Z",
-   "leaders": [
-    "BP05-L14",
-    "BP05-L01",
-    "BP03-006",
-    "BP05-L11"
-   ],
-   "leaderNames": [
-    "花芽すみれ (IGV)",
-    "秋雪こはく",
-    "紡木こかげ",
-    "Cpt (IGV)"
-   ],
-   "code": "eyJuIjoi5paw77yQ44Kz44K5IiwibCI6WyJCUDA1LUwxNCIsIkJQMDUtTDAxIiwiQlAwMy0wMDYiLCJCUDA1LUwxMSJdLCJjIjpbWyJCUDA1LTAyMCIsNF0sWyJCUDA1LTA0OCIsNF0sWyJCUDA1LTAyNCIsMl0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDAzLTAyOCIsNF0sWyJCUDAzLTA1NiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA0LTEwNiIsMl0sWyJCUDAxLTAyOCIsNF0sWyJCUDAyLTAzMyIsNF0sWyJCUDAyLTA1NCIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNC0wNzYiLCJCUDAyLTA3NCIsIkJQMDItMDc1IiwiU1QwMS0wMTkiXSwidiI6MX0"
-  },
-  {
    "rank": 37,
-   "id": "p-n-dd-kohaku",
-   "name": "記事：ダブルダウン（れん・つな・こはく・のあ）",
-   "origin": "field",
-   "parent": null,
-   "change": null,
-   "winRate": 45.8,
-   "games": 600,
-   "perOpponent": {
-    "アリア・クレイジーバースト": "25/60",
-    "ttt・フラッシュバン": "29/60",
-    "デュアルハザード赤": "41/60",
-    "最強イエロー": "24/60",
-    "極致アナイヤ改": "22/60",
-    "頂点捕食者 改": "20/60",
-    "最強イエロー 赤1タッチ": "31/60",
-    "記事：ダブルダウン（れん・つな・あかり・のあ）": "36/60",
-    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "23/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "24/60"
-   },
-   "measuredAt": "2026-11-17T02:43:54.671Z",
-   "leaders": [
-    "BP02-002",
-    "BP03-015",
-    "BP05-L01",
-    "BP05-L10"
-   ],
-   "leaderNames": [
-    "如月れん",
-    "猫汰つな",
-    "秋雪こはく",
-    "胡桃のあ (IGV)"
-   ],
-   "code": "eyJuIjoi6KiY5LqL77ya44OA44OW44Or44OA44Km44Oz77yI44KM44KT44O744Gk44Gq44O744GT44Gv44GP44O744Gu44GC77yJIiwibCI6WyJCUDAyLTAwMiIsIkJQMDMtMDE1IiwiQlAwNS1MMDEiLCJCUDA1LUwxMCJdLCJjIjpbWyJCUDA1LTAzMSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAyLTAyMSIsNF0sWyJCUDAzLTA0MyIsNF0sWyJCUDA1LTAzNSIsNF0sWyJCUDAyLTA0OSIsNF0sWyJCUDAzLTA3MSIsNF0sWyJCUDA1LTA2MyIsNF0sWyJTVDAxLTAwOSIsNF0sWyJCUDAyLTA2OCIsNF0sWyJCUDA1LTA2MCIsMl0sWyJCUDA1LTAyMCIsNF0sWyJCUDA1LTA0OCIsNF1dLCJ0IjpbIkJQMDMtMDgwIiwiQlAwMS0wODkiLCJCUDAxLTA5MiIsIkJQMDEtMDk1IiwiQlAwNS0wNzgiXSwidiI6MX0"
-  },
-  {
-   "rank": 38,
    "id": "p-n-handes",
    "name": "記事：ハンデス（レイド・どぐら・Kamito・ttt）",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 44.2,
-   "games": 600,
+   "winRate": 51,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "25/60",
     "ttt・フラッシュバン": "21/60",
@@ -1397,9 +1545,14 @@
     "最強イエロー 赤1タッチ": "18/60",
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "38/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "40/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "25/60",
+    "トレコロ：アブソ再臨": "30/60",
+    "トレコロ：ハザード極致": "37/60",
+    "トレコロ：頂点DD": "41/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "39/60",
+    "環境：OD We are（ODアサルト型）": "47/60"
    },
-   "measuredAt": "2026-11-17T02:41:18.770Z",
+   "measuredAt": "2026-11-18T03:28:53.515Z",
    "leaders": [
     "BP01-007",
     "BP02-014",
@@ -1415,14 +1568,179 @@
    "code": "eyJuIjoi6KiY5LqL77ya44OP44Oz44OH44K577yI44Os44Kk44OJ44O744Gp44GQ44KJ44O7S2FtaXRv44O7dHR077yJIiwibCI6WyJCUDAxLTAwNyIsIkJQMDItMDE0IiwiQlAwNS1MMDYiLCJCUDA1LUwwOCJdLCJjIjpbWyJCUDAzLTAzOCIsMl0sWyJCUDA0LTAyNCIsM10sWyJCUDA1LTA1MiIsM10sWyJCUDAxLTAzMyIsNF0sWyJCUDAyLTA0MiIsNF0sWyJCUDA1LTAyOCIsNF0sWyJCUDA1LTAzMCIsNF0sWyJCUDAyLTA3MCIsNF0sWyJCUDA1LTA1NiIsNF0sWyJCUDA1LTA1OCIsNF0sWyJCUDAxLTAyNyIsNF0sWyJTVDAxLTAwOSIsMl0sWyJTVDAxLTAxMyIsNF0sWyJCUDAyLTA2OCIsNF1dLCJ0IjpbIkJQMDMtMDgwIiwiQlAwNC0wNzYiLCJCUDA0LTA4MCIsIkJQMDUtMDc2IiwiQlAwNS0wNzkiXSwidiI6MX0"
   },
   {
+   "rank": 38,
+   "id": "p-zero",
+   "name": "新０コス",
+   "origin": "user",
+   "parent": null,
+   "change": null,
+   "winRate": 49.8,
+   "games": 960,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "22/60",
+    "ttt・フラッシュバン": "24/60",
+    "デュアルハザード赤": "48/60",
+    "最強イエロー": "26/60",
+    "極致アナイヤ改": "25/60",
+    "頂点捕食者 改": "22/60",
+    "最強イエロー 赤1タッチ": "31/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "31/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "34/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "22/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "23/60",
+    "トレコロ：アブソ再臨": "24/60",
+    "トレコロ：ハザード極致": "31/60",
+    "トレコロ：頂点DD": "40/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "31/60",
+    "環境：OD We are（ODアサルト型）": "44/60"
+   },
+   "measuredAt": "2026-11-18T03:19:56.499Z",
+   "leaders": [
+    "BP05-L14",
+    "BP05-L01",
+    "BP03-006",
+    "BP05-L11"
+   ],
+   "leaderNames": [
+    "花芽すみれ (IGV)",
+    "秋雪こはく",
+    "紡木こかげ",
+    "Cpt (IGV)"
+   ],
+   "code": "eyJuIjoi5paw77yQ44Kz44K5IiwibCI6WyJCUDA1LUwxNCIsIkJQMDUtTDAxIiwiQlAwMy0wMDYiLCJCUDA1LUwxMSJdLCJjIjpbWyJCUDA1LTAyMCIsNF0sWyJCUDA1LTA0OCIsNF0sWyJCUDA1LTAyNCIsMl0sWyJCUDA1LTA3MCIsNF0sWyJCUDA1LTA0MiIsNF0sWyJCUDA1LTA2NCIsNF0sWyJCUDA1LTAzNiIsNF0sWyJCUDAzLTAyOCIsNF0sWyJCUDAzLTA1NiIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDA0LTEwNiIsMl0sWyJCUDAxLTAyOCIsNF0sWyJCUDAyLTAzMyIsNF0sWyJCUDAyLTA1NCIsMl1dLCJ0IjpbIkJQMDQtMDczIiwiQlAwNC0wNzYiLCJCUDAyLTA3NCIsIkJQMDItMDc1IiwiU1QwMS0wMTkiXSwidiI6MX0"
+  },
+  {
    "rank": 39,
+   "id": "p-n-dd-kohaku",
+   "name": "記事：ダブルダウン（れん・つな・こはく・のあ）",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 49,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "25/60",
+    "ttt・フラッシュバン": "29/60",
+    "デュアルハザード赤": "41/60",
+    "最強イエロー": "24/60",
+    "極致アナイヤ改": "22/60",
+    "頂点捕食者 改": "20/60",
+    "最強イエロー 赤1タッチ": "31/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "36/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "23/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "24/60",
+    "トレコロ：アブソ再臨": "23/60",
+    "トレコロ：ハザード極致": "35/60",
+    "トレコロ：頂点DD": "37/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "34/60",
+    "環境：OD We are（ODアサルト型）": "37/60"
+   },
+   "measuredAt": "2026-11-18T03:24:57.457Z",
+   "leaders": [
+    "BP02-002",
+    "BP03-015",
+    "BP05-L01",
+    "BP05-L10"
+   ],
+   "leaderNames": [
+    "如月れん",
+    "猫汰つな",
+    "秋雪こはく",
+    "胡桃のあ (IGV)"
+   ],
+   "code": "eyJuIjoi6KiY5LqL77ya44OA44OW44Or44OA44Km44Oz77yI44KM44KT44O744Gk44Gq44O744GT44Gv44GP44O744Gu44GC77yJIiwibCI6WyJCUDAyLTAwMiIsIkJQMDMtMDE1IiwiQlAwNS1MMDEiLCJCUDA1LUwxMCJdLCJjIjpbWyJCUDA1LTAzMSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAyLTAyMSIsNF0sWyJCUDAzLTA0MyIsNF0sWyJCUDA1LTAzNSIsNF0sWyJCUDAyLTA0OSIsNF0sWyJCUDAzLTA3MSIsNF0sWyJCUDA1LTA2MyIsNF0sWyJTVDAxLTAwOSIsNF0sWyJCUDAyLTA2OCIsNF0sWyJCUDA1LTA2MCIsMl0sWyJCUDA1LTAyMCIsNF0sWyJCUDA1LTA0OCIsNF1dLCJ0IjpbIkJQMDMtMDgwIiwiQlAwMS0wODkiLCJCUDAxLTA5MiIsIkJQMDEtMDk1IiwiQlAwNS0wNzgiXSwidiI6MX0"
+  },
+  {
+   "rank": 40,
+   "id": "p-t-hazard",
+   "name": "トレコロ：ハザード極致",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 43.7,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "23/60",
+    "ttt・フラッシュバン": "18/60",
+    "デュアルハザード赤": "34/60",
+    "最強イエロー": "20/60",
+    "極致アナイヤ改": "20/60",
+    "頂点捕食者 改": "18/60",
+    "最強イエロー 赤1タッチ": "24/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "29/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "28/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "32/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "22/60",
+    "トレコロ：アブソ再臨": "27/60",
+    "トレコロ：頂点DD": "35/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "21/60",
+    "環境：OD We are（ODアサルト型）": "42/60"
+   },
+   "measuredAt": "2026-11-18T03:48:31.792Z",
+   "leaders": [
+    "BP01-003",
+    "BP05-L04",
+    "ST02-002",
+    "BP05-L16"
+   ],
+   "leaderNames": [
+    "橘ひなの",
+    "LEO",
+    "Mondo",
+    "ハセシン"
+   ],
+   "code": "eyJuIjoi44OI44Os44Kz44Ot77ya44OP44K244O844OJ5qW16Ie0IiwibCI6WyJCUDAxLTAwMyIsIkJQMDUtTDA0IiwiU1QwMi0wMDIiLCJCUDA1LUwxNiJdLCJjIjpbWyJCUDA1LTAxNyIsNF0sWyJCUDA1LTA0NSIsNF0sWyJCUDAxLTAyMyIsNF0sWyJCUDAxLTAyNSIsNF0sWyJCUDA1LTAxOCIsNF0sWyJCUDA1LTAyMyIsNF0sWyJCUDA1LTA0NCIsNF0sWyJCUDAxLTA1OSIsNF0sWyJCUDAxLTA2MSIsNF0sWyJCUDAyLTA0NyIsMl0sWyJCUDA1LTA1MSIsNF0sWyJCUDAyLTA2OCIsNF0sWyJCUDA1LTA3MiIsNF1dLCJ0IjpbIkJQMDEtMDg5IiwiQlAwMS0wOTEiLCJCUDAzLTA4MCIsIkJQMDUtMDc4IiwiQlAwNS0wNzkiXSwidiI6MX0"
+  },
+  {
+   "rank": 41,
+   "id": "p-c-harvest",
+   "name": "環境：収穫アサルト（赤緑リンクアサルト型）",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 43.2,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "19/60",
+    "ttt・フラッシュバン": "19/60",
+    "デュアルハザード赤": "30/60",
+    "最強イエロー": "25/60",
+    "極致アナイヤ改": "21/60",
+    "頂点捕食者 改": "17/60",
+    "最強イエロー 赤1タッチ": "24/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "31/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "29/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "21/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "16/60",
+    "トレコロ：アブソ再臨": "27/60",
+    "トレコロ：ハザード極致": "30/60",
+    "トレコロ：頂点DD": "38/60",
+    "環境：OD We are（ODアサルト型）": "42/60"
+   },
+   "measuredAt": "2026-11-18T03:57:12.458Z",
+   "leaders": [
+    "BP01-003",
+    "BP02-001",
+    "ST02-002",
+    "BP01-013"
+   ],
+   "leaderNames": [
+    "橘ひなの",
+    "赤見かるび",
+    "Mondo",
+    "空澄セナ"
+   ],
+   "code": "eyJuIjoi55Kw5aKD77ya5Y-O56mr44Ki44K144Or44OI77yI6LWk57eR44Oq44Oz44Kv44Ki44K144Or44OI5Z6L77yJIiwibCI6WyJCUDAxLTAwMyIsIkJQMDItMDAxIiwiU1QwMi0wMDIiLCJCUDAxLTAxMyJdLCJjIjpbWyJCUDA0LTA2NiIsNF0sWyJCUDAxLTA0NCIsNF0sWyJCUDAxLTAxOCIsNF0sWyJCUDAxLTAyMyIsNF0sWyJCUDAxLTAyNSIsNF0sWyJCUDAyLTAyMCIsNF0sWyJCUDAyLTAxOCIsMl0sWyJCUDAxLTA0NyIsNF0sWyJCUDAxLTA1NCIsNF0sWyJCUDAxLTA1OSIsNF0sWyJCUDAxLTA2MSIsNF0sWyJCUDAyLTA0OCIsNF0sWyJCUDAxLTA4MyIsNF1dLCJ0IjpbIkJQMDEtMDg5IiwiQlAwMS0wOTIiLCJCUDAzLTA4MCIsIkJQMDUtMDc2IiwiQlAwNS0wNzgiXSwidiI6MX0"
+  },
+  {
+   "rank": 42,
    "id": "p-n-dd-akari",
    "name": "記事：ダブルダウン（れん・つな・あかり・のあ）",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 35.8,
-   "games": 600,
+   "winRate": 41.2,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "15/60",
     "ttt・フラッシュバン": "29/60",
@@ -1433,9 +1751,14 @@
     "最強イエロー 赤1タッチ": "21/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "27/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "19/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "16/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "16/60",
+    "トレコロ：アブソ再臨": "20/60",
+    "トレコロ：ハザード極致": "35/60",
+    "トレコロ：頂点DD": "30/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "33/60",
+    "環境：OD We are（ODアサルト型）": "38/60"
    },
-   "measuredAt": "2026-11-17T02:46:28.265Z",
+   "measuredAt": "2026-11-18T03:33:50.872Z",
    "leaders": [
     "BP02-002",
     "BP03-015",
@@ -1451,14 +1774,55 @@
    "code": "eyJuIjoi6KiY5LqL77ya44OA44OW44Or44OA44Km44Oz77yI44KM44KT44O744Gk44Gq44O744GC44GL44KK44O744Gu44GC77yJIiwibCI6WyJCUDAyLTAwMiIsIkJQMDMtMDE1IiwiQlAwNC0wMDMiLCJCUDA1LUwxMCJdLCJjIjpbWyJCUDA1LTAzMSIsNF0sWyJCUDA1LTA1OSIsNF0sWyJCUDAyLTAyMSIsNF0sWyJCUDAzLTA0MyIsNF0sWyJCUDA1LTAzNSIsNF0sWyJCUDAyLTA0OSIsNF0sWyJCUDAzLTA3MSIsNF0sWyJCUDA1LTA2MyIsNF0sWyJTVDAxLTAwOSIsNF0sWyJCUDAyLTA2OCIsNF0sWyJCUDA1LTA2MCIsMl0sWyJCUDA0LTAyMiIsNF0sWyJCUDA0LTA1MCIsNF1dLCJ0IjpbIkJQMDMtMDgwIiwiQlAwMS0wODkiLCJCUDAxLTA5MiIsIkJQMDEtMDk1IiwiQlAwNS0wNzgiXSwidiI6MX0"
   },
   {
-   "rank": 40,
+   "rank": 43,
+   "id": "p-t-apexdd",
+   "name": "トレコロ：頂点DD",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 37.8,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "15/60",
+    "ttt・フラッシュバン": "21/60",
+    "デュアルハザード赤": "35/60",
+    "最強イエロー": "26/60",
+    "極致アナイヤ改": "20/60",
+    "頂点捕食者 改": "15/60",
+    "最強イエロー 赤1タッチ": "28/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "28/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "30/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "14/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "17/60",
+    "トレコロ：アブソ再臨": "22/60",
+    "トレコロ：ハザード極致": "16/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "20/60",
+    "環境：OD We are（ODアサルト型）": "33/60"
+   },
+   "measuredAt": "2026-11-18T03:52:56.813Z",
+   "leaders": [
+    "BP05-L09",
+    "BP05-L10",
+    "BP05-L13",
+    "BP05-L14"
+   ],
+   "leaderNames": [
+    "神成きゅぴ (IGV)",
+    "胡桃のあ (IGV)",
+    "Arya Kuroha",
+    "花芽すみれ (IGV)"
+   ],
+   "code": "eyJuIjoi44OI44Os44Kz44Ot77ya6aCC54K5REQiLCJsIjpbIkJQMDUtTDA5IiwiQlAwNS1MMTAiLCJCUDA1LUwxMyIsIkJQMDUtTDE0Il0sImMiOltbIkJQMDUtMDMxIiw0XSxbIkJQMDUtMDM4Iiw0XSxbIkJQMDUtMDMzIiw0XSxbIkJQMDUtMDM0Iiw0XSxbIkJQMDUtMDM1Iiw0XSxbIkJQMDUtMDQwIiwyXSxbIkJQMDUtMDQxIiw0XSxbIkJQMDUtMDQyIiw0XSxbIkJQMDUtMDYyIiw0XSxbIkJQMDUtMDYzIiw0XSxbIkJQMDUtMDY4Iiw0XSxbIkJQMDUtMDY5Iiw0XSxbIkJQMDUtMDcwIiw0XV0sInQiOlsiQlAwMi0wNzgiLCJCUDAzLTA4MCIsIkJQMDUtMDczIiwiQlAwNS0wNzQiLCJCUDA1LTA3OSJdLCJ2IjoxfQ"
+  },
+  {
+   "rank": 44,
    "id": "p-dual",
    "name": "デュアルハザード赤",
    "origin": "field",
    "parent": null,
    "change": null,
-   "winRate": 28.5,
-   "games": 600,
+   "winRate": 31.1,
+   "games": 900,
    "perOpponent": {
     "アリア・クレイジーバースト": "13/60",
     "ttt・フラッシュバン": "18/60",
@@ -1469,9 +1833,14 @@
     "記事：ダブルダウン（れん・つな・あかり・のあ）": "23/60",
     "記事：ダブルダウン（れん・つな・こはく・のあ）": "12/60",
     "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "27/60",
-    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "9/60"
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "9/60",
+    "トレコロ：アブソ再臨": "17/60",
+    "トレコロ：ハザード極致": "21/60",
+    "トレコロ：頂点DD": "19/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "16/60",
+    "環境：OD We are（ODアサルト型）": "36/60"
    },
-   "measuredAt": "2026-11-17T02:48:29.669Z",
+   "measuredAt": "2026-11-18T03:37:38.047Z",
    "leaders": [
     "BP01-004",
     "ST02-001",
@@ -1485,6 +1854,47 @@
     "秋雪こはく"
    ],
    "code": "eyJuIjoi44OH44Ol44Ki44Or44OP44K244O844OJ6LWkIiwibCI6WyJCUDAxLTAwNCIsIlNUMDItMDAxIiwiQlAwNC0wMDIiLCJCUDA1LUwwMSJdLCJjIjpbWyJCUDA1LTAxNyIsNF0sWyJCUDA0LTAxNyIsNF0sWyJCUDAxLTAyMiIsNF0sWyJBTjAxLTAxMyIsNF0sWyJTVDAyLTAwNSIsM10sWyJCUDAxLTAxOCIsMl0sWyJTVDAyLTAwNyIsMl0sWyJCUDA0LTAxOSIsNF0sWyJBTjAxLTAwNSIsNF0sWyJCUDA0LTAyMSIsMl0sWyJCUDAxLTAxOSIsMl0sWyJCUDAzLTAxOCIsMl0sWyJCUDAxLTA1NSIsMl0sWyJCUDA0LTA0NiIsMV0sWyJCUDAxLTAyNCIsM10sWyJCUDAzLTAxOSIsMV0sWyJCUDAyLTA0NiIsMV0sWyJCUDA0LTAxOCIsMV0sWyJTVDAyLTAwNiIsMV0sWyJCUDAxLTA1NCIsMV0sWyJCUDAyLTAxOCIsMV0sWyJQUi0wNTMiLDFdXSwidCI6WyJTVDAxLTAxOSIsIlNUMDItMDIyIiwiQlAwNC0wNzciLCJCUDAyLTA4MCIsIkJQMDItMDc3Il0sInYiOjF9"
+  },
+  {
+   "rank": 45,
+   "id": "p-c-odweare",
+   "name": "環境：OD We are（ODアサルト型）",
+   "origin": "field",
+   "parent": null,
+   "change": null,
+   "winRate": 27.7,
+   "games": 900,
+   "perOpponent": {
+    "アリア・クレイジーバースト": "9/60",
+    "ttt・フラッシュバン": "16/60",
+    "デュアルハザード赤": "29/60",
+    "最強イエロー": "15/60",
+    "極致アナイヤ改": "12/60",
+    "頂点捕食者 改": "10/60",
+    "最強イエロー 赤1タッチ": "19/60",
+    "記事：ダブルダウン（れん・つな・あかり・のあ）": "24/60",
+    "記事：ダブルダウン（れん・つな・こはく・のあ）": "21/60",
+    "記事：ハンデス（レイド・どぐら・Kamito・ttt）": "15/60",
+    "記事：すみれ（あかり・らむね・とおこ・すみれ）": "12/60",
+    "トレコロ：アブソ再臨": "16/60",
+    "トレコロ：ハザード極致": "16/60",
+    "トレコロ：頂点DD": "20/60",
+    "環境：収穫アサルト（赤緑リンクアサルト型）": "15/60"
+   },
+   "measuredAt": "2026-11-18T04:01:23.424Z",
+   "leaders": [
+    "BP03-005",
+    "BP01-016",
+    "BP05-L10",
+    "BP04-013"
+   ],
+   "leaderNames": [
+    "ズズ",
+    "nqrse",
+    "胡桃のあ (IGV)",
+    "乾伸一郎"
+   ],
+   "code": "eyJuIjoi55Kw5aKD77yaT0QgV2UgYXJl77yIT0TjgqLjgrXjg6vjg4jlnovvvIkiLCJsIjpbIkJQMDMtMDA1IiwiQlAwMS0wMTYiLCJCUDA1LUwxMCIsIkJQMDQtMDEzIl0sImMiOltbIkJQMDQtMDI0Iiw0XSxbIkJQMDMtMDU5Iiw0XSxbIkJQMDMtMDI3Iiw0XSxbIkJQMDUtMDM1Iiw0XSxbIkJQMDQtMDM5Iiw0XSxbIkJQMDQtMDQxIiw0XSxbIlNUMDEtMDA5Iiw0XSxbIkJQMDMtMDU1Iiw0XSxbIkJQMDQtMDU0IiwyXSxbIkJQMDUtMDYzIiw0XSxbIkJQMDEtMDg4Iiw0XSxbIkJQMDItMDY4Iiw0XSxbIkJQMDQtMDY5Iiw0XV0sInQiOlsiQlAwMS0wOTEiLCJCUDAxLTA5MiIsIkJQMDEtMDk0IiwiQlAwMS0wOTUiLCJCUDAzLTA4MCJdLCJ2IjoxfQ"
   }
  ]
 }
