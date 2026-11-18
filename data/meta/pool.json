@@ -3654,5 +3654,81 @@
    "BP01-095",
    "BP03-080"
   ]
+ },
+ {
+  "id": "p-shadow-ren-mea",
+  "name": "影アナイアレーション れん・めあ型（0コスドロー16枚）",
+  "origin": "user",
+  "leaders": [
+   "BP04-005",
+   "BP05-L11",
+   "BP05-L14",
+   "BP02-002"
+  ],
+  "cards": [
+   {
+    "cardNumber": "BP01-036",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-046",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP01-081",
+    "count": 2
+   },
+   {
+    "cardNumber": "BP04-038",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-042",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-059",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-064",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-070",
+    "count": 4
+   },
+   {
+    "cardNumber": "ST01-009",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-049",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP02-021",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-027",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP04-055",
+    "count": 4
+   },
+   {
+    "cardNumber": "BP05-036",
+    "count": 4
+   }
+  ],
+  "tactics": [
+   "BP04-073",
+   "BP05-076",
+   "BP03-074",
+   "BP05-078",
+   "BP05-079"
+  ]
  }
 ]
