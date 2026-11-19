@@ -271,6 +271,23 @@ test('デッキから選ぶ選択でnullを返せばプレイしない（見た4
   assert.strictEqual(state.players.playerB.trash.length, 5);
 });
 
+test('頂点捕食者でタダでプレイするアタックは、アタッカーを選び直せる（選択が無ければ元のアタッカー）', () => {
+  const state = makeState();
+  toHand(state, 'playerB', ATTACK_COST2);
+  setDeckTop(state, 'playerB', [ATTACK_COST2]);
+  const asked = [];
+  state.players.playerB.leaders[2].awakened = true;
+  attackWith(state, 'BP05-038', {
+    chooseApexDiscard: (c) => c.map((x) => x.instanceId),
+    chooseFreeAttackAttacker: (cands, st, info) => { asked.push(info); return cands.findIndex((c) => c.leaderIndex === 2); },
+    chooseFreeAttackTarget: (cands, st, info) => { asked.push(info); return cands.findIndex((c) => c.leaderIndex === 1); },
+  });
+  assert.strictEqual(asked.length, 2);
+  assert.deepStrictEqual(asked[0], { cardId: ATTACK_COST2, defaultAttacker: 0 });
+  assert.deepStrictEqual(asked[1], { cardId: ATTACK_COST2, attackerLeaderIndex: 2 });
+  const d = damages(state, 'playerA');
+  assert.strictEqual(d[1], atkOf(state, 'playerB', 2), '覚醒したリーダー2の攻撃力で殴っている');
+});
 test('頂点捕食者でタダでプレイしたストームラッシュは、1回ごとにアタッカーとアタックを受けるリーダーを選べる', () => {
   const state = makeState();
   toHand(state, 'playerB', ATTACK_COST2);
