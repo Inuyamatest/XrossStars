@@ -435,7 +435,7 @@
           else apexPlayer.trash.push({ card: c, faceUp: false });
         });
         if (chosenAttack) {
-          ResolutionStack.push(state.resolutionStack, buildDeferredFreeAttack(chosenAttack, ctx, cardIndex));
+          ResolutionStack.push(state.resolutionStack, buildDeferredFreeAttack(chosenAttack, ctx, cardIndex, { chooseAttacker: true }));
         }
         return state;
       }
@@ -617,8 +617,9 @@
   }
 
   // 頂点捕食者：デッキから選んだアタックカードを「このアタックが終わってから」コストを支払わずにプレイする
-  // PendingEffect。解決時点で、元のアタッカーが生存していればそのリーダーで、ダウンしていれば生存している
-  // 先頭のリーダーでアタックする。アタックを受けるリーダーはctx.chooseFreeAttackTarget(candidates, state) => index
+  // PendingEffect。アタッカーは ctx.chooseFreeAttackAttacker(candidates, state, {cardId, defaultAttacker}) => index で選ぶ
+  // （opts.chooseAttacker のとき。選択が無ければ元のアタッカー、ダウンしていれば生存している先頭のリーダー）。
+  // アタックを受けるリーダーはctx.chooseFreeAttackTarget(candidates, state, {cardId, attackerLeaderIndex}) => index
   // （省略時は元のアタックを受けたリーダー、ダウンしていれば生存している先頭のリーダー）。
   // アタッカー/対象がいない場合はプレイできないため、そのカードは裏向きでトラッシュに置く（PROVISIONAL）。
   // 巡り合う二人：デッキから選んだメモリアを、解決時にコストを支払わずにプレイするPendingEffect
@@ -664,13 +665,20 @@
     }
     var aliveOwn = player.leaders.map(function (l, i) { return l.isDown ? -1 : i; }).filter(function (i) { return i >= 0; });
     var attackerIndex = ctx.attackerLeaderIndex;
+    var isMulti = !!getMultiAttackCount(cardInstance.cardId); // 複数回アタックは下で1回ごとに選ぶ
+    var askAttacker = function (defaultAttacker) {
+      var ap = ctx.chooseFreeAttackAttacker(aliveOwn.map(function (i) { return { playerId: ownerId, leaderIndex: i }; }), state,
+        { cardId: cardInstance.cardId, defaultAttacker: defaultAttacker });
+      return (ap != null && ap >= 0 && ap < aliveOwn.length) ? aliveOwn[ap] : defaultAttacker;
+    };
     if (attackerIndex == null || !player.leaders[attackerIndex] || player.leaders[attackerIndex].isDown) {
       // 元のアタッカーがいない（巡り合う二人のようにアタックに紐づかない、またはダウンした）ならアタッカーを選ぶ
       attackerIndex = aliveOwn.length ? aliveOwn[0] : -1;
-      if (aliveOwn.length > 1 && ctx.chooseFreeAttackAttacker) {
-        var ap = ctx.chooseFreeAttackAttacker(aliveOwn.map(function (i) { return { playerId: ownerId, leaderIndex: i }; }), state);
-        if (ap != null && ap >= 0 && ap < aliveOwn.length) attackerIndex = aliveOwn[ap];
-      }
+      if (aliveOwn.length > 1 && ctx.chooseFreeAttackAttacker) attackerIndex = askAttacker(attackerIndex);
+    } else if (opts.chooseAttacker && !isMulti && aliveOwn.length > 1 && ctx.chooseFreeAttackAttacker) {
+      // 頂点捕食者：山札からプレイするアタックも、ふつうにアタックカードをプレイするときと同じくアタッカーを選ぶ
+      // （選択が無ければ元のアタッカー）
+      attackerIndex = askAttacker(attackerIndex);
     }
     var targetCandidates = getAllowedAttackTargets(state, ownerId).map(function (i) { return { playerId: targetPlayerId, leaderIndex: i }; });
     if (attackerIndex < 0 || targetCandidates.length === 0) {
@@ -678,7 +686,7 @@
       return state;
     }
     var targetPick = ctx.chooseFreeAttackTarget
-      ? ctx.chooseFreeAttackTarget(targetCandidates.slice(), state)
+      ? ctx.chooseFreeAttackTarget(targetCandidates.slice(), state, { cardId: cardInstance.cardId, attackerLeaderIndex: attackerIndex })
       : targetCandidates.findIndex(function (c) { return c.leaderIndex === ctx.targetLeaderIndex; });
     if (targetPick == null || targetPick < 0 || targetPick >= targetCandidates.length) targetPick = 0;
     var targetIndex = targetCandidates[targetPick].leaderIndex;

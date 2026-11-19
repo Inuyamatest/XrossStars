@@ -102,9 +102,10 @@
       return cands.map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId, cost: c.cost }; });
     }
     function singleLeader(title, kind) {
-      return function (candidates) {
+      // free: タダでプレイするアタックの情報（{cardId, defaultAttacker} / {cardId, attackerLeaderIndex}）。CPUの判断に使う
+      return function (candidates, st, free) {
         if (candidates.length <= 1) return 0;
-        var a = ask(q({ type: 'LEADERS', kind: kind, title: title, candidates: candidates, min: 1, max: 1 }));
+        var a = ask(q({ type: 'LEADERS', kind: kind, title: title, candidates: candidates, min: 1, max: 1, free: free || null }));
         return a[0];
       };
     }

@@ -60,7 +60,7 @@
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
   // planBeaconSet／planBeaconHold／planFlag：攻略記事の「復活ビーコンを1R目に置いて温存」「勝ち進行でターゲットフラッグ」。
   // CPU同士のA/Bで勝率が上がらなかった（各400戦で48〜50%）ため既定はオフ
-  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true, multiAttacker: true };
+  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true, multiAttacker: true, freeAttacker: true };
   if (typeof process !== 'undefined' && process.env && process.env.XS_TUNE) { try { Object.assign(TUNE, JSON.parse(process.env.XS_TUNE)); } catch (e) { /* 無視 */ } }
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
@@ -776,6 +776,30 @@
       return amounts;
     }
 
+    if (q.type === 'LEADERS' && q.free && q.free.cardId && (q.kind === 'ATTACKER' || q.kind === 'TARGET')) {
+      // タダでプレイするアタック（頂点捕食者の山札から等）：アタッカーは、一番よいアタックになるリーダー（倒せるならまだ覚醒していない
+      // リーダーで倒して覚醒させる…は scoreAttack に含まれる）。同点なら元のアタッカー。対象は、選んだアタッカーで一番よい相手
+      var oppIdF = GameState.getOpponentId(playerId);
+      var meF = state.players[playerId];
+      var scoreFor = function (ai, ti) {
+        var est = estimateAttack(state, playerId, q.free.cardId, ai, ti, cardIndex);
+        return scoreAttack(est, 0, q.free.cardId, meF.leaders[ai], afterAttackValue(state, playerId, null, q.free.cardId, ai, ti, est, cardIndex));
+      };
+      var tgts = Resolver.getAllowedAttackTargets(state, playerId);
+      var bestF = null;
+      q.candidates.forEach(function (ref, i) {
+        var v;
+        if (q.kind === 'ATTACKER') {
+          if (!TUNE.freeAttacker) v = ref.leaderIndex === q.free.defaultAttacker ? 1 : 0;
+          else v = tgts.reduce(function (m, ti) { return Math.max(m, scoreFor(ref.leaderIndex, ti)); }, -Infinity) + (ref.leaderIndex === q.free.defaultAttacker ? 0.01 : 0);
+        } else {
+          if (ref.playerId !== oppIdF || q.free.attackerLeaderIndex == null) return;
+          v = scoreFor(q.free.attackerLeaderIndex, ref.leaderIndex);
+        }
+        if (!bestF || v > bestF.v) bestF = { v: v, i: i };
+      });
+      if (bestF) return [bestF.i];
+    }
     if (q.type === 'LEADERS' && q.multi && TUNE.multiAttacker && (q.kind === 'ATTACKER' || q.kind === 'TARGET')) {
       // タダでプレイした複数回アタック（頂点捕食者からストームラッシュ等）：全回の割り振りをまとめて考え、その回の分を答える
       var mp = planMultiAttack(state, playerId, q.multi.cardId, null, q.multi.count, cardIndex).attacks[q.multi.index];
