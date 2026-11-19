@@ -115,6 +115,23 @@
       chooseFreeAttackTarget: singleLeader('このアタックを受けるリーダーを選んでください', 'TARGET'),
       chooseFreeAttackAttacker: singleLeader('アタックする自分のリーダーを選んでください', 'ATTACKER'),
 
+      // タダでプレイした複数回アタック（頂点捕食者でストームラッシュ等）：1回ごとにアタッカーとアタックを受けるリーダーを選ぶ
+      // （q.multi = { index, count, cardId, plan }。CPUは q.multi を見て、全回の割り振りをまとめて考える）
+      chooseFreeMultiAttack: function (info) {
+        var plan = [];
+        for (var i = 0; i < info.count; i++) {
+          var multi = { index: i, count: info.count, cardId: info.cardId, plan: plan.slice() };
+          var label = 'アタック ' + (i + 1) + '/' + info.count + '：';
+          var atkCands = info.attackers.map(function (li) { return { playerId: info.ownerPlayerId, leaderIndex: li }; });
+          var ai = atkCands.length <= 1 ? 0 : ask(q({ type: 'LEADERS', kind: 'ATTACKER', title: label + 'アタックする自分のリーダーを選んでください', candidates: atkCands, min: 1, max: 1, multi: multi }))[0];
+          var oppId = info.ownerPlayerId === 'playerA' ? 'playerB' : 'playerA';
+          var tgtCands = info.targets.map(function (li) { return { playerId: oppId, leaderIndex: li }; });
+          var ti = tgtCands.length <= 1 ? 0 : ask(q({ type: 'LEADERS', kind: 'TARGET', title: label + 'アタックを受けるリーダーを選んでください', candidates: tgtCands, min: 1, max: 1, multi: multi }))[0];
+          plan.push({ attackerLeaderIndex: info.attackers[ai], targetLeaderIndex: info.targets[ti] });
+        }
+        return plan;
+      },
+
       // ジェイルブレイク：合計ダメージを対戦相手のリーダーに割り振る
       chooseDistributedDamage: function (candidates, total) {
         if (!candidates.length) return [];

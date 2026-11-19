@@ -60,7 +60,7 @@
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
   // planBeaconSet／planBeaconHold／planFlag：攻略記事の「復活ビーコンを1R目に置いて温存」「勝ち進行でターゲットフラッグ」。
   // CPU同士のA/Bで勝率が上がらなかった（各400戦で48〜50%）ため既定はオフ
-  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true };
+  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true, multiAttacker: true };
   if (typeof process !== 'undefined' && process.env && process.env.XS_TUNE) { try { Object.assign(TUNE, JSON.parse(process.env.XS_TUNE)); } catch (e) { /* 無視 */ } }
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
@@ -157,26 +157,46 @@
     return { damage: dmg, hp: hp, kill: dmg >= hp };
   }
 
-  // 複数回アタック（ストームラッシュ）の対象の割り振り：同じリーダーに全部撃つと、1回目でダウンさせた後の残りが無駄になる。
-  // 1回ずつ「この1回で倒せる相手（体力の多い順）」→いなければ「残り体力の一番少ない相手」を選ぶ（倒し切れる相手を順番に狙う）
+  // 複数回アタック（ストームラッシュ）の割り振り：同じリーダーに全部撃つと、1回目でダウンさせた後の残りが無駄になる。
+  // 1回ずつ「この1回で倒せる相手（体力の多い順）」→いなければ「残り体力の一番少ない相手」を選ぶ（倒し切れる相手を順番に狙う）。
+  // attackerIndex を指定すると全回そのリーダーでアタックする。null なら1回ごとにアタッカーも選ぶ
+  // （「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」）：倒せるならまだ覚醒していないリーダーで倒して覚醒させ
+  // （以降の回は覚醒後の攻撃力）、倒せないなら一番ダメージの出るリーダー
   function planMultiAttack(state, playerId, cardId, attackerIndex, count, cardIndex) {
     var player = state.players[playerId];
     var oppId = GameState.getOpponentId(playerId);
     var targets = Resolver.getAllowedAttackTargets(state, playerId);
     var remain = {};
     targets.forEach(function (ti) { remain[ti] = GameState.getLeaderCurrentHp(cardIndex, state.players[oppId].leaders[ti]); });
-    var ctx = { ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: targets[0], cardIndex: cardIndex };
-    var per = Math.max(0, GameState.getLeaderCurrentAtk(cardIndex, player.leaders[attackerIndex]) + Resolver.computeAttackCardBaseDamage(cardId, state, ctx));
-    var first = per + (player.pendingAttackBoost || 0);
+    var attackers = attackerIndex == null ? aliveIndexes(player) : [attackerIndex];
+    var awake = {};
+    attackers.forEach(function (ai) { awake[ai] = !!player.leaders[ai].awakened; });
+    var perOf = function (ai) {
+      var l = player.leaders[ai];
+      var was = l.awakened;
+      l.awakened = awake[ai];
+      var ctx = { ownerPlayerId: playerId, attackerPlayerId: playerId, attackerLeaderIndex: ai, targetPlayerId: oppId, targetLeaderIndex: targets[0], cardIndex: cardIndex };
+      var v = Math.max(0, GameState.getLeaderCurrentAtk(cardIndex, l) + Resolver.computeAttackCardBaseDamage(cardId, state, ctx));
+      l.awakened = was;
+      return v;
+    };
     var out = [];
     for (var k = 0; k < count; k++) {
-      var dmg = k === 0 ? first : per;
       var alive = targets.filter(function (ti) { return remain[ti] > 0; });
       if (!alive.length) alive = targets;
-      var killable = alive.filter(function (ti) { return remain[ti] <= dmg; }).sort(function (a, b) { return remain[b] - remain[a]; });
-      var ti = killable.length ? killable[0] : alive.slice().sort(function (a, b) { return remain[a] - remain[b]; })[0];
-      remain[ti] -= dmg;
-      out.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: oppId, targetLeaderIndex: ti });
+      var best = null;
+      attackers.forEach(function (ai) {
+        var dmg = perOf(ai) + (k === 0 ? (player.pendingAttackBoost || 0) : 0);
+        alive.forEach(function (ti) {
+          var kill = remain[ti] <= dmg;
+          // 倒せる（体力の多い相手ほど価値が高い）＞まだ覚醒していないリーダーで倒す＞ダメージ＞残り体力の少ない相手
+          var sc = (kill ? 100000 + remain[ti] * 10 + (awake[ai] ? 0 : 5) : dmg * 1000 - remain[ti]);
+          if (!best || sc > best.sc) best = { sc: sc, ai: ai, ti: ti, dmg: dmg, kill: kill };
+        });
+      });
+      remain[best.ti] -= best.dmg;
+      if (best.kill) awake[best.ai] = true;
+      out.push({ attackerLeaderIndex: best.ai, targetPlayerId: oppId, targetLeaderIndex: best.ti });
     }
     return { attacks: out };
   }
@@ -372,7 +392,7 @@
       var count = Resolver.getMultiAttackCount(attack.cardId);
       var oppId = GameState.getOpponentId(playerId);
       var options = { attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target };
-      if (count && TUNE.multiPlan) options = planMultiAttack(state, playerId, attack.cardId, attack.attacker, count, cardIndex);
+      if (count && TUNE.multiPlan) options = planMultiAttack(state, playerId, attack.cardId, TUNE.multiAttacker ? null : attack.attacker, count, cardIndex);
       else if (count) {
         options = { attacks: [] };
         for (var i = 0; i < count; i++) options.attacks.push({ attackerLeaderIndex: attack.attacker, targetPlayerId: oppId, targetLeaderIndex: attack.target });
@@ -406,6 +426,7 @@
       } else if (card.cardType === 'ATTACK') {
         var count = Resolver.getMultiAttackCount(c.cardId);
         if (count && TUNE.multiPlan) aliveIndexes(player).forEach(function (ai) { acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: planMultiAttack(state, playerId, c.cardId, ai, count, cardIndex) }); });
+        if (count && TUNE.multiPlan && TUNE.multiAttacker) acts.push({ type: 'ATTACK', instanceId: c.instanceId, cardId: c.cardId, options: planMultiAttack(state, playerId, c.cardId, null, count, cardIndex) }); // 1回ごとにアタッカーも選ぶ
         aliveIndexes(player).forEach(function (ai) {
           Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
             var one = { attackerLeaderIndex: ai, targetPlayerId: oppId, targetLeaderIndex: ti };
@@ -755,6 +776,13 @@
       return amounts;
     }
 
+    if (q.type === 'LEADERS' && q.multi && TUNE.multiAttacker && (q.kind === 'ATTACKER' || q.kind === 'TARGET')) {
+      // タダでプレイした複数回アタック（頂点捕食者からストームラッシュ等）：全回の割り振りをまとめて考え、その回の分を答える
+      var mp = planMultiAttack(state, playerId, q.multi.cardId, null, q.multi.count, cardIndex).attacks[q.multi.index];
+      var want = q.kind === 'ATTACKER' ? { pid: playerId, li: mp.attackerLeaderIndex } : { pid: mp.targetPlayerId, li: mp.targetLeaderIndex };
+      var hit = q.candidates.findIndex(function (r) { return r.playerId === want.pid && r.leaderIndex === want.li; });
+      if (hit >= 0) return [hit];
+    }
     if (q.type === 'LEADERS') {
       var cands = q.candidates.map(function (ref, i) { return { ref: ref, i: i }; });
       var own = q.candidates.every(function (r) { return r.playerId === playerId; });
