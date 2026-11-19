@@ -60,7 +60,8 @@
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
   // planBeaconSet／planBeaconHold／planFlag：攻略記事の「復活ビーコンを1R目に置いて温存」「勝ち進行でターゲットフラッグ」。
   // CPU同士のA/Bで勝率が上がらなかった（各400戦で48〜50%）ため既定はオフ
-  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true };
+  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true };
+  if (typeof process !== 'undefined' && process.env && process.env.XS_TUNE) { try { Object.assign(TUNE, JSON.parse(process.env.XS_TUNE)); } catch (e) { /* 無視 */ } }
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
   }
@@ -248,6 +249,20 @@
     if (est.kill && !attacker.awakened) s += 40; // ダウンを取ると覚醒できる
     if (effectsOf(cardId).some(function (e) { return e.trigger === 'AFTER_ATTACK'; })) s += 15;
     return s - cost * 4;
+  }
+
+  // タダでプレイするアタックカード（手札に無いカード）の値打ち：アタッカーと対象の組の中で一番よいもの
+  function freeAttackValue(state, playerId, cardId, cardIndex) {
+    var player = state.players[playerId];
+    var best = -Infinity;
+    aliveIndexes(player).forEach(function (ai) {
+      Resolver.getAllowedAttackTargets(state, playerId).forEach(function (ti) {
+        var est = estimateAttack(state, playerId, cardId, ai, ti, cardIndex);
+        var sc = scoreAttack(est, 0, cardId, player.leaders[ai], afterAttackValue(state, playerId, null, cardId, ai, ti, est, cardIndex));
+        if (sc > best) best = sc;
+      });
+    });
+    return best === -Infinity ? 0 : best;
   }
 
   function bestAttack(state, playerId, cardIndex, excluded) {
@@ -821,7 +836,7 @@
         var singles = items.filter(function (x) { return x.cost >= q.costMin; })
           .sort(function (a, b) { return (a.ace - b.ace) || (a.cost - b.cost); });
         if (singles.length && (!singles[0].ace || player.hand.length >= 3)) return [singles[0].i];
-        if (player.hand.length < 3) return [];
+        if (player.hand.length < (TUNE.apexLoose ? 2 : 3)) return [];
         var sorted = items.filter(function (x) { return x.cost > 0 && !x.ace; }).sort(function (a, b) { return b.cost - a.cost; });
         var picked = [];
         var sum = 0;
@@ -853,8 +868,13 @@
           return chosen;
         }
         if (q.max === 1 && cards.length > 1) {
-          // 1枚だけタダでプレイする（頂点捕食者の山札から等）：コストの高いカードほど効果が大きいので、一番高いもの
-          var best = cards.map(function (c, i) { return { i: i, cost: cardCost(c, cardIndex) }; }).sort(function (a, b) { return b.cost - a.cost; })[0];
+          // 1枚だけタダでプレイする（頂点捕食者の山札から等）。アタックカードなら今の盤面で一番効くもの
+          // （ダブルダウンはプレイエリアのメモリアが2枚以上のときだけ+100、ストームラッシュは3回分…を
+          // estimateAttack・afterAttackValue で見積もる）。それ以外はコストの高いカードほど効果が大きいので、一番高いもの
+          var allAttacks = TUNE.freePickSmart && cards.every(function (c) { return (cardIndex[c.cardId] || {}).cardType === 'ATTACK'; });
+          var best = cards.map(function (c, i) {
+            return { i: i, cost: cardCost(c, cardIndex), v: allAttacks ? freeAttackValue(state, playerId, c.cardId, cardIndex) : 0 };
+          }).sort(function (a, b) { return (b.v - a.v) || (b.cost - a.cost); })[0];
           return [best.i];
         }
         return (q.preselect && q.preselect.length ? q.preselect : [0]).slice(0, q.max);
