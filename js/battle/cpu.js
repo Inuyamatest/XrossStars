@@ -113,7 +113,7 @@
       case '追加マガジン': return 40 + (3 - round) * 5;
       case 'パワーフィールド': return 10 * myAlive.length + 5;
       case '討伐クエスト': return 35;
-      case 'アイテムショップ': return 35;
+      case 'アイテムショップ': return 41 + Math.min(10, Math.floor(me.trash.filter(function (t) { return !t.faceUp; }).length / 4)); // 2枚引く（ストラテジックレーダーと同じ）＋裏向きのトラッシュをデッキに戻す
       case 'メリケンサック': return round === 1 ? 50 : 35;
       case '盗賊キット': return round === 1 ? 40 : 30;
       case 'オートタレット': return round === 1 ? 45 : 30;
