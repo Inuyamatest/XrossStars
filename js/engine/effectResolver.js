@@ -694,8 +694,22 @@
     Object.assign(freeOptions, pickChoiceCallbacks(ctx));
     var count = getMultiAttackCount(cardInstance.cardId);
     if (count) {
+      // ストームラッシュ等「アタックのたびに、アタッカーとアタックを受けるリーダーを選ぶ」：タダでプレイしたときも1回ごとに選ぶ。
+      // ctx.chooseFreeMultiAttack({ ownerPlayerId, cardId, count, attackers:[leaderIndex], targets:[leaderIndex], defaultAttacker }, state)
+      //   => [{ attackerLeaderIndex, targetLeaderIndex }] × count（無い・形が合わないときは、上で選んだアタッカーと対象で count 回）
+      var plan = ctx.chooseFreeMultiAttack ? ctx.chooseFreeMultiAttack({
+        ownerPlayerId: ownerId, cardId: cardInstance.cardId, count: count, attackers: aliveOwn.slice(),
+        targets: targetCandidates.map(function (c) { return c.leaderIndex; }), defaultAttacker: attackerIndex,
+      }, state) : null;
+      var planOk = Array.isArray(plan) && plan.length === count && plan.every(function (a) {
+        return a && aliveOwn.indexOf(a.attackerLeaderIndex) >= 0 && targetCandidates.some(function (c) { return c.leaderIndex === a.targetLeaderIndex; });
+      });
       freeOptions.attacks = [];
-      for (var i = 0; i < count; i++) freeOptions.attacks.push({ attackerLeaderIndex: attackerIndex, targetPlayerId: targetPlayerId, targetLeaderIndex: targetIndex });
+      for (var i = 0; i < count; i++) {
+        freeOptions.attacks.push(planOk
+          ? { attackerLeaderIndex: plan[i].attackerLeaderIndex, targetPlayerId: targetPlayerId, targetLeaderIndex: plan[i].targetLeaderIndex }
+          : { attackerLeaderIndex: attackerIndex, targetPlayerId: targetPlayerId, targetLeaderIndex: targetIndex });
+      }
     }
     playAttackCardWithEffects(state, ownerId, cardInstance.instanceId, freeOptions, cardIndex);
     return state;
@@ -1045,7 +1059,7 @@
     'chooseSelfDamage', 'chooseDeckLookAddToHand', 'chooseDiscard', 'chooseFreePlayFromHand', 'chooseDeckLookPlay',
     'chooseReplayFromPlayArea', 'chooseApexDiscard', 'chooseDeckLookAttack', 'chooseFreeAttackTarget',
     'chooseAttackDiscard', 'chooseConfirm', 'chooseDeclareCardType', 'chooseRevealCard',
-    'chooseDistributedDamage', 'chooseMeetTwo', 'chooseFreeAttackAttacker', 'chooseLookTopTrash',
+    'chooseDistributedDamage', 'chooseMeetTwo', 'chooseFreeAttackAttacker', 'chooseFreeMultiAttack', 'chooseLookTopTrash',
   ];
   function pickChoiceCallbacks(source) {
     var extra = {};

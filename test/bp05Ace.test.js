@@ -271,6 +271,45 @@ test('デッキから選ぶ選択でnullを返せばプレイしない（見た4
   assert.strictEqual(state.players.playerB.trash.length, 5);
 });
 
+test('頂点捕食者でタダでプレイしたストームラッシュは、1回ごとにアタッカーとアタックを受けるリーダーを選べる', () => {
+  const state = makeState();
+  toHand(state, 'playerB', ATTACK_COST2);
+  setDeckTop(state, 'playerB', ['BP03-017']);
+  const asked = [];
+  const plan = [{ attackerLeaderIndex: 1, targetLeaderIndex: 1 }, { attackerLeaderIndex: 2, targetLeaderIndex: 2 }, { attackerLeaderIndex: 3, targetLeaderIndex: 3 }];
+  attackWith(state, 'BP05-038', {
+    chooseApexDiscard: (c) => c.map((x) => x.instanceId),
+    chooseFreeMultiAttack: (info) => { asked.push(info); return plan; },
+  });
+  assert.strictEqual(asked.length, 1);
+  assert.strictEqual(asked[0].count, 3);
+  assert.strictEqual(asked[0].cardId, 'BP03-017');
+  assert.deepStrictEqual(asked[0].attackers, [0, 1, 2, 3]);
+  const d = damages(state, 'playerA');
+  assert.strictEqual(d[0], atkOf(state, 'playerB', 0), '頂点捕食者のアタックだけ');
+  [1, 2, 3].forEach((i) => assert.strictEqual(d[i], atkOf(state, 'playerB', i), 'リーダー' + i + 'はリーダー' + i + 'のアタック1回分'));
+});
+test('割り振りの選択が無ければ、元のアタッカーと対象で3回アタックする（従来どおり）', () => {
+  const state = makeState();
+  toHand(state, 'playerB', ATTACK_COST2);
+  setDeckTop(state, 'playerB', ['BP03-017']);
+  attackWith(state, 'BP05-038', { chooseApexDiscard: (c) => c.map((x) => x.instanceId) });
+  const d = damages(state, 'playerA');
+  const t = state.players.playerA.leaders[0];
+  assert.ok(t.isDown || d[0] === atkOf(state, 'playerB', 0) * 4, 'damage=' + d[0]);
+  assert.deepStrictEqual(d.slice(1), [0, 0, 0]);
+});
+test('割り振りが形に合わない（回数が違う）ときも従来どおり', () => {
+  const state = makeState();
+  toHand(state, 'playerB', ATTACK_COST2);
+  setDeckTop(state, 'playerB', ['BP03-017']);
+  attackWith(state, 'BP05-038', {
+    chooseApexDiscard: (c) => c.map((x) => x.instanceId),
+    chooseFreeMultiAttack: () => [{ attackerLeaderIndex: 1, targetLeaderIndex: 1 }],
+  });
+  assert.deepStrictEqual(damages(state, 'playerA').slice(1), [0, 0, 0]);
+});
+
 // ============================================================
 console.log('=== BP05-045 共に至る極致 ===');
 // ============================================================

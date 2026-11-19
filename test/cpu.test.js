@@ -205,6 +205,17 @@ test('頂点捕食者の捨て札：コスト1を2枚捨てるのは手札が3�
   const a = Cpu.answerQuestion(apexHand(s, ['BP04-053', 'BP04-063', 'BP04-063']), s, 'playerA', cardIndex);
   assert.deepStrictEqual(a.sort(), [1, 2]);
 });
+test('タダでプレイしたストームラッシュ：倒せる相手から順に、まだ覚醒していないリーダーで倒しにいく（1回ごとにアタッカーを選ぶ）', () => {
+  const s = makeState();
+  const opp = s.players.playerB.leaders;
+  const atk = GameState.getLeaderCurrentAtk(cardIndex, s.players.playerA.leaders[0]);
+  [1, 2].forEach((i) => { opp[i].damage = GameState.getLeaderMaxHp(cardIndex, opp[i]) - atk; }); // 1回で倒せる
+  const cb = Choices.makeCallbacks((q) => Cpu.answerQuestion(q, s, q.chooser || 'playerA', cardIndex), { getActivePlayerId: () => 'playerA', getResolvingEffect: () => null });
+  const plan = cb.chooseFreeMultiAttack({ ownerPlayerId: 'playerA', cardId: 'BP03-017', count: 3, attackers: [0, 1, 2, 3], targets: [0, 1, 2, 3], defaultAttacker: 0 });
+  assert.strictEqual(plan.length, 3);
+  assert.deepStrictEqual(plan.slice(0, 2).map((a) => a.targetLeaderIndex).sort(), [1, 2], JSON.stringify(plan));
+  assert.notStrictEqual(plan[0].attackerLeaderIndex, plan[1].attackerLeaderIndex, '倒すたびに別のリーダーで（覚醒させる）');
+});
 test('三銃士でプレイし直すメモリアは、プレイ時にダメージを与えるものを優先し、プレイ時効果の無いものは選ばない', () => {
   const s = makeState();
   // 美味しいよね（アタック強化のみ）／穏やかな一時（プレイ時：回復）／BEAUTY SALON（プレイ時：20ダメージ）
