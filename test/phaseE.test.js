@@ -17,6 +17,13 @@ const CardEffectData = require('../js/engine/cardEffectData.js');
 const EffectResolver = require('../js/engine/effectResolver.js');
 
 const cardIndex = CardLookup.loadDefaultCardIndexNode();
+
+// 次のアタックに乗るアタック強化の合計（条件付きのものはアタックのダメージ計算時に判定する。今の盤面で判定した値）
+function boostAtAttack(state, pid) {
+  const p = state.players[pid];
+  const ctx = { ownerPlayerId: pid, cardIndex };
+  return (p.pendingAttackBoost || 0) + (p.pendingAttackTimeBoosts || []).reduce((s, b) => s + ((typeof b.condition !== 'function' || b.condition(state, ctx)) ? b.amount : 0), 0);
+}
 const allCards = Object.values(cardIndex);
 const plainCard = require('./helpers/plainCard.js')(allCards, CardEffectData, __filename);
 
@@ -208,10 +215,10 @@ test('プレイエリアにメモリアカードが3枚以上（このカード�
   const state = Match.createMatch(makeMatchConfig());
   pushToPlayArea(state, 'playerA', FILLER_MEMORIA);
   pushToPlayArea(state, 'playerA', FILLER_MEMORIA);
-  // この時点でプレイエリアのメモリアは2枚。We are...!自身がプレイされて3枚目になった瞬間に判定する。
+  // この時点でプレイエリアのメモリアは2枚。We are...!自身がプレイされて3枚目になる（判定はアタックのダメージ計算時）。
   const instanceId = injectHand(state, 'playerA', 'BP03-059');
   EffectResolver.playMemoriaCardWithEffects(state, 'playerA', instanceId, {}, cardIndex);
-  assert.strictEqual(state.players.playerA.pendingAttackBoost, 70, '自分自身を含めて3枚になるのでアタック強化+70が乗るはず');
+  assert.strictEqual(boostAtAttack(state, 'playerA'), 70, '自分自身を含めて3枚になるのでアタック強化+70が乗るはず');
 });
 
 // ============================================================

@@ -17,6 +17,13 @@ const CardEffectData = require('../js/engine/cardEffectData.js');
 const EffectResolver = require('../js/engine/effectResolver.js');
 
 const cardIndex = CardLookup.loadDefaultCardIndexNode();
+
+// 次のアタックに乗るアタック強化の合計（条件付きのものはアタックのダメージ計算時に判定する。今の盤面で判定した値）
+function boostAtAttack(state, pid) {
+  const p = state.players[pid];
+  const ctx = { ownerPlayerId: pid, cardIndex };
+  return (p.pendingAttackBoost || 0) + (p.pendingAttackTimeBoosts || []).reduce((s, b) => s + ((typeof b.condition !== 'function' || b.condition(state, ctx)) ? b.amount : 0), 0);
+}
 const allCards = Object.values(cardIndex);
 
 let passed = 0;
@@ -242,7 +249,17 @@ test('逃走成功：両プレイヤーが1枚引き、アタック強化+50', (
 test('開店セレモニー：+20。メモリアが3枚以上なら（自身を含めて数える）さらに+50', () => {
   let s = makeState(); playMemoria(s, 'BP01-075'); assert.strictEqual(s.players.playerB.pendingAttackBoost, 20);
   s = makeState(); playMemoria(s, MEMORIA_0); playMemoria(s, MEMORIA_0); playMemoria(s, 'BP01-075');
-  assert.strictEqual(s.players.playerB.pendingAttackBoost, 70);
+  assert.strictEqual(boostAtAttack(s, 'playerB'), 70);
+});
+test('条件付きのアタック強化は、アタックのダメージを計算するときにメモリアを数える（後から出したメモリアも数える）', () => {
+  // 雪降る夜に（メモリア3枚以上なら次のアタック+30）を最初に出し、その後でメモリアを2枚並べてからアタック
+  const s = makeState(); playMemoria(s, 'BP04-065'); playMemoria(s, MEMORIA_0); playMemoria(s, MEMORIA_0);
+  attackWith(s, FILLER_ATTACK);
+  assert.strictEqual(dmg(s), GameState.getLeaderCurrentAtk(cardIndex, s.players.playerB.leaders[0]) + 30);
+  // メモリアが2枚しかなければ乗らない
+  const s2 = makeState(); playMemoria(s2, 'BP04-065'); playMemoria(s2, MEMORIA_0);
+  attackWith(s2, FILLER_ATTACK);
+  assert.strictEqual(dmg(s2), GameState.getLeaderCurrentAtk(cardIndex, s2.players.playerB.leaders[0]));
 });
 test('福男：自分のリーダーが3体ダウンしているときだけ1枚引く', () => {
   let s = makeState(); playMemoria(s, 'BP01-073'); assert.strictEqual(s.players.playerB.hand.length, 0);
