@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261119c';
+  var APP_VERSION = '20261120a';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -1206,6 +1206,14 @@
     return typeof p.ppPaid === 'number' ? '（PP−' + p.ppPaid + '）' : '';
   }
 
+  // 本人にだけ見える情報（デッキを見て手札に加えたカード・裏向きでトラッシュに置いたカード）をログに出してよいか：
+  // 公開されたもの、CPU同士の観戦、CPU戦・オンライン対戦での自分の分。1台を2人で回す対戦では相手に見えてしまうので出さない
+  function canSeeOwnHidden(p) {
+    if (p.revealed || isSpectate()) return true;
+    var me = humanId();
+    return !!me && p.playerId === me;
+  }
+
   function describeEvent(e) {
     var p = e.payload || {};
     switch (e.type) {
@@ -1224,7 +1232,10 @@
       case 'LEADER_DOWNED': return { cls: 'down', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」ダウン' };
       case 'LEADER_AWAKENED': return { cls: 'awake', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」覚醒！' };
       case 'EQUIPMENT_ATTACHED': return { cls: 'play', text: pShort(p.playerId) + '「' + leaderNameOf(p.playerId, p.leaderIndex) + '」に「' + cardOf(p.cardId).name + '」を装備' };
-      case 'CARD_ADDED_TO_HAND_BY_EFFECT': return { cls: '', text: pShort(p.playerId) + '：デッキから1枚を手札に加えた' };
+      case 'CARD_ADDED_TO_HAND_BY_EFFECT':
+        return { cls: '', text: pShort(p.playerId) + '：デッキから' + (canSeeOwnHidden(p) ? '「' + cardOf(p.cardId).name + '」' : '1枚') + 'を手札に加えた' + (p.revealed ? '（公開）' : '') };
+      case 'DECK_LOOK_TRASHED':
+        return { cls: '', text: pShort(p.playerId) + '：見た残りの' + p.count + '枚をトラッシュに置いた' + (canSeeOwnHidden(p) ? '（' + p.cardIds.map(function (id) { return cardOf(id).name; }).join('・') + '）' : '') };
       case 'FREE_ATTACK_PLAYED_BY_EFFECT': return { cls: 'play', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」をコストを支払わずにプレイ' };
       case 'ECHO_TURNED_HORIZONTAL': return { cls: '', text: pShort(p.playerId) + '：「' + cardOf(p.cardId).name + '」はエコーで横向きに' };
       case 'ECHO_REPLAYED': return { cls: 'play', text: pShort(p.playerId) + '：エコー「' + cardOf(p.cardId).name + '」をプレイし直した' };
