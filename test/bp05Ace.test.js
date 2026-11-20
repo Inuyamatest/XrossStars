@@ -327,6 +327,30 @@ test('割り振りが形に合わない（回数が違う）ときも従来ど�
   assert.deepStrictEqual(damages(state, 'playerA').slice(1), [0, 0, 0]);
 });
 
+test('デッキを見る効果：手札に加えたカードと、見た残りをトラッシュに置いたことがログに残る（討伐クエストは公開しない）', () => {
+  const state = makeState();
+  setDeckTop(state, 'playerB', [ATTACK_COST2, FILLER_ATTACK, MEMORIA_COST0, MEMORIA_COST1, ATTACK_COST3, FILLER_ATTACK, FILLER_ATTACK]);
+  const ev = (type) => state.actionLog.filter((e) => e.type === type);
+  const effects = CardEffectData.getEffectsForCard('BP04-079');
+  const ctx = { ownerPlayerId: 'playerB', cardIndex, chooseDeckLookAddToHand: (c) => [c[2].instanceId] };
+  EffectResolver.applyAction(state, effects[0].action, [], ctx, cardIndex);
+  const added = ev('CARD_ADDED_TO_HAND_BY_EFFECT');
+  assert.strictEqual(added.length, 1);
+  assert.strictEqual(added[0].payload.cardId, MEMORIA_COST0);
+  assert.strictEqual(added[0].payload.revealed, false);
+  const trashed = ev('DECK_LOOK_TRASHED');
+  assert.strictEqual(trashed.length, 1);
+  assert.strictEqual(trashed[0].payload.count, 6);
+  assert.deepStrictEqual(trashed[0].payload.cardIds, [ATTACK_COST2, FILLER_ATTACK, MEMORIA_COST1, ATTACK_COST3, FILLER_ATTACK, FILLER_ATTACK]);
+});
+test('アブソリュートドミニオンで手札に加えたカードは「公開」として記録される', () => {
+  const state = makeState();
+  setDeckTop(state, 'playerB', [MEMORIA_COST0, FILLER_ATTACK, FILLER_ATTACK, FILLER_ATTACK, FILLER_ATTACK]);
+  attackWith(state, 'BP05-024');
+  const added = state.actionLog.filter((e) => e.type === 'CARD_ADDED_TO_HAND_BY_EFFECT');
+  assert.ok(added.length >= 1 && added.every((e) => e.payload.revealed === true));
+});
+
 // ============================================================
 console.log('=== BP05-045 共に至る極致 ===');
 // ============================================================

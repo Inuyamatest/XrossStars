@@ -52,6 +52,7 @@
     HAND_DISCARDED_OVER_LIMIT: 'HAND_DISCARDED_OVER_LIMIT',
     CARD_DISCARDED_BY_EFFECT: 'CARD_DISCARDED_BY_EFFECT', // カード効果（DISCARD_HAND）による手札破棄。8章の手札上限処理とは別イベント
     CARD_ADDED_TO_HAND_BY_EFFECT: 'CARD_ADDED_TO_HAND_BY_EFFECT', // デッキルックで手札に加えた（DECK_LOOK_ADD_TO_HAND）
+    DECK_LOOK_TRASHED: 'DECK_LOOK_TRASHED', // デッキを見る効果で、見た残りを裏向きでトラッシュに置いた（cardIds）
     FREE_ATTACK_PLAYED_BY_EFFECT: 'FREE_ATTACK_PLAYED_BY_EFFECT', // カード効果でアタックカードをコストを支払わずにプレイ（頂点捕食者）
     ECHO_TURNED_HORIZONTAL: 'ECHO_TURNED_HORIZONTAL', // エコー：ターン終了時にトラッシュに置く代わりに横向きにした
     LEADER_REVIVED: 'LEADER_REVIVED', // ダウンしたリーダーをダウンしていない状態に戻した（復活ポータル）

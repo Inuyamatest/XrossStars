@@ -287,10 +287,13 @@
         }).map(function (c) { return { instanceId: c.instanceId, cardId: c.cardId }; });
         var chosenId = (deckLookCandidates.length > 0 && ctx.chooseDeckLookPlay) ? ctx.chooseDeckLookPlay(deckLookCandidates.slice(), state) : null;
         var chosenCard = chosenId ? revealed.find(function (c) { return c.instanceId === chosenId; }) : null;
+        var deckLookTrashed = [];
         revealed.forEach(function (c) {
           if (chosenCard && c.instanceId === chosenCard.instanceId) return;
           deckLookPlayer.trash.push({ card: c, faceUp: false });
+          deckLookTrashed.push(c.cardId);
         });
+        logDeckLookTrashed(state, ctx.ownerPlayerId, deckLookTrashed);
         if (chosenCard) {
           playMemoriaForFreeAndQueueEffects(state, ctx.ownerPlayerId, chosenCard, cardIndex, pickChoiceCallbacks(ctx));
         }
@@ -358,14 +361,19 @@
         addCandidates.forEach(function (c) {
           if (picked.length < minPick && picked.indexOf(c.instanceId) < 0) picked.push(c.instanceId);
         });
+        var lookTrashed = [];
         looked.forEach(function (c) {
           if (picked.indexOf(c.instanceId) >= 0) {
             lookPlayer.hand.push(c);
-            Events.logEvent(state, 'CARD_ADDED_TO_HAND_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: c.cardId });
+            // revealed: カードに「公開し、手札に加える」とあるもの（アブソリュートドミニオン・シンクロトリニティ）。
+            // 討伐クエストは公開しないので、対戦相手には何を加えたか見えない（対戦画面のログで出し分ける）
+            Events.logEvent(state, 'CARD_ADDED_TO_HAND_BY_EFFECT', { playerId: ctx.ownerPlayerId, cardId: c.cardId, revealed: !!action.reveal });
           } else {
             lookPlayer.trash.push({ card: c, faceUp: false });
+            lookTrashed.push(c.cardId);
           }
         });
+        logDeckLookTrashed(state, ctx.ownerPlayerId, lookTrashed);
         return state;
       }
 
@@ -430,10 +438,12 @@
           if (!attackCandidates.some(function (c) { return c.instanceId === chosenAttackId; })) chosenAttackId = null;
         }
         var chosenAttack = null;
+        var apexTrashed = [];
         apexLooked.forEach(function (c) {
           if (c.instanceId === chosenAttackId) chosenAttack = c;
-          else apexPlayer.trash.push({ card: c, faceUp: false });
+          else { apexPlayer.trash.push({ card: c, faceUp: false }); apexTrashed.push(c.cardId); }
         });
+        logDeckLookTrashed(state, ctx.ownerPlayerId, apexTrashed);
         if (chosenAttack) {
           ResolutionStack.push(state.resolutionStack, buildDeferredFreeAttack(chosenAttack, ctx, cardIndex, { chooseAttacker: true }));
         }
@@ -576,10 +586,13 @@
           : { memoria: memC[0] ? memC[0].instanceId : null, attack: atkC[0] ? atkC[0].instanceId : null, attackFirst: false };
         var memCard = pickMeet.memoria && memC.some(function (c) { return c.instanceId === pickMeet.memoria; }) ? meetLooked.find(function (c) { return c.instanceId === pickMeet.memoria; }) : null;
         var atkCard = pickMeet.attack && atkC.some(function (c) { return c.instanceId === pickMeet.attack; }) ? meetLooked.find(function (c) { return c.instanceId === pickMeet.attack; }) : null;
+        var meetTrashed = [];
         meetLooked.forEach(function (c) {
           if (c === memCard || c === atkCard) return;
           meetPlayer.trash.push({ card: c, faceUp: false });
+          meetTrashed.push(c.cardId);
         });
+        logDeckLookTrashed(state, ctx.ownerPlayerId, meetTrashed);
         var memPending = memCard ? buildDeferredFreeMemoria(memCard, ctx, cardIndex) : null;
         var atkPending = atkCard ? buildDeferredFreeAttack(atkCard, ctx, cardIndex) : null;
         (pickMeet.attackFirst ? [atkPending, memPending] : [memPending, atkPending]).forEach(function (p) {
@@ -614,6 +627,12 @@
       default:
         throw new Error('未知のActionTypeです（cardEffectData.jsの設定を確認してください）: ' + action.type);
     }
+  }
+
+  // デッキを見る効果で、見た残りを裏向きでトラッシュに置いたことの記録（対戦画面のログで、本人には何を置いたか見せる）
+  function logDeckLookTrashed(state, playerId, cardIds) {
+    if (!cardIds.length) return;
+    Events.logEvent(state, 'DECK_LOOK_TRASHED', { playerId: playerId, cardIds: cardIds.slice(), count: cardIds.length });
   }
 
   // 頂点捕食者：デッキから選んだアタックカードを「このアタックが終わってから」コストを支払わずにプレイする

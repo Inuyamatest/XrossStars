@@ -875,7 +875,7 @@
     // カード種類の限定は無い（「エース以外のコスト0のカード」）。「加えてもよい」だが手札に加えるだけで
     // 失うものが無いため、選択コールバック省略時は加える（ruleConfig.js bp05AcePolicy）。
     'BP04-028': [
-      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 3, maxPick: 1, filter: { cost: 0, excludeAce: true } } }),
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 3, maxPick: 1, filter: { cost: 0, excludeAce: true }, reveal: true } }),
     ],
 
     // ============================================================
@@ -1771,7 +1771,7 @@
     // カードテキスト: "〖アタックする〗 〖アタック後〗自分のデッキの上から5枚を見る。その中からコスト0の
     //  メモリアカードを最大3枚公開し、手札に加える。残りのカードをトラッシュに置く。"
     'BP05-024': [
-      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 5, maxPick: 3, filter: { cardType: 'MEMORIA', cost: 0 } } }),
+      E({ trigger: 'AFTER_ATTACK', action: { type: 'DECK_LOOK_ADD_TO_HAND', count: 5, maxPick: 3, filter: { cardType: 'MEMORIA', cost: 0 }, reveal: true } }),
     ],
 
     // BP05-031 ダブルダウン（アタック, 黄, cost2, ACE）
