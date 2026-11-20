@@ -161,13 +161,14 @@
       // ON_ATTACK: アタック宣言時（Phases.playAttackCard呼び出し直前、このカード自身がまだ
       //   プレイエリアに積まれる前）に評価する（アナイアレーション・オールスターコンボで確認できる
       //   範囲では、宣言時点の状態で確定して問題ない）。
-      // ATTACK_BOOST: メモリアをプレイした瞬間（このカード自身は既にプレイエリアに積まれた後）に
-      //   評価する。We are...!の括弧書き「メモリアカードの数は【アタック強化】を実行するときに数える」
-      //   という個別カードの明記されたルーリングを、条件付きATTACK_BOOST全般の評価タイミングとして
-      //   一般化したもの（他のカードでの確認は取れていない）。
+      // ATTACK_BOOST: 次のアタックのダメージを計算するとき（アタック宣言時、アタックカードがプレイエリアに
+      //   積まれる前）に評価する。条件付きのアタック強化を持つカードはすべて「メモリアカードの数は
+      //   【アタック強化】を実行するときに数える」と書かれており、【アタック強化】はダメージ計算
+      //   （spec 12-2 (2-2)「このアタックを強化している…『アタック強化』効果のダメージ」）で実行されるため。
+      //   メモリアを出した後に別のメモリアを並べれば、それも数える（以前はメモリアをプレイした瞬間に判定していた）。
       conditionalAttackBonusEvaluationTiming: {
         onAttack: 'AT_ATTACK_DECLARATION_BEFORE_PLAY_AREA_PUSH',
-        attackBoost: 'AT_MEMORIA_PLAY_TIME_AFTER_PLAY_AREA_PUSH',
+        attackBoost: 'AT_ATTACK_DECLARATION_BEFORE_PLAY_AREA_PUSH',
         status: 'PROVISIONAL',
         source: 'BP03-059 We are...!の括弧書き（ATTACK_BOOST側のみ明記）からの一般化。ON_ATTACK側は該当カードのテキストに評価タイミングの明記なし。',
       },

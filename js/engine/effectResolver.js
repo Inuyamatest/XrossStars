@@ -1138,8 +1138,13 @@
     player.pendingAttackTimeBoosts = player.pendingAttackTimeBoosts || [];
     var boostCtx = { ownerPlayerId: playerId, sourceInstanceId: cardInstance.instanceId, cardIndex: cardIndex };
     CardEffectData.getEffectsForCard(cardInstance.cardId).forEach(function (e) {
-      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
-        if (e.condition && !e.condition(state, boostCtx)) return;
+      if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS' && e.condition) {
+        // 条件付きのアタック強化（「プレイエリアにメモリアカードが3枚以上あるなら」等）は、カードの括弧書き
+        // 「メモリアカードの数は【アタック強化】を実行するときに数える」に従い、次のアタックのダメージを計算する
+        // ときに判定する（ruleConfig.js conditionalAttackBonusEvaluationTiming）。後から出したメモリアも数える
+        player.pendingAttackTimeBoosts.push({ amount: e.modifier.amount, condition: e.condition, instanceId: cardInstance.instanceId, cardId: cardInstance.cardId });
+        player.pendingBoostSources.push({ instanceId: cardInstance.instanceId, cardId: cardInstance.cardId, amount: e.modifier.amount, conditional: true });
+      } else if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS') {
         Combat.queueAttackBoost(state, playerId, e.modifier.amount, cardInstance.instanceId);
         player.pendingBoostSources.push({ instanceId: cardInstance.instanceId, cardId: cardInstance.cardId, amount: e.modifier.amount });
       } else if (e.trigger === 'ATTACK_BOOST' && e.modifier && e.modifier.type === 'DAMAGE_BONUS_AT_ATTACK') {

@@ -36,7 +36,7 @@
   var Fx = window.XS_BATTLE_FX;
   var Online = window.XS_BATTLE_ONLINE;
   // オンライン対戦で2台のプログラムが同じかどうかの確認用（違うと同じ手順を再生しても結果がずれる）
-  var APP_VERSION = '20261120a';
+  var APP_VERSION = '20261120b';
   // このファイルの ?v= （デッキ検証のWeb Workerにも同じものを付けて、古いキャッシュを読まないようにする）
   var ASSET_QUERY = (function () {
     var src = document.currentScript && document.currentScript.src;
@@ -1410,9 +1410,23 @@
     return (player.pendingAttackBoost || 0) + (player.pendingAttackTimeBoosts || []).reduce(function (s, b) { return s + b.amount; }, 0);
   }
 
+  // 条件付きのアタック強化（「メモリアが3枚以上なら」等。判定はアタックのダメージ計算時）が、今の盤面で条件を満たしているか
+  function pidOfPlayer(player) { return game.state.players.playerA === player ? 'playerA' : 'playerB'; }
+  function timeBoostMetNow(player, b) {
+    if (typeof b.condition !== 'function') return true;
+    try { return !!b.condition(game.state, { ownerPlayerId: pidOfPlayer(player), cardIndex: cardIndex }); } catch (e) { return false; }
+  }
+  function timeBoostFor(player, instanceId) {
+    return (player.pendingAttackTimeBoosts || []).filter(function (b) { return b.instanceId === instanceId; });
+  }
+  // 今の盤面で乗る見込みの合計（条件付きは今条件を満たしている分だけ）
+  function pendingNowTotal(player) {
+    return (player.pendingAttackBoost || 0) + (player.pendingAttackTimeBoosts || []).reduce(function (s, b) { return s + (timeBoostMetNow(player, b) ? b.amount : 0); }, 0);
+  }
+
   function renderBoostBadge(player) {
-    var total = player.pendingAttackBoost || 0;
-    var cond = (player.pendingAttackTimeBoosts || []).length > 0;
+    var total = pendingNowTotal(player);
+    var cond = (player.pendingAttackTimeBoosts || []).some(function (b) { return !timeBoostMetNow(player, b); });
     var after = (player.pendingAfterAttackEffects || []).length > 0;
     if (!total && !cond && !after) return '';
     var tip = (player.pendingBoostSources || []).map(function (b) { return cardOf(b.cardId).name + ' +' + b.amount + (b.conditional ? '（条件付き）' : ''); }).join(' / ');
@@ -1425,7 +1439,8 @@
     var afters = player.pendingAfterAttackEffects || [];
     if (!(player.pendingAttackBoost || 0) && !sources.length && !afters.length) return '';
     var chips = sources.map(function (b) {
-      return '<span class="bt-nx-chip" data-preview="' + esc(b.cardId) + '">' + esc(cardOf(b.cardId).name) + ' <b>+' + b.amount + '</b>' + (b.conditional ? '<small>条件付き</small>' : '') + '</span>';
+      var met = b.conditional ? timeBoostFor(player, b.instanceId).some(function (t) { return t.amount === b.amount && timeBoostMetNow(player, t); }) : true;
+      return '<span class="bt-nx-chip" data-preview="' + esc(b.cardId) + '">' + esc(cardOf(b.cardId).name) + ' <b>+' + b.amount + '</b>' + (b.conditional ? '<small>' + (met ? '条件達成' : '条件未達') + '</small>' : '') + '</span>';
     });
     var seenAfter = {};
     afters.forEach(function (a) {
@@ -1434,7 +1449,7 @@
       seenAfter[a.sourceInstanceId] = true;
       chips.push('<span class="bt-nx-chip after" data-preview="' + esc(id) + '">' + esc(cardOf(id).name) + ' <b>アタック後</b></span>');
     });
-    return '<div class="bt-nextattack"><span class="bt-nx-label">次のアタック</span><span class="bt-nx-total">+' + (player.pendingAttackBoost || 0) + '</span>' + chips.join('') + '</div>';
+    return '<div class="bt-nextattack"><span class="bt-nx-label">次のアタック</span><span class="bt-nx-total">+' + pendingNowTotal(player) + '</span>' + chips.join('') + '</div>';
   }
 
   // プレイエリアのカードが、次のアタックへの強化／アタック後効果を保留中なら印を付ける
