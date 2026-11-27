@@ -1273,21 +1273,25 @@
     var card = cardIndex[cardId];
     if (!card || typeof card.cost !== 'number') return null;
     if (isFreeBySameNameRule(state, playerId, cardId, cardIndex)) return 0;
+    // コストの増減をすべて足し引きしてから、最後に下限を当てる（PROVISIONAL: ruleConfig.js costModifierOrder）。
+    // 例：相手の電磁スモーク（+1）があるときの復活ビーコンは 5＋1−（プレイエリアの枚数）で、1までしか下がらない
     var cost = card.cost;
+    var floor = 0;
     var rule = CardEffectData.getCostRule && CardEffectData.getCostRule(cardId);
     if (rule && rule.type === 'PER_OWN_PLAY_AREA') {
       // 復活ビーコン「自分のプレイエリアのカード1枚につき、このカードのコストを-1する。このカードのコストは1までしか下がらない。」
-      cost = Math.max(rule.min != null ? rule.min : 0, cost + rule.amount * state.players[playerId].playArea.length);
+      cost += rule.amount * state.players[playerId].playArea.length;
+      if (rule.min != null) floor = rule.min;
     } else if (rule && rule.type === 'PREVIOUS_ROUND_LOST') {
       // フォールダウンシールド「直前のラウンドであなたが負けているなら、このカードのコストを-5する。」
-      if (state.match && state.match.previousRoundLoser === playerId) cost = Math.max(0, cost + rule.amount);
+      if (state.match && state.match.previousRoundLoser === playerId) cost += rule.amount;
     }
     if (card.cardType === 'TACTICS') {
       // 電磁スモーク「このラウンド、対戦相手のタクティクスカードのコストを+1する。」（相手のプレイエリアに残っている枚数分）
       var opp = state.players[GameState.getOpponentId(playerId)];
       opp.playArea.forEach(function (entry) { if (CardEffectData.hasKeyword(entry.card.cardId, 'OPPONENT_TACTICS_COST_PLUS_1')) cost += 1; });
     }
-    return cost;
+    return Math.max(floor, cost);
   }
 
   // ---- 〖アタックする〗のうち、ダメージを決める前に盤面を動かす処理（選択・公開・破棄を伴うもの）----
