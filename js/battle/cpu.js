@@ -60,7 +60,7 @@
   // 調整用（テストで旧来の動きと比べるため。対戦画面では変更しない）
   // planBeaconSet／planBeaconHold／planFlag：攻略記事の「復活ビーコンを1R目に置いて温存」「勝ち進行でターゲットフラッグ」。
   // CPU同士のA/Bで勝率が上がらなかった（各400戦で48〜50%）ため既定はオフ
-  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true, multiAttacker: true, freeAttacker: true };
+  var TUNE = { smartTactics: true, planBeaconSet: false, planBeaconHold: false, planFlag: false, hpEquipFirst: true, chipWeight: 0.7, handBase: 30, oppHand: 0.8, depth2: true, depth2Top: 3, combo: true, multiPlan: true, apexLoose: false, freePickSmart: true, multiAttacker: true, freeAttacker: true, tempAtkMinAttacks: 2 };
   if (typeof process !== 'undefined' && process.env && process.env.XS_TUNE) { try { Object.assign(TUNE, JSON.parse(process.env.XS_TUNE)); } catch (e) { /* 無視 */ } }
   function isHpEquipment(cardId) {
     return effectsOf(cardId).some(function (e) { return e.action && (e.action.type === 'EQUIP_HP_MODIFIER' || e.action.type === 'EQUIP_BASE_HP_OVERRIDE'); });
@@ -356,6 +356,7 @@
       var cost = Resolver.getEffectivePlayCost(state, playerId, c.cardId, cardIndex);
       if (cost == null || cost > pp) return;
       if (TUNE.combo && !comboReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // コンボの準備カードは決め手を撃てるときまで温存
+      if (!tempAtkReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // 先導者の証などは、このターンに何回も殴れるときまで温存
       plays.push({ kind: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId, cost: cost, boost: boostAmountOf(c.cardId), utility: hasUtilityNow(state, playerId, c.cardId) });
     });
     if (Phases.canPlayTactics(state)) {
@@ -422,6 +423,7 @@
       if (cost == null || cost > pp) return;
       if (card.cardType === 'MEMORIA') {
         if (TUNE.combo && !comboReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // コンボの準備カードは温存
+        if (!tempAtkReady(state, playerId, c.cardId, cost, pp, cardIndex, excluded)) return; // 先導者の証などは、このターンに何回も殴れるときまで温存
         acts.push({ type: 'MEMORIA', instanceId: c.instanceId, cardId: c.cardId });
       } else if (card.cardType === 'ATTACK') {
         var count = Resolver.getMultiAttackCount(c.cardId);
@@ -608,6 +610,25 @@
       var pc = Resolver.getEffectivePlayCost(state, playerId, h.cardId, cardIndex);
       return pc != null && cost + pc <= pp;
     });
+  }
+  // 「このターン、自分のリーダーすべての攻撃力を+N」（先導者の証）は、出した後のアタックの回数だけ効く。
+  // 出した後のPPで手札から撃てるアタックの回数（ストームラッシュは3回）が TUNE.tempAtkMinAttacks 未満なら温存する
+  function tempAtkReady(state, playerId, cardId, cost, pp, cardIndex, excluded) {
+    if (!TUNE.tempAtkMinAttacks) return true;
+    var isTempAtk = effectsOf(cardId).some(function (e) { return e.trigger === 'ON_PLAY' && e.action && e.action.type === 'TEMP_ATK_MODIFIER'; });
+    if (!isTempAtk) return true;
+    var me = state.players[playerId];
+    var budget = pp - cost;
+    var attacks = me.hand.filter(function (h) {
+      if (excluded && excluded[h.instanceId]) return false;
+      var cd = cardIndex[h.cardId];
+      return cd && cd.cardType === 'ATTACK';
+    }).map(function (h) {
+      return { cost: Resolver.getEffectivePlayCost(state, playerId, h.cardId, cardIndex), n: Resolver.getMultiAttackCount(h.cardId) || 1 };
+    }).filter(function (a) { return a.cost != null; }).sort(function (a, b) { return a.cost - b.cost; });
+    var count = 0;
+    attacks.forEach(function (a) { if (a.cost <= budget) { budget -= a.cost; count += a.n; } });
+    return count >= TUNE.tempAtkMinAttacks;
   }
   // このアクションが「手札に決め手があるときの準備カード」か（2手先まで必ず読む）
   function isComboStarter(state, playerId, act, cardIndex) {
