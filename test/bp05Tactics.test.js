@@ -127,11 +127,13 @@ test('下がったコストを支払ってプレイし、ダウンしている�
   assert.strictEqual(l.equipment.length, 0);
   assert.ok(s.players.playerB.trash.some((t) => t.card.cardId === 'BP01-095' && t.faceUp));
 });
-test('相手の電磁スモークがあれば下限1のあとで+1', () => {
-  const s = makeState();
-  for (let i = 0; i < 6; i++) s.players.playerB.playArea.push({ card: inst(FILLER), order: i, pendingTriggers: [] });
-  s.players.playerA.playArea.push({ card: inst('BP05-076'), order: 0, pendingTriggers: [], isTactics: true });
-  assert.strictEqual(cost(s, 'playerB', 'BP05-078'), 2);
+test('相手の電磁スモークがあれば、増減をすべて足し引きしてから下限1（5＋1−枚数）', () => {
+  [[4, 2], [5, 1], [6, 1], [0, 6]].forEach(([n, want]) => {
+    const s = makeState();
+    for (let i = 0; i < n; i++) s.players.playerB.playArea.push({ card: inst(FILLER), order: i, pendingTriggers: [] });
+    s.players.playerA.playArea.push({ card: inst('BP05-076'), order: 0, pendingTriggers: [], isTactics: true });
+    assert.strictEqual(cost(s, 'playerB', 'BP05-078'), want, 'プレイエリア' + n + '枚');
+  });
 });
 
 console.log('=== フォールダウンシールド ===');

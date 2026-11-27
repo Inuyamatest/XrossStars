@@ -155,6 +155,14 @@
         status: 'PROVISIONAL',
         source: 'data/cards.json内のconfirmStatus/confirmedフィールド自体が未確認を示している',
       },
+      // コストを変える効果が重なったとき（相手の電磁スモーク+1と、復活ビーコンの「プレイエリア1枚につき-1、1までしか
+      // 下がらない」など）の順番は公式資料に明記が無い。増減をすべて足し引きしてから最後に下限を当てる
+      // （5＋1−5＝1。下限を先に当ててから+1すると2になる）。多くのカードゲームの一般的な扱いに合わせた。
+      costModifierOrder: {
+        order: 'SUM_ALL_MODIFIERS_THEN_APPLY_FLOOR',
+        status: 'PROVISIONAL',
+        source: 'BP05-078 復活ビーコン・BP05-076 電磁スモークのテキストからの解釈（公式FAQ未確認）',
+      },
       // Phase E: 条件付きのON_ATTACK（ATTACK_DAMAGE_BONUS）・ATTACK_BOOST（DAMAGE_BONUS）ボーナスを
       // いつ評価するかは、これまでcomputeAttackCardBaseDamage/queueAttackBoostのどちらも
       // 「常に無条件で発動する」設計だったため、新たに決める必要があった。
